@@ -463,7 +463,7 @@ struct TimePayLiveActivityWidget: Widget {
             .activityBackgroundTint(WidgetPalette.navy)
         } dynamicIsland: { context in
             let isUnlock = context.state.sessionKind == "unlock"
-            DynamicIsland {
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Image(systemName: isUnlock ? "lock.open.fill" : "hourglass").foregroundStyle(WidgetPalette.teal)
                 }
