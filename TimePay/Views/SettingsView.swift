@@ -54,7 +54,7 @@ struct SettingsView: View {
                 GlassCard(glow: gate.setupCompleted ? NOCOTheme.mint : .orange) {
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {
-                            Text("Kurzbefehl-Setup")
+                            Text("Apps sperren")
                                 .font(.subheadline.weight(.bold))
                             Spacer()
                             GlassPill(
@@ -68,7 +68,7 @@ struct SettingsView: View {
                         Button {
                             showSetup = true
                         } label: {
-                            Label(gate.setupCompleted ? "Setup ansehen" : "Setup starten", systemImage: "wand.and.stars")
+                            Label(gate.setupCompleted ? "Anleitung ansehen" : "Setup starten", systemImage: "wand.and.stars")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(NOCOPrimaryButtonStyle())
@@ -135,12 +135,11 @@ struct SettingsView: View {
                 Button("Abbrechen", role: .cancel) {}
                 Button("Zurücksetzen", role: .destructive) {
                     gate.resetSetup()
-                    settings.shortcutImported = false
                     settings.automationConfirmed = false
                     settings.hasSeenOnboarding = false
                 }
             } message: {
-                Text("Kurzbefehl und Automation musst du danach erneut bestätigen.")
+                Text("Die Automation in Kurzbefehle musst du danach erneut bestätigen.")
             }
         }
     }
@@ -148,7 +147,6 @@ struct SettingsView: View {
     private var setupChecklist: some View {
         VStack(alignment: .leading, spacing: 8) {
             checklistRow("Apps gewählt", done: !gate.enabledApps.isEmpty)
-            checklistRow("Kurzbefehl importiert", done: settings.shortcutImported)
             checklistRow("Automation aktiv", done: settings.automationConfirmed)
         }
     }

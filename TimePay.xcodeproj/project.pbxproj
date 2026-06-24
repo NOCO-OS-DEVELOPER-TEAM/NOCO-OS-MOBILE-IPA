@@ -46,6 +46,7 @@
 		D10000010000000000000003 /* ShortcutsGuideTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000020000000000000003 /* ShortcutsGuideTabView.swift */; };
 		D10000010000000000000004 /* ShortcutGateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000020000000000000004 /* ShortcutGateManager.swift */; };
 		D10000010000000000000005 /* TimePayGateIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000020000000000000005 /* TimePayGateIntents.swift */; };
+		D10000010000000000000007 /* GateEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000020000000000000007 /* GateEngine.swift */; };
 		D10000010000000000000006 /* ProtectedApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000020000000000000006 /* ProtectedApp.swift */; };
 		E10000010000000000000001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000020000000000000001 /* AppSettings.swift */; };
 		E10000010000000000000002 /* ShortcutInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000020000000000000002 /* ShortcutInstaller.swift */; };
@@ -139,6 +140,7 @@
 		D10000020000000000000003 /* ShortcutsGuideTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsGuideTabView.swift; sourceTree = "<group>"; };
 		D10000020000000000000004 /* ShortcutGateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutGateManager.swift; sourceTree = "<group>"; };
 		D10000020000000000000005 /* TimePayGateIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimePayGateIntents.swift; sourceTree = "<group>"; };
+		D10000020000000000000007 /* GateEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GateEngine.swift; sourceTree = "<group>"; };
 		D10000020000000000000006 /* ProtectedApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectedApp.swift; sourceTree = "<group>"; };
 		E10000020000000000000001 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		E10000020000000000000002 /* ShortcutInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutInstaller.swift; sourceTree = "<group>"; };
@@ -278,6 +280,7 @@
 				B10000020000000000000016 /* LiveActivityManager.swift */,
 				B10000020000000000000017 /* DiagnosticLog.swift */,
 				B1000002000000000000001C /* TimePayEnvironmentDiagnostics.swift */,
+				D10000020000000000000007 /* GateEngine.swift */,
 				D10000020000000000000004 /* ShortcutGateManager.swift */,
 				D10000020000000000000005 /* TimePayGateIntents.swift */,
 				E10000020000000000000002 /* ShortcutInstaller.swift */,
@@ -582,6 +585,7 @@
 				D10000010000000000000001 /* GateTabView.swift in Sources */,
 				D10000010000000000000002 /* ShortcutsSetupView.swift in Sources */,
 				D10000010000000000000003 /* ShortcutsGuideTabView.swift in Sources */,
+				D10000010000000000000007 /* GateEngine.swift in Sources */,
 				D10000010000000000000004 /* ShortcutGateManager.swift in Sources */,
 				D10000010000000000000005 /* TimePayGateIntents.swift in Sources */,
 				D10000010000000000000006 /* ProtectedApp.swift in Sources */,
@@ -703,7 +707,7 @@
 				CODE_SIGN_ENTITLEMENTS = TimePay/TimePay.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TimePay/Info.plist;
@@ -740,7 +744,7 @@
 				CODE_SIGN_ENTITLEMENTS = TimePay/TimePay.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TimePay/Info.plist;
@@ -776,7 +780,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldConfiguration/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -802,7 +806,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldConfiguration/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -829,7 +833,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldAction/TimePayShieldAction.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldAction/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -855,7 +859,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldAction/TimePayShieldAction.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldAction/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -882,7 +886,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayMonitor/TimePayMonitor.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayMonitor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -908,7 +912,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayMonitor/TimePayMonitor.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayMonitor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -935,7 +939,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayWidgets/TimePayWidgets.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -961,7 +965,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayWidgets/TimePayWidgets.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 38;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

@@ -9,9 +9,9 @@ struct ShortcutsGuideTabView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
                     SectionHeader(
-                        "Kurzbefehl",
-                        subtitle: "Einmal einrichten — ohne Fokus-Modus",
-                        icon: "square.and.pencil"
+                        "Automation",
+                        subtitle: "Einmal einrichten — kein Kurzbefehl-Import",
+                        icon: "bolt.fill"
                     )
 
                     if !gate.setupCompleted {

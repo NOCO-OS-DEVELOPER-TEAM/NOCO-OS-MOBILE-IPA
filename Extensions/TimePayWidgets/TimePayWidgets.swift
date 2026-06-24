@@ -78,7 +78,7 @@ struct WidgetOpenUnlockIntent: AppIntent {
     static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
-        TimePaySharedStorage.defaults?.set("unlock", forKey: TimePayKeys.pendingDeepLinkKey)
+        TimePaySharedStorage.queuePendingDeepLink("unlock")
         return .result()
     }
 }
@@ -88,7 +88,7 @@ struct WidgetOpenEarnIntent: AppIntent {
     static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
-        TimePaySharedStorage.defaults?.set("earn", forKey: TimePayKeys.pendingDeepLinkKey)
+        TimePaySharedStorage.queuePendingDeepLink("earn")
         return .result()
     }
 }
@@ -97,10 +97,10 @@ struct WidgetOpenEarnIntent: AppIntent {
 struct EndUnlockSessionIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Freigabe beenden"
     static var description = IntentDescription("Beendet die Freigabe und erstattet ungenutzte Zeit.")
-    static var openAppWhenRun = false
+    static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
-        TimePaySharedStorage.defaults?.set(true, forKey: TimePayKeys.pendingEndUnlockKey)
+        TimePaySharedStorage.queuePendingEndUnlock()
         return .result()
     }
 }

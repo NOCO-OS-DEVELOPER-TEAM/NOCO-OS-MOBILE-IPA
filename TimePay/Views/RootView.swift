@@ -8,12 +8,14 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            LiquidGlassBackground()
+            LiquidGlassBackground(animated: false)
             MainTabView()
         }
         .task {
+            GateEngine.syncExpiredUnlock()
             store.resumeUnlockTimerIfNeeded()
             store.resumeEarnSessionIfNeeded()
+            store.checkPendingEndUnlock()
             store.consumePendingDeepLink()
             store.syncWidgetData()
             store.spendMinutes = Double(settings.defaultUnlockMinutes)
@@ -48,11 +50,17 @@ struct RootView: View {
         .animation(.spring(), value: store.toastMessage)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
+                GateEngine.syncExpiredUnlock()
                 store.resumeUnlockTimerIfNeeded()
                 store.resumeEarnSessionIfNeeded()
+                store.checkPendingEndUnlock()
                 store.consumePendingDeepLink()
                 store.syncWidgetData()
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .timePayQuickAction)) { _ in
+            store.checkPendingEndUnlock()
+            store.consumePendingDeepLink()
         }
     }
 }

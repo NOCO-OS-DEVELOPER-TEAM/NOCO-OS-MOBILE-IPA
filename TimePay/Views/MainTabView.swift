@@ -26,6 +26,8 @@ struct MainTabView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .timePayQuickAction)) { note in
+            store.checkPendingEndUnlock()
+            store.consumePendingDeepLink()
             if note.object as? String == TimePayQuickAction.setup {
                 selectedTab = .setup
             }

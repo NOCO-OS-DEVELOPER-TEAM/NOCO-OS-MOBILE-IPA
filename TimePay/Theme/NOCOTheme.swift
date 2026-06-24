@@ -100,22 +100,31 @@ struct GlassCard<Content: View>: View {
                     RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [.white.opacity(0.09), .white.opacity(0.02), .clear],
+                                colors: [.white.opacity(0.12), .white.opacity(0.04), .clear],
                                 startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, NOCOTheme.lavender.opacity(0.04)],
+                                startPoint: .top,
                                 endPoint: .bottomTrailing
                             )
                         )
                     if let glow {
                         RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
-                            .fill(glow.opacity(0.09))
-                            .blur(radius: 18)
+                            .fill(glow.opacity(0.1))
+                            .blur(radius: 22)
+                            .offset(y: 4)
                     }
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
-                        .stroke(NOCOTheme.glassBorder, lineWidth: 1.2)
+                        .stroke(NOCOTheme.glassBorder, lineWidth: 1.3)
                 }
-                .shadow(color: (glow ?? NOCOTheme.teal).opacity(0.14), radius: 24, y: 10)
+                .shadow(color: (glow ?? NOCOTheme.teal).opacity(0.16), radius: 28, y: 12)
             }
     }
 }
@@ -197,6 +206,109 @@ struct GlassCheckRow: View {
             }
         }
         .buttonStyle(GlassScaleButtonStyle())
+    }
+}
+
+/// Große Liquid-Glass-Info — z. B. „Kein Kurzbefehl nötig“.
+struct LiquidGlassInfoBanner: View {
+    let icon: String
+    let title: String
+    let message: String
+    var accent: Color = NOCOTheme.teal
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [accent.opacity(0.35), accent.opacity(0.05)],
+                            center: .center,
+                            startRadius: 4,
+                            endRadius: 32
+                        )
+                    )
+                    .frame(width: 52, height: 52)
+                Image(systemName: icon)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(accent)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.subheadline.weight(.bold))
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.62))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(18)
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [accent.opacity(0.16), NOCOTheme.lavender.opacity(0.06), .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(NOCOTheme.glassBorder, lineWidth: 1.2)
+            }
+            .shadow(color: accent.opacity(0.2), radius: 20, y: 8)
+        }
+    }
+}
+
+/// Einzelner Tipp-Schritt: „Tippe auf …“
+struct GlassTapStep: View {
+    let number: Int
+    let tap: String
+    var detail: String? = nil
+    var accent: Color = NOCOTheme.teal
+    var isLast: Bool = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            VStack(spacing: 0) {
+                ZStack {
+                    Circle()
+                        .fill(accent.opacity(0.18))
+                        .frame(width: 32, height: 32)
+                    Text("\(number)")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(accent)
+                }
+                if !isLast {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [accent.opacity(0.35), accent.opacity(0.05)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
+                        .padding(.vertical, 4)
+                }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                (Text("Tippe auf ") + Text(tap).fontWeight(.bold) + Text("."))
+                    .font(.subheadline.weight(.medium))
+                if let detail {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+            .padding(.bottom, isLast ? 0 : 14)
+        }
     }
 }
 
@@ -449,7 +561,7 @@ struct SmoothSessionProgressRing: View {
     var lineWidth: CGFloat = 6
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { context in
             let total = max(end.timeIntervalSince(start), 1)
             let remaining = max(end.timeIntervalSince(context.date), 0)
             let progress = min(max(1 - remaining / total, 0), 1)
@@ -562,7 +674,7 @@ struct GateOrbView: View {
             Circle()
                 .fill((isOpen ? NOCOTheme.teal : Color.orange).opacity(isUrgent ? 0.28 : 0.12))
                 .frame(width: size * 1.15, height: size * 1.15)
-                .blur(radius: shouldAnimate ? 28 : 18)
+                .blur(radius: shouldAnimate ? 20 : 14)
                 .scaleEffect(flashExpired ? 1.2 : (shouldAnimate && breathe ? 1.04 : 0.96))
                 .animation(.spring(response: 0.45, dampingFraction: 0.55), value: flashExpired)
 

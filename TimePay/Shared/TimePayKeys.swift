@@ -79,23 +79,114 @@ enum TimePaySharedStorage {
         UserDefaults(suiteName: TimePayKeys.appGroup) ?? .standard
     }
 
-    static var unlockUntilDate: Date? {
-        get {
-            let ts = defaults?.double(forKey: TimePayKeys.unlockUntil) ?? 0
-            return ts > 0 ? Date(timeIntervalSince1970: ts) : nil
+    static func queuePendingDeepLink(_ action: String) {
+        for d in storageTargets() {
+            d.set(action, forKey: TimePayKeys.pendingDeepLinkKey)
         }
-        set {
-            if let newValue {
-                defaults?.set(newValue.timeIntervalSince1970, forKey: TimePayKeys.unlockUntil)
+    }
+
+    static func takePendingDeepLink() -> String? {
+        for d in storageTargets() {
+            guard let action = d.string(forKey: TimePayKeys.pendingDeepLinkKey), !action.isEmpty else { continue }
+            for target in storageTargets() {
+                target.removeObject(forKey: TimePayKeys.pendingDeepLinkKey)
+            }
+            return action
+        }
+        return nil
+    }
+
+    static func queuePendingEndUnlock() {
+        for d in storageTargets() {
+            d.set(true, forKey: TimePayKeys.pendingEndUnlockKey)
+        }
+    }
+
+    static func takePendingEndUnlock() -> Bool {
+        for d in storageTargets() {
+            guard d.bool(forKey: TimePayKeys.pendingEndUnlockKey) else { continue }
+            for target in storageTargets() {
+                target.set(false, forKey: TimePayKeys.pendingEndUnlockKey)
+            }
+            return true
+        }
+        return false
+    }
+
+    static func takePendingEndUnlock() -> Bool {
+        for d in storageTargets() {
+            guard d.bool(forKey: TimePayKeys.pendingEndUnlockKey) else { continue }
+            for target in storageTargets() {
+                target.set(false, forKey: TimePayKeys.pendingEndUnlockKey)
+            }
+            return true
+        }
+        return false
+    }
+
+    static func unlockUntilTimestamp() -> TimeInterval {
+        var best: TimeInterval = 0
+        for d in storageTargets() {
+            let ts = d.double(forKey: TimePayKeys.unlockUntil)
+            if ts > best { best = ts }
+        }
+        return best
+    }
+
+    static func hasAnyUnlockState() -> Bool {
+        storageTargets().contains { d in
+            d.double(forKey: TimePayKeys.unlockUntil) > 0 || d.bool(forKey: TimePayKeys.isUnlocked)
+        }
+    }
+
+    static func setUnlockUntil(_ date: Date?) {
+        for d in storageTargets() {
+            if let date {
+                d.set(date.timeIntervalSince1970, forKey: TimePayKeys.unlockUntil)
+                d.set(true, forKey: TimePayKeys.isUnlocked)
             } else {
-                defaults?.removeObject(forKey: TimePayKeys.unlockUntil)
+                d.removeObject(forKey: TimePayKeys.unlockUntil)
+                d.set(false, forKey: TimePayKeys.isUnlocked)
             }
         }
     }
 
+    static func setPendingAppName(_ name: String) {
+        for d in storageTargets() {
+            d.set(name, forKey: TimePayKeys.pendingShortcutAppKey)
+        }
+    }
+
+    static func takePendingAppName() -> String? {
+        for d in storageTargets() {
+            guard let name = d.string(forKey: TimePayKeys.pendingShortcutAppKey), !name.isEmpty else { continue }
+            for target in storageTargets() {
+                target.removeObject(forKey: TimePayKeys.pendingShortcutAppKey)
+            }
+            return name
+        }
+        return nil
+    }
+
+    static var unlockUntilDate: Date? {
+        get {
+            let ts = unlockUntilTimestamp()
+            return ts > 0 ? Date(timeIntervalSince1970: ts) : nil
+        }
+        set {
+            setUnlockUntil(newValue)
+        }
+    }
+
     static var isUnlocked: Bool {
-        get { defaults?.bool(forKey: TimePayKeys.isUnlocked) ?? false }
-        set { defaults?.set(newValue, forKey: TimePayKeys.isUnlocked) }
+        get { remainingUnlockSeconds() > 0 }
+        set {
+            if newValue, unlockUntilDate == nil {
+                setUnlockUntil(Date().addingTimeInterval(60))
+            } else if !newValue {
+                setUnlockUntil(nil)
+            }
+        }
     }
 
     static func remainingUnlockSeconds() -> Int {

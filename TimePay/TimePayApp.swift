@@ -27,7 +27,9 @@ struct TimePayApp: App {
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
+                        GateEngine.syncExpiredUnlock()
                         store.resumeUnlockTimerIfNeeded()
+                        store.checkPendingEndUnlock()
                         store.consumePendingDeepLink()
                     }
                 }

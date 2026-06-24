@@ -18,9 +18,7 @@ final class ShortcutGateManager: ObservableObject {
         syncBlockedCountWidget()
     }
 
-    static var isGateOpen: Bool {
-        TimePaySharedStorage.isUnlocked && TimePaySharedStorage.remainingUnlockSeconds() > 0
-    }
+    static var isGateOpen: Bool { GateEngine.isOpen }
 
     var enabledApps: [ProtectedApp] {
         protectedApps.filter(\.isEnabled)
@@ -35,48 +33,38 @@ final class ShortcutGateManager: ObservableObject {
 
     var gateStatusLabel: String {
         if Self.isGateOpen {
-            let s = TimePaySharedStorage.remainingUnlockSeconds()
+            let s = GateEngine.remainingSeconds
             return "Offen · \(s / 60):\(String(format: "%02d", s % 60))"
         }
         return "Geschlossen"
     }
 
-    func openGate(minutes: Int) {
-        Self.openGate(seconds: minutes * 60)
-    }
+    func openGate(minutes: Int) { Self.openGate(seconds: minutes * 60) }
+    func openGate(seconds: Int) { Self.openGate(seconds: seconds) }
+    func closeGate() { Self.closeGate() }
 
-    func openGate(seconds: Int) {
-        Self.openGate(seconds: seconds)
-    }
-
-    func closeGate() {
-        Self.closeGate()
-    }
-
-    static func openGate(minutes: Int) {
-        openGate(seconds: minutes * 60)
-    }
+    static func openGate(minutes: Int) { openGate(seconds: minutes * 60) }
 
     static func openGate(seconds: Int) {
-        guard seconds > 0 else { return }
-        let end = Date().addingTimeInterval(TimeInterval(seconds))
-        TimePaySharedStorage.isUnlocked = true
-        TimePaySharedStorage.unlockUntilDate = end
+        GateEngine.grantUnlock(seconds: seconds)
     }
 
     static func closeGate() {
-        TimePaySharedStorage.isUnlocked = false
-        TimePaySharedStorage.unlockUntilDate = nil
+        GateEngine.closeUnlock()
     }
 
     func markSetupCompleted() {
         setupCompleted = true
-        TimePaySharedStorage.defaults?.set(true, forKey: setupKey)
+        for d in TimePaySharedStorage.storageTargets() {
+            d.set(true, forKey: setupKey)
+        }
     }
 
     func resetSetup() {
         setupCompleted = false
-        TimePaySharedStorage.defaults?.set(false, forKey: setupKey)
+        for d in TimePaySharedStorage.storageTargets() {
+            d.set(false, forKey: setupKey)
+        }
     }
 
     func toggleApp(_ id: String) {
@@ -144,14 +132,14 @@ final class ShortcutGateManager: ObservableObject {
     func handleIncomingURL(_ url: URL, store: TimePayStore) {
         guard url.scheme == "timepay" else { return }
         switch url.host {
-        case "gate", "unlock":
+        case "gate", "unlock", "block":
             let app = URLComponents(url: url, resolvingAgainstBaseURL: false)?
                 .queryItems?
                 .first(where: { $0.name == "app" })?
                 .value?
                 .removingPercentEncoding
             lastInterceptedApp = app
-            store.openUnlockFromShortcut(appName: app)
+            GateEngine.handleGateURL(url, store: store)
         case "earn":
             store.tryOpenEarnSheet()
         case "end":
@@ -197,32 +185,23 @@ final class ShortcutGateManager: ObservableObject {
 
     private func persistProtectedApps() {
         guard let data = try? JSONEncoder().encode(protectedApps) else { return }
-        TimePaySharedStorage.defaults?.set(data, forKey: appsKey)
+        for d in TimePaySharedStorage.storageTargets() {
+            d.set(data, forKey: appsKey)
+        }
     }
 
     static let shortcutBuildGuide = """
-    SPERRE EINRICHTEN
+    SPERRE (3 Schritte)
     ─────────────────────────────────────────────
-    \(ShortcutInstaller.howItWorksShort)
-
-    METHODE A — ohne Kurzbefehl-Datei (empfohlen)
-    Automation → App → geschützte Apps → Wird geöffnet
-    Aktion: TimePay → „Apps sperren“
-    Sofort ausführen AN · Vor Ausführen AUS
-
-    METHODE B — Kurzbefehl importieren
-    Setup → „\(ShortcutInstaller.gateShortcutName)“ teilen → Hinzufügen
-    Automation → Kurzbefehl „\(ShortcutInstaller.gateShortcutName)“ ausführen
+    1. TimePay → Empfohlene Apps aktivieren
+    2. Kurzbefehle → Automation → App → Ist geöffnet
+    3. Aktion: URL öffnen → timepay://gate
+       (Alternativ: TimePay → Apps sperren)
+       Sofort ausführen AN · Vor Ausführen fragen AUS
     """
 
     static let howItWorks = """
-    So funktioniert’s:
-
-    1. Du öffnest z. B. App Store oder Instagram.
-    2. Die Automation führt „Apps sperren“ aus.
-    3. TimePay prüft: Hast du Freigabe-Zeit?
-       • Ja (z. B. 1 Min) → nichts passiert, App bleibt offen.
-       • Nein → TimePay öffnet sich, du gibst dir Minuten.
-    4. Nach Ablauf der Zeit schließt sich das Gate — beim nächsten Öffnen landest du wieder in TimePay.
+    App öffnen ohne Freigabe → TimePay erscheint → Minuten abbuchen.
+    Mit Freigabe-Zeit → App bleibt offen.
     """
 }

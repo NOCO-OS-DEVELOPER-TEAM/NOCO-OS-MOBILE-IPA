@@ -91,9 +91,9 @@ struct HomeTabView: View {
                         .font(.title2)
                         .foregroundStyle(NOCOTheme.coral)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Fast fertig — Kurzbefehl & Automation")
+                        Text("Setup — 3 Schritte")
                             .font(.subheadline.weight(.bold))
-                        Text("Vorgefertigter Kurzbefehl mit einem Tippen — dann Automation anlegen.")
+                        Text("Apps → Automation → timepay://gate")
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.55))
                     }
@@ -106,13 +106,25 @@ struct HomeTabView: View {
         .buttonStyle(.plain)
     }
 
+    private var balanceGaugeProgress: Double {
+        let cap = max(Double(store.balanceHalfMinutes) / 2.0, 60)
+        return min(Double(store.balanceHalfMinutes) / 2.0 / cap, 1)
+    }
+
     private var balanceCard: some View {
         GlassCard(glow: NOCOTheme.teal, padding: 24) {
-            VStack(spacing: 16) {
-                HStack {
-                    Text("Zeitkonto")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.6))
+            VStack(spacing: 18) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Zeitkonto")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.6))
+                        if store.streakDays >= 2 {
+                            Label("\(store.streakDays) Tage Streak", systemImage: "flame.fill")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(NOCOTheme.coral)
+                        }
+                    }
                     Spacer()
                     if store.unlockSessionRemaining > 0 {
                         StatusBadge(text: "Freigabe", color: NOCOTheme.teal, icon: "lock.open.fill")
@@ -144,21 +156,56 @@ struct HomeTabView: View {
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(.white.opacity(0.55))
                         } else {
-                            Text(store.balanceDisplayNumber)
-                                .font(.system(size: 56, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .contentTransition(.numericText())
-                            Text(store.balanceHalfMinutes % 2 == 0 ? "Minuten Guthaben" : "Minuten Guthaben")
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(store.balanceDisplayNumber)
+                                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .contentTransition(.numericText())
+                                Text("Min")
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(NOCOTheme.teal.opacity(0.85))
+                            }
+                            Text(store.formattedBalance)
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(NOCOTheme.teal)
+                                .foregroundStyle(.white.opacity(0.45))
                         }
                     }
                 }
 
-                Text(heroSubtitle)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
-                    .multilineTextAlignment(.center)
+                if !store.isSessionActive {
+                    VStack(spacing: 8) {
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(.white.opacity(0.08))
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [NOCOTheme.teal.opacity(0.5), NOCOTheme.teal],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: max(geo.size.width * balanceGaugeProgress, 8))
+                            }
+                        }
+                        .frame(height: 6)
+                        HStack {
+                            Text("Heute +\(store.earnedToday) · −\(store.spentToday) Min")
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.45))
+                            Spacer()
+                            Text("\(gate.enabledApps.count) Apps geschützt")
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.45))
+                        }
+                    }
+                } else {
+                    Text(heroSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                }
             }
             .frame(maxWidth: .infinity)
         }

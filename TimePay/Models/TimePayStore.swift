@@ -165,11 +165,12 @@ final class TimePayStore: ObservableObject {
     }
 
     func consumePendingDeepLink() {
-        guard let action = TimePaySharedStorage.defaults?.string(forKey: TimePayKeys.pendingDeepLinkKey) else { return }
-        TimePaySharedStorage.defaults?.removeObject(forKey: TimePayKeys.pendingDeepLinkKey)
+        GateEngine.syncExpiredUnlock()
+        guard let action = TimePaySharedStorage.takePendingDeepLink() else { return }
         switch action {
         case "gate":
-            openUnlockFromShortcut(appName: nil)
+            let app = TimePaySharedStorage.takePendingAppName()
+            presentBlockSheet(appName: app)
         case "setup":
             openSetupTab = true
         case "unlock":
@@ -324,17 +325,27 @@ final class TimePayStore: ObservableObject {
         syncWidgetData()
     }
 
-    func openUnlockFromShortcut(appName: String?) {
+    func presentBlockSheet(appName: String?) {
         shortcutRequestedApp = appName
-        if ShortcutGateManager.isGateOpen {
-            toast("Freigabe läuft noch — App sollte sich öffnen lassen.")
+        guard canBookTime else {
+            toast("Session läuft — erst warten, dann freischalten.")
             return
         }
-        if canBookTime {
-            showUnlockSheet = true
-        } else {
-            toast("Session läuft — erst warten, dann freischalten.")
+        showUnlockSheet = true
+    }
+
+    func notifyGateAlreadyOpen() {
+        toast("Freigabe läuft — wechsel zurück zur App.")
+    }
+
+    /// Legacy-Alias
+    func openUnlockFromShortcut(appName: String?) {
+        GateEngine.syncExpiredUnlock()
+        if GateEngine.isOpen {
+            notifyGateAlreadyOpen()
+            return
         }
+        presentBlockSheet(appName: appName)
     }
 
     func checkPendingUnlockFromShield() {
@@ -354,8 +365,7 @@ final class TimePayStore: ObservableObject {
     }
 
     func checkPendingEndUnlock() {
-        guard TimePaySharedStorage.defaults?.bool(forKey: TimePayKeys.pendingEndUnlockKey) == true else { return }
-        TimePaySharedStorage.defaults?.set(false, forKey: TimePayKeys.pendingEndUnlockKey)
+        guard TimePaySharedStorage.takePendingEndUnlock() else { return }
         endUnlockSessionEarly()
     }
 

@@ -41,13 +41,13 @@ enum TimePayQuickAction {
     static func handle(_ item: UIApplicationShortcutItem) {
         switch item.type {
         case unlock:
-            TimePaySharedStorage.defaults?.set("unlock", forKey: TimePayKeys.pendingDeepLinkKey)
+            TimePaySharedStorage.queuePendingDeepLink("unlock")
         case earn:
-            TimePaySharedStorage.defaults?.set("earn", forKey: TimePayKeys.pendingDeepLinkKey)
+            TimePaySharedStorage.queuePendingDeepLink("earn")
         case end:
-            TimePaySharedStorage.defaults?.set("end", forKey: TimePayKeys.pendingDeepLinkKey)
+            TimePaySharedStorage.queuePendingDeepLink("end")
         case setup:
-            TimePaySharedStorage.defaults?.set("setup", forKey: TimePayKeys.pendingDeepLinkKey)
+            TimePaySharedStorage.queuePendingDeepLink("setup")
         default:
             break
         }

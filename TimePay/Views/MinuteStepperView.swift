@@ -1,13 +1,15 @@
 import SwiftUI
 
-/// Minuten-Auswahl in 1-Minuten-Schritten.
+/// Minuten-Auswahl in 1-Minuten-Schritten — Haptik bei jedem Minuten-Schritt.
 struct MinuteStepperView: View {
+    @EnvironmentObject private var settings: AppSettings
     @Binding var minutes: Double
     let maxMinutes: Double
     let accent: Color
     let label: String
 
     @State private var textInput = ""
+    @State private var lastHapticMinute = 0
     @FocusState private var fieldFocused: Bool
 
     private var minMinutes: Double { 1 }
@@ -58,8 +60,16 @@ struct MinuteStepperView: View {
                     .foregroundStyle(.orange)
             }
         }
-        .onAppear { syncTextFromValue() }
-        .onChange(of: minutes) { _, _ in
+        .onAppear {
+            syncTextFromValue()
+            lastHapticMinute = Int(minutes.rounded())
+        }
+        .onChange(of: minutes) { _, newValue in
+            let minute = Int(newValue.rounded())
+            if minute != lastHapticMinute {
+                lastHapticMinute = minute
+                settings.selection()
+            }
             if !fieldFocused { syncTextFromValue() }
         }
     }
