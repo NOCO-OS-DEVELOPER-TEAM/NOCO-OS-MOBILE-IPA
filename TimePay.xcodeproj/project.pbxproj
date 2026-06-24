@@ -92,7 +92,7 @@
 		B10000020000000000000011 /* DeviceActivityScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActivityScheduler.swift; sourceTree = "<group>"; };
 		B10000020000000000000012 /* PermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
 		B10000020000000000000013 /* ShieldUnlockNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldUnlockNotifier.swift; sourceTree = "<group>"; };
-		B10000020000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000020000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000030000000000000001 /* TimePay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TimePay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000030000000000000002 /* TimePayShieldConfiguration.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimePayShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000030000000000000003 /* TimePayShieldAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimePayShieldAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -154,7 +154,7 @@
 			children = (
 				B10000020000000000000001 /* TimePayApp.swift */,
 				B1000002000000000000000D /* TimePay.entitlements */,
-				B10000020000000000000013 /* Info.plist */,
+				B10000020000000000000014 /* Info.plist */,
 				B10000050000000000000008 /* Shared */,
 				B10000050000000000000004 /* Theme */,
 				B10000050000000000000005 /* Models */,
