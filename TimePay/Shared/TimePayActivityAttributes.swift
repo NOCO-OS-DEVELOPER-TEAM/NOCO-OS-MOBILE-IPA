@@ -7,6 +7,7 @@ struct TimePaySessionAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         var endDate: Date
         var remainingSeconds: Int
+        var totalSeconds: Int
         var sessionTitle: String
         var sessionKind: String
     }

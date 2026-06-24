@@ -126,13 +126,17 @@ struct WidgetSnapshot {
     let blocked: Int
     let sessionKind: String
     let sessionRemaining: Int
+    let sessionTotal: Int
     let sessionTitle: String
     let sessionEndDate: Date?
 
     static func load() -> WidgetSnapshot {
-        let d = TimePaySharedStorage.defaults
-        let half = d?.integer(forKey: TimePayKeys.widgetBalanceHalfMinutes) ?? 0
-        let whole = max(d?.integer(forKey: TimePayKeys.balanceKey) ?? 20, 0)
+        let d = TimePaySharedStorage.widgetSnapshotData()
+        let halfWidget = d?.integer(forKey: TimePayKeys.widgetBalanceHalfMinutes) ?? 0
+        let halfBalance = d?.integer(forKey: TimePayKeys.balanceHalfMinutesKey) ?? 0
+        let half = max(halfWidget, halfBalance)
+        let wholeStored = d?.integer(forKey: TimePayKeys.balanceKey) ?? 0
+        let whole = half > 0 ? max(half / 2, wholeStored) : max(wholeStored, 20)
         let endTS = d?.double(forKey: TimePayKeys.widgetSessionEndTimestamp) ?? 0
         let endDate = endTS > 0 ? Date(timeIntervalSince1970: endTS) : nil
         return WidgetSnapshot(
@@ -142,6 +146,7 @@ struct WidgetSnapshot {
             blocked: d?.integer(forKey: TimePayKeys.widgetBlockedCount) ?? 0,
             sessionKind: d?.string(forKey: TimePayKeys.widgetSessionKind) ?? "none",
             sessionRemaining: d?.integer(forKey: TimePayKeys.widgetSessionRemaining) ?? 0,
+            sessionTotal: d?.integer(forKey: TimePayKeys.widgetSessionTotal) ?? 0,
             sessionTitle: d?.string(forKey: TimePayKeys.widgetSessionTitle) ?? "",
             sessionEndDate: endDate
         )
@@ -265,6 +270,13 @@ struct BalanceWidgetView: View {
     }
 
     private var sessionLabel: String {
+        if entry.hasSession, let end = entry.sessionEndDate, end > Date() {
+            let prefix = entry.sessionKind == "unlock" ? "Freigabe" : entry.sessionTitle
+            if entry.sessionTotal > 0 {
+                return "\(prefix) · noch bis \(formatTime(entry.sessionTotal))"
+            }
+            return "\(prefix) · live"
+        }
         let t = formatTime(entry.sessionRemaining)
         if entry.sessionKind == "unlock" { return "Freigabe · \(t)" }
         if entry.sessionKind == "earn" { return "\(entry.sessionTitle) · \(t)" }
@@ -372,9 +384,15 @@ struct SessionWidgetView: View {
                     .font(.system(size: 30, weight: .bold, design: .monospaced))
                     .foregroundStyle(.white)
                     .monospacedDigit()
-                Text("live")
-                    .font(.caption2)
-                    .foregroundStyle(WidgetPalette.mint)
+                if entry.sessionTotal > 0 {
+                    Text("von \(formatTime(entry.sessionTotal))")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(WidgetPalette.mint)
+                } else {
+                    Text("live")
+                        .font(.caption2)
+                        .foregroundStyle(WidgetPalette.mint)
+                }
             }
             .padding()
             .widgetURL(URL(string: entry.sessionKind == "unlock" ? "timepay://end" : "timepay://earn")!)
@@ -423,6 +441,9 @@ struct TimePayLiveActivityWidget: Widget {
             let isUnlock = context.state.sessionKind == "unlock"
             let accent = isUnlock ? WidgetPalette.teal : WidgetPalette.lavender
             let title = isUnlock ? "Freigabe aktiv" : context.state.sessionTitle
+            let total = max(context.state.totalSeconds, context.attributes.totalSeconds, 1)
+            let elapsed = Date().timeIntervalSince(context.attributes.startedAt)
+            let progress = min(1, max(0, elapsed / Double(total)))
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top) {
@@ -433,15 +454,27 @@ struct TimePayLiveActivityWidget: Widget {
                         Text(title)
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(.white)
+                        Text(isUnlock ? "noch frei" : "noch bis Gutschrift")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.5))
                     }
                     Spacer()
-                    Text(timerInterval: Date()...context.state.endDate, countsDown: true)
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(accent)
-                        .contentTransition(.numericText())
-                        .shadow(color: accent.opacity(0.35), radius: 6)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(timerInterval: Date()...context.state.endDate, countsDown: true)
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(accent)
+                            .contentTransition(.numericText())
+                            .shadow(color: accent.opacity(0.35), radius: 6)
+                        Text("von \(formatLiveDuration(total))")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
                 }
+
+                ProgressView(value: progress)
+                    .tint(accent)
+                    .scaleEffect(x: 1, y: 1.6, anchor: .center)
 
                 Text("Sperrbildschirm · Live")
                     .font(.caption2)
@@ -460,13 +493,19 @@ struct TimePayLiveActivityWidget: Widget {
             .activityBackgroundTint(WidgetPalette.navy)
         } dynamicIsland: { context in
             let isUnlock = context.state.sessionKind == "unlock"
+            let total = max(context.state.totalSeconds, context.attributes.totalSeconds, 1)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Image(systemName: isUnlock ? "lock.open.fill" : "hourglass").foregroundStyle(WidgetPalette.teal)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: Date()...context.state.endDate, countsDown: true)
-                        .monospacedDigit().font(.title3.weight(.bold)).foregroundStyle(WidgetPalette.teal)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(timerInterval: Date()...context.state.endDate, countsDown: true)
+                            .monospacedDigit().font(.title3.weight(.bold)).foregroundStyle(WidgetPalette.teal)
+                        Text("von \(formatLiveDuration(total))")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(isUnlock ? "Freigabe" : context.state.sessionTitle).font(.caption)
@@ -485,6 +524,14 @@ struct TimePayLiveActivityWidget: Widget {
             }
         }
     }
+
+    private func formatLiveDuration(_ seconds: Int) -> String {
+        let m = seconds / 60
+        let s = seconds % 60
+        if m > 0 && s == 0 { return "\(m) Min" }
+        if m > 0 { return "\(m):\(String(format: "%02d", s))" }
+        return "\(s)s"
+    }
 }
 #endif
 
@@ -498,6 +545,7 @@ struct BalanceEntry: TimelineEntry {
     let blocked: Int
     let sessionKind: String
     let sessionRemaining: Int
+    let sessionTotal: Int
     let sessionTitle: String
     let sessionEndDate: Date?
 
@@ -507,7 +555,17 @@ struct BalanceEntry: TimelineEntry {
 
 struct BalanceProvider: TimelineProvider {
     func placeholder(in context: Context) -> BalanceEntry {
-        makeEntry(from: .init(minutes: 20, balanceHalfMinutes: 40, streak: 3, blocked: 2, sessionKind: "unlock", sessionRemaining: 320, sessionTitle: "Freigabe", sessionEndDate: Date().addingTimeInterval(320)))
+        makeEntry(from: .init(
+            minutes: 20,
+            balanceHalfMinutes: 40,
+            streak: 3,
+            blocked: 2,
+            sessionKind: "unlock",
+            sessionRemaining: 320,
+            sessionTotal: 600,
+            sessionTitle: "Freigabe",
+            sessionEndDate: Date().addingTimeInterval(320)
+        ))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (BalanceEntry) -> Void) {
@@ -530,6 +588,7 @@ struct BalanceProvider: TimelineProvider {
             blocked: snap.blocked,
             sessionKind: snap.sessionKind,
             sessionRemaining: snap.sessionRemaining,
+            sessionTotal: snap.sessionTotal,
             sessionTitle: snap.sessionTitle,
             sessionEndDate: snap.sessionEndDate
         )

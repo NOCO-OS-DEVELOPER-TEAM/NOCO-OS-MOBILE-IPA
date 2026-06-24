@@ -15,5 +15,9 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>shortcuts</string>
+	</array>
 </dict>
 </plist>

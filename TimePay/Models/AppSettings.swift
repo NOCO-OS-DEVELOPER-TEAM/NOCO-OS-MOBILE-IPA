@@ -31,9 +31,10 @@ final class AppSettings: ObservableObject {
 
     var setupProgress: Double {
         var steps = 0.0
+        if shortcutImported { steps += 1 }
         if automationConfirmed { steps += 1 }
         if hasSeenOnboarding { steps += 1 }
-        return steps / 2.0
+        return steps / 3.0
     }
 
     func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {

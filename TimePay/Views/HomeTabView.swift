@@ -13,51 +13,41 @@ struct HomeTabView: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 22) {
-                header
-                gateHero
-                if !gate.setupCompleted {
-                    setupCard
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 22) {
+                    gateHero
+                    if !gate.setupCompleted {
+                        setupCard
+                    }
+                    balanceCard
+                    if store.isSessionActive {
+                        activeSessionCard
+                    }
+                    quickActions
+                    statsGrid
+                    presetRow
                 }
-                balanceCard
-                if store.isSessionActive {
-                    activeSessionCard
-                }
-                quickActions
-                statsGrid
-                presetRow
+                .padding(.horizontal, 20)
+                .padding(.bottom, TabBarMetrics.contentBottomInset)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 100)
-        }
-        .sheet(isPresented: $showSetup) {
-            OneTapSetupView()
+            .navigationTitle("Übersicht")
+            .appleGlassNavigation()
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NOCOLogoMark(size: 28)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    SetupProgressRing(progress: settings.setupProgress)
+                }
+            }
+            .sheet(isPresented: $showSetup) {
+                OneTapSetupView()
+            }
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .center) {
-            HStack(spacing: 12) {
-                NOCOLogoMark(size: 50)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("TimePay")
-                        .font(.title2.weight(.bold))
-                    Text("NOCO Liquid Glass")
-                        .font(.caption)
-                        .foregroundStyle(NOCOTheme.teal)
-                }
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 6) {
-                if store.streakDays >= 2 {
-                    StatusBadge(text: "\(store.streakDays) Tage", color: NOCOTheme.lavender, icon: "flame.fill")
-                }
-                SetupProgressRing(progress: settings.setupProgress)
-            }
-        }
-        .padding(.top, 8)
-    }
+    // header removed — large title + toolbar logo
 
     private var gateHero: some View {
         GlassCard(glow: ShortcutGateManager.isGateOpen ? NOCOTheme.teal : NOCOTheme.lavender, padding: 20) {
@@ -101,9 +91,9 @@ struct HomeTabView: View {
                         .font(.title2)
                         .foregroundStyle(NOCOTheme.coral)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Fast fertig — Automation anlegen")
+                        Text("Fast fertig — Kurzbefehl & Automation")
                             .font(.subheadline.weight(.bold))
-                        Text("Nur eine Aktion: „Gate durchsetzen“ in Kurzbefehle — kein Kurzbefehl selbst bauen.")
+                        Text("Vorgefertigter Kurzbefehl mit einem Tippen — dann Automation anlegen.")
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.55))
                     }

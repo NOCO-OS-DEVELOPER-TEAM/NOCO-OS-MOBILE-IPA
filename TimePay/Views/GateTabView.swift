@@ -10,22 +10,36 @@ struct GateTabView: View {
     @State private var listMode = true
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 18) {
-                headerHero
-                if !gate.setupCompleted { setupBanner }
-                quickPresets
-                if !gate.enabledApps.isEmpty { enabledSummary }
-                searchAndModeBar
-                appList
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    headerHero
+                    if !gate.setupCompleted { setupBanner }
+                    quickPresets
+                    if !gate.enabledApps.isEmpty { enabledSummary }
+                    searchAndModeBar
+                    appList
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, TabBarMetrics.contentBottomInset)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 100)
+            .navigationTitle("Apps")
+            .appleGlassNavigation()
+            .searchable(text: $gate.searchQuery, prompt: "App suchen…")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showAddApp = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(NOCOTheme.teal)
+                    }
+                }
+            }
+            .sheet(isPresented: $showSetup) { OneTapSetupView() }
+            .sheet(isPresented: $showAddApp) { addAppSheet }
         }
-        .searchable(text: $gate.searchQuery, prompt: "App suchen…")
-        .sheet(isPresented: $showSetup) { OneTapSetupView() }
-        .sheet(isPresented: $showAddApp) { addAppSheet }
     }
 
     private var quickPresets: some View {
@@ -203,7 +217,7 @@ struct GateTabView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Setup abschließen")
                             .font(.subheadline.weight(.bold))
-                        Text("2 Schritte — nur Automation")
+                        Text("3 Schritte — Kurzbefehl importieren & Automation")
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.55))
                     }

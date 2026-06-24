@@ -162,7 +162,9 @@ final class ShortcutGateManager: ObservableObject {
     }
 
     func syncBlockedCountWidget() {
-        TimePaySharedStorage.defaults?.set(enabledApps.count, forKey: TimePayKeys.widgetBlockedCount)
+        for d in TimePaySharedStorage.storageTargets() {
+            d.set(enabledApps.count, forKey: TimePayKeys.widgetBlockedCount)
+        }
     }
 
     private func loadProtectedApps() {
@@ -199,17 +201,16 @@ final class ShortcutGateManager: ObservableObject {
     }
 
     static let shortcutBuildGuide = """
-    AUTOMATION (einmal — kein Kurzbefehl bauen)
+    KURZBEFEHL (ein Tippen in der App)
     ─────────────────────────────────────────────
-    1. Kurzbefehle → Automation → + → App
-    2. Geschützte Apps wählen → „Wird geöffnet“
-    3. Aktion: TimePay → „Gate durchsetzen“
-    4. „Sofort ausführen“ AN · „Vor Ausführen fragen“ AUS
+    Setup → „Kurzbefehl hinzufügen“ → In Kurzbefehle „Hinzufügen“
+    Name: NOCO TimePay Gate (vorgefertigt)
 
-    Ohne Freigabe öffnet TimePay automatisch.
-    Mit Freigabe bleibt die App offen.
-
-    WICHTIG: Kein Fokus-Modus nötig!
+    AUTOMATION
+    ─────────────────────────────────────────────
+    1. Automation → App → geschützte Apps → Wird geöffnet
+    2. Kurzbefehl ausführen → „NOCO TimePay Gate“
+    3. Sofort ausführen AN · Vor Ausführen AUS
     """
 
     static let howItWorks = """

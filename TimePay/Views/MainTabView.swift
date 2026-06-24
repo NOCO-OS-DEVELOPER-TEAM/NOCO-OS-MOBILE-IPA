@@ -1,40 +1,19 @@
 import SwiftUI
-import UIKit
 
 struct MainTabView: View {
     @EnvironmentObject private var store: TimePayStore
     @EnvironmentObject private var settings: AppSettings
-    @State private var selectedTab = 0
+    @State private var selectedTab: MainTab = .home
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            HomeTabView()
-                .tabItem {
-                    Label("Übersicht", systemImage: "sparkles")
-                }
-                .tag(0)
+        ZStack(alignment: .bottom) {
+            tabContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            GateTabView()
-                .tabItem {
-                    Label("Apps", systemImage: "square.grid.3x3.fill")
-                }
-                .tag(1)
-
-            OneTapSetupView(embeddedInTab: true, onSwitchToAppsTab: {
-                selectedTab = 1
-            })
-            .tabItem {
-                Label("Setup", systemImage: "wand.and.stars")
-            }
-            .tag(2)
-
-            SettingsView()
-                .tabItem {
-                    Label("Einstellungen", systemImage: "gearshape.fill")
-                }
-                .tag(3)
+            LiquidGlassTabBar(selection: $selectedTab)
+                .padding(.horizontal, 14)
+                .padding(.bottom, TabBarMetrics.bottomPadding)
         }
-        .tint(NOCOTheme.teal)
         .onChange(of: selectedTab) { old, new in
             if old != new {
                 settings.selection()
@@ -42,26 +21,33 @@ struct MainTabView: View {
         }
         .onChange(of: store.openSetupTab) { _, open in
             if open {
-                selectedTab = 2
+                selectedTab = .setup
                 store.openSetupTab = false
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .timePayQuickAction)) { note in
             if note.object as? String == TimePayQuickAction.setup {
-                selectedTab = 2
+                selectedTab = .setup
             }
         }
         .onAppear {
-            configureGlassTabBar()
+            store.syncWidgetData()
         }
     }
 
-    private func configureGlassTabBar() {
-        let appearance = UITabBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
-        appearance.backgroundColor = UIColor(NOCOTheme.midnight).withAlphaComponent(0.55)
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .home:
+            HomeTabView()
+        case .apps:
+            GateTabView()
+        case .setup:
+            OneTapSetupView(embeddedInTab: true, onSwitchToAppsTab: {
+                selectedTab = .apps
+            })
+        case .settings:
+            SettingsView()
+        }
     }
 }

@@ -34,39 +34,34 @@ enum NOCOTheme {
     static let heroRadius: CGFloat = 32
 }
 
+enum TabBarMetrics {
+    static let barHeight: CGFloat = 72
+    static let bottomPadding: CGFloat = 8
+    static let contentBottomInset: CGFloat = barHeight + bottomPadding + 16
+}
+
 struct LiquidGlassBackground: View {
+    var animated: Bool = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var animate = false
-    @State private var drift = false
+
+    private var shouldAnimate: Bool { animated && !reduceMotion }
 
     var body: some View {
         ZStack {
             NOCOTheme.midnight.ignoresSafeArea()
 
             Circle()
-                .fill(NOCOTheme.teal.opacity(0.22))
+                .fill(NOCOTheme.teal.opacity(shouldAnimate ? 0.2 : 0.14))
+                .frame(width: 300, height: 300)
+                .blur(radius: shouldAnimate ? 70 : 50)
+                .offset(x: shouldAnimate && animate ? -110 : -130, y: shouldAnimate && animate ? -170 : -150)
+
+            Circle()
+                .fill(NOCOTheme.lavender.opacity(shouldAnimate ? 0.15 : 0.1))
                 .frame(width: 340, height: 340)
-                .blur(radius: 90)
-                .offset(x: animate ? -100 : -140, y: animate ? -200 : -160)
-                .scaleEffect(drift ? 1.08 : 0.92)
-
-            Circle()
-                .fill(NOCOTheme.lavender.opacity(0.18))
-                .frame(width: 400, height: 400)
-                .blur(radius: 100)
-                .offset(x: animate ? 140 : 90, y: animate ? 260 : 220)
-                .scaleEffect(drift ? 0.94 : 1.06)
-
-            Circle()
-                .fill(NOCOTheme.mint.opacity(0.12))
-                .frame(width: 280, height: 280)
-                .blur(radius: 70)
-                .offset(x: drift ? 40 : 90, y: drift ? 40 : -10)
-
-            Circle()
-                .fill(NOCOTheme.coral.opacity(0.08))
-                .frame(width: 200, height: 200)
-                .blur(radius: 55)
-                .offset(x: drift ? -60 : -20, y: drift ? 320 : 280)
+                .blur(radius: shouldAnimate ? 80 : 55)
+                .offset(x: shouldAnimate && animate ? 120 : 100, y: shouldAnimate && animate ? 240 : 220)
 
             LinearGradient(
                 colors: [.white.opacity(0.05), .clear, NOCOTheme.teal.opacity(0.04)],
@@ -76,11 +71,9 @@ struct LiquidGlassBackground: View {
             .ignoresSafeArea()
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 10).repeatForever(autoreverses: true)) {
+            guard shouldAnimate else { return }
+            withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
                 animate = true
-            }
-            withAnimation(.easeInOut(duration: 14).repeatForever(autoreverses: true)) {
-                drift = true
             }
         }
     }
@@ -204,6 +197,78 @@ struct GlassCheckRow: View {
             }
         }
         .buttonStyle(GlassScaleButtonStyle())
+    }
+}
+
+/// Prominenter Ein-Tippen-Import für den Gate-Kurzbefehl.
+struct GlassHeroImportButton: View {
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(NOCOTheme.accentGradient)
+                        .frame(width: 56, height: 56)
+                        .shadow(color: NOCOTheme.teal.opacity(0.35), radius: 12, y: 4)
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.black.opacity(0.78))
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.58))
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(NOCOTheme.teal)
+            }
+            .padding(18)
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [NOCOTheme.teal.opacity(0.14), NOCOTheme.lavender.opacity(0.06)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(NOCOTheme.glassBorder, lineWidth: 1.4)
+                }
+                .shadow(color: NOCOTheme.teal.opacity(0.2), radius: 26, y: 10)
+            }
+        }
+        .buttonStyle(GlassScaleButtonStyle())
+    }
+}
+
+struct AppleGlassNavigation: ViewModifier {
+    var largeTitle: Bool = true
+
+    func body(content: Content) -> some View {
+        content
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .navigationBarTitleDisplayMode(largeTitle ? .large : .inline)
+    }
+}
+
+extension View {
+    func appleGlassNavigation(largeTitle: Bool = true) -> some View {
+        modifier(AppleGlassNavigation(largeTitle: largeTitle))
     }
 }
 
@@ -486,16 +551,19 @@ struct GateOrbView: View {
     var sessionStart: Date?
     var sessionEnd: Date?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var breathe = false
     @State private var expirePulse = false
+
+    private var shouldAnimate: Bool { !reduceMotion }
 
     var body: some View {
         ZStack {
             Circle()
                 .fill((isOpen ? NOCOTheme.teal : Color.orange).opacity(isUrgent ? 0.28 : 0.12))
                 .frame(width: size * 1.15, height: size * 1.15)
-                .blur(radius: 28)
-                .scaleEffect(flashExpired ? 1.2 : (breathe ? 1.05 : 0.92))
+                .blur(radius: shouldAnimate ? 28 : 18)
+                .scaleEffect(flashExpired ? 1.2 : (shouldAnimate && breathe ? 1.04 : 0.96))
                 .animation(.spring(response: 0.45, dampingFraction: 0.55), value: flashExpired)
 
             if flashExpired {
@@ -531,10 +599,10 @@ struct GateOrbView: View {
                 .font(.system(size: size * 0.22, weight: .semibold))
                 .foregroundStyle(flashExpired ? NOCOTheme.coral : (isOpen ? NOCOTheme.teal : .orange))
                 .symbolEffect(.bounce, value: flashExpired)
-                .symbolEffect(.pulse, options: isOpen && !flashExpired ? .repeating : .nonRepeating)
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true)) {
+            guard shouldAnimate else { return }
+            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
                 breathe = true
             }
         }
@@ -757,5 +825,104 @@ struct FeatureRow: View {
             }
             Spacer()
         }
+    }
+}
+
+// MARK: - Liquid Glass Tab Bar
+
+enum MainTab: Int, CaseIterable, Identifiable {
+    case home, apps, setup, settings
+
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .home: "Übersicht"
+        case .apps: "Apps"
+        case .setup: "Setup"
+        case .settings: "Einstellungen"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .home: "sparkles"
+        case .apps: "square.grid.3x3.fill"
+        case .setup: "wand.and.stars"
+        case .settings: "gearshape.fill"
+        }
+    }
+}
+
+struct LiquidGlassTabBar: View {
+    @Binding var selection: MainTab
+    @Namespace private var pillNamespace
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(MainTab.allCases) { tab in
+                tabButton(tab)
+            }
+        }
+        .padding(6)
+        .background {
+            ZStack {
+                Capsule(style: .continuous)
+                    .fill(.ultraThinMaterial)
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [.white.opacity(0.14), .white.opacity(0.03), NOCOTheme.teal.opacity(0.06)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Capsule(style: .continuous)
+                    .stroke(NOCOTheme.glassBorder, lineWidth: 1.2)
+            }
+            .shadow(color: NOCOTheme.teal.opacity(0.22), radius: 24, y: 10)
+            .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
+        }
+    }
+
+    private func tabButton(_ tab: MainTab) -> some View {
+        let isSelected = selection == tab
+        return Button {
+            guard selection != tab else { return }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
+                selection = tab
+            }
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 18, weight: isSelected ? .bold : .semibold))
+                Text(tab.title)
+                    .font(.system(size: 9, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(isSelected ? NOCOTheme.teal : .white.opacity(0.42))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background {
+                if isSelected {
+                    Capsule(style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [NOCOTheme.teal.opacity(0.22), NOCOTheme.lavender.opacity(0.14)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .stroke(NOCOTheme.teal.opacity(0.35), lineWidth: 1)
+                        }
+                        .matchedGeometryEffect(id: "tabPill", in: pillNamespace)
+                        .shadow(color: NOCOTheme.teal.opacity(0.25), radius: 10, y: 3)
+                }
+            }
+        }
+        .buttonStyle(GlassScaleButtonStyle())
     }
 }

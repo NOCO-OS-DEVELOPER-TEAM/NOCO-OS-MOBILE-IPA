@@ -27,12 +27,17 @@ final class NotificationManager: NSObject {
     // MARK: - Unlock session
 
     func notifyUnlockStarted(minutes: Int) {
+        notifyUnlockStarted(seconds: minutes * 60)
+    }
+
+    func notifyUnlockStarted(seconds: Int) {
+        let minutesLabel = max(1, (seconds + 29) / 60)
         post(
             id: TimePayKeys.unlockStartedID,
             title: "Apps freigeschaltet",
-            body: "Du hast \(minutes) Min ausgegeben — Apps sind jetzt offen."
+            body: "Du hast \(minutesLabel) Min ausgegeben — Apps sind jetzt offen."
         )
-        scheduleUnlockWarnings(totalSeconds: minutes * 60)
+        scheduleUnlockWarnings(totalSeconds: seconds)
     }
 
     func scheduleRelockNotification(afterSeconds seconds: Int) {

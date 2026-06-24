@@ -10,11 +10,10 @@ struct SettingsView: View {
     @State private var showDiagnosticShare = false
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
-                SectionHeader("Einstellungen", subtitle: "Verhalten, Live Activity & Setup", icon: "gearshape.fill")
-
-                GlassCard {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
+                    GlassCard {
                     VStack(spacing: 0) {
                         toggleRow(
                             title: "Haptisches Feedback",
@@ -80,7 +79,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Widgets")
                             .font(.subheadline.weight(.bold))
-                        Text("Zeitkonto · Schnellaktionen · Session")
+                        Text("Zeitkonto · Schnellaktionen · Session — Guthaben: \(store.formattedBalance)")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.45))
                         HStack(spacing: 10) {
@@ -88,13 +87,14 @@ struct SettingsView: View {
                             widgetPreviewMedium
                         }
                         Button {
-                            WidgetCenter.shared.reloadAllTimelines()
+                            gate.syncBlockedCountWidget()
+                            store.syncWidgetData()
                         } label: {
-                            Label("Widgets aktualisieren", systemImage: "arrow.clockwise")
+                            Label("Widgets jetzt aktualisieren", systemImage: "arrow.clockwise")
                                 .font(.caption.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(NOCOSecondaryButtonStyle())
+                        .buttonStyle(NOCOPrimaryButtonStyle())
                     }
                 }
 
@@ -113,38 +113,42 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("NOCO TimePay")
                             .font(.subheadline.weight(.bold))
-                        Text("Version 2.4 · Live-Sperrbildschirm · UI-Polish")
+                        Text("Version 2.9 · Glass Tab Bar · Widget-Fix")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.45))
                     }
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 100)
-        }
-        .sheet(isPresented: $showSetup) {
-            OneTapSetupView()
-        }
-        .sheet(isPresented: $showDiagnosticShare) {
-            ShareTextSheet(text: DiagnosticLog.export(store: store, gate: gate))
-        }
-        .alert("Setup zurücksetzen?", isPresented: $showResetConfirm) {
-            Button("Abbrechen", role: .cancel) {}
-            Button("Zurücksetzen", role: .destructive) {
-                gate.resetSetup()
-                settings.shortcutImported = false
-                settings.automationConfirmed = false
-                settings.hasSeenOnboarding = false
+            .padding(.top, 4)
+            .padding(.bottom, TabBarMetrics.contentBottomInset)
             }
-        } message: {
-            Text("Kurzbefehl und Automation musst du danach erneut bestätigen.")
+            .navigationTitle("Einstellungen")
+            .appleGlassNavigation()
+            .sheet(isPresented: $showSetup) {
+                OneTapSetupView()
+            }
+            .sheet(isPresented: $showDiagnosticShare) {
+                ShareTextSheet(text: DiagnosticLog.export(store: store, gate: gate))
+            }
+            .alert("Setup zurücksetzen?", isPresented: $showResetConfirm) {
+                Button("Abbrechen", role: .cancel) {}
+                Button("Zurücksetzen", role: .destructive) {
+                    gate.resetSetup()
+                    settings.shortcutImported = false
+                    settings.automationConfirmed = false
+                    settings.hasSeenOnboarding = false
+                }
+            } message: {
+                Text("Kurzbefehl und Automation musst du danach erneut bestätigen.")
+            }
         }
     }
 
     private var setupChecklist: some View {
         VStack(alignment: .leading, spacing: 8) {
             checklistRow("Apps gewählt", done: !gate.enabledApps.isEmpty)
+            checklistRow("Kurzbefehl importiert", done: settings.shortcutImported)
             checklistRow("Automation aktiv", done: settings.automationConfirmed)
         }
     }

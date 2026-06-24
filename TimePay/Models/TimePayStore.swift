@@ -122,6 +122,7 @@ final class TimePayStore: ObservableObject {
         }
         loadStats()
         refreshStreak()
+        resumeEarnSessionIfNeeded()
         syncWidgetData()
     }
 
@@ -204,12 +205,13 @@ final class TimePayStore: ObservableObject {
         ShortcutGateManager.openGate(seconds: costHalf * 30)
         shortcutRequestedApp = nil
         toast("Apps für \(minutesDisplay) freigeschaltet.")
-        NotificationManager.shared.notifyUnlockStarted(minutes: wholeMinutes)
+        NotificationManager.shared.notifyUnlockStarted(seconds: costHalf * 30)
         if balanceHalfMinutes <= 10 && balanceHalfMinutes > 0 {
             NotificationManager.shared.notifyLowBalance(remaining: balanceMinutes)
         }
         LiveActivityManager.startUnlock(totalSeconds: costHalf * 30)
         startUnlockCountdown()
+        syncWidgetData()
         showUnlockSheet = false
     }
 
@@ -224,6 +226,7 @@ final class TimePayStore: ObservableObject {
         earnSessionRemaining = targetSeconds
         earnSessionTotal = targetSeconds
         earnSessionEndDate = Date().addingTimeInterval(TimeInterval(targetSeconds))
+        persistEarnSession()
         earnTimer?.invalidate()
         earnTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -232,7 +235,12 @@ final class TimePayStore: ObservableObject {
         }
         let targetWhole = (targetHalf + 1) / 2
         NotificationManager.shared.notifyEarnStarted(task: selectedTask.title, minutes: targetWhole)
-        LiveActivityManager.startEarn(title: selectedTask.title, totalSeconds: targetSeconds)
+        LiveActivityManager.startEarn(
+            title: selectedTask.title,
+            totalSeconds: targetSeconds,
+            endDate: earnSessionEndDate
+        )
+        syncWidgetData()
         showEarnSheet = false
     }
 
@@ -242,6 +250,7 @@ final class TimePayStore: ObservableObject {
         earnSessionRemaining = 0
         earnSessionTotal = 0
         earnSessionEndDate = nil
+        clearPersistedEarnSession()
         NotificationManager.shared.notifyEarnCancelled()
         LiveActivityManager.endAll()
         toast("Session abgebrochen — keine Gutschrift.")
@@ -261,8 +270,58 @@ final class TimePayStore: ObservableObject {
         } else if unlockSessionTotal == 0 {
             unlockSessionTotal = max(unlockBookedHalfMinutes * 30, unlockSessionRemaining)
         }
-        LiveActivityManager.startUnlock(remainingSeconds: unlockSessionRemaining, totalSeconds: unlockSessionTotal)
+        LiveActivityManager.syncUnlock(
+            remainingSeconds: unlockSessionRemaining,
+            totalSeconds: unlockSessionTotal
+        )
         startUnlockCountdown()
+        syncWidgetData()
+    }
+
+    func resumeEarnSessionIfNeeded() {
+        let defaults = TimePaySharedStorage.defaults
+        guard defaults?.bool(forKey: TimePayKeys.earnSessionActiveKey) == true else { return }
+        let endTS = defaults?.double(forKey: TimePayKeys.earnSessionEndKey) ?? 0
+        guard endTS > 0 else {
+            clearPersistedEarnSession()
+            return
+        }
+        let end = Date(timeIntervalSince1970: endTS)
+        let remaining = max(0, Int(end.timeIntervalSinceNow))
+        guard remaining > 0 else {
+            clearPersistedEarnSession()
+            isEarningSessionActive = false
+            earnSessionRemaining = 0
+            earnSessionTotal = 0
+            earnSessionEndDate = nil
+            LiveActivityManager.endAll()
+            return
+        }
+
+        let savedTotal = defaults?.integer(forKey: TimePayKeys.earnSessionTotalKey) ?? 0
+        earnSessionTotal = savedTotal > 0 ? savedTotal : remaining
+        earnSessionRemaining = remaining
+        earnSessionEndDate = end
+        earnMinutes = defaults?.double(forKey: TimePayKeys.earnMinutesTargetKey) ?? earnMinutes
+        if let taskId = defaults?.string(forKey: TimePayKeys.earnTaskIdKey),
+           let task = ProductiveTask.defaults.first(where: { $0.id == taskId }) {
+            selectedTask = task
+        }
+
+        isEarningSessionActive = true
+        earnTimer?.invalidate()
+        earnTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.tickEarn()
+            }
+        }
+        LiveActivityManager.syncEarn(
+            title: selectedTask.title,
+            remainingSeconds: remaining,
+            totalSeconds: earnSessionTotal,
+            endDate: end
+        )
+        syncWidgetData()
     }
 
     func openUnlockFromShortcut(appName: String?) {
@@ -332,23 +391,25 @@ final class TimePayStore: ObservableObject {
     }
 
     private func tickEarn() {
-        guard earnSessionRemaining > 0 else { return }
-        earnSessionRemaining -= 1
-        syncWidgetData()
-        if earnSessionRemaining == 0 {
-            let earnedHalf = max(Int((earnMinutes * 2).rounded()), 2)
-            balanceHalfMinutes += earnedHalf
-            recordEarned((earnedHalf + 1) / 2)
-            isEarningSessionActive = false
-            earnSessionTotal = 0
-            earnSessionEndDate = nil
-            earnTimer?.invalidate()
-            playSessionExpiredAnimation()
-            toast("+\(TimePayFormat.halfMinutes(earnedHalf)) gutgeschrieben!")
-            NotificationManager.shared.notifyEarnComplete(minutes: (earnedHalf + 1) / 2)
-            LiveActivityManager.endAll()
-            refreshStreak()
+        if let end = earnSessionEndDate {
+            earnSessionRemaining = max(0, Int(end.timeIntervalSinceNow))
         }
+        syncWidgetData()
+        guard earnSessionRemaining <= 0 else { return }
+
+        let earnedHalf = max(Int((earnMinutes * 2).rounded()), 2)
+        balanceHalfMinutes += earnedHalf
+        recordEarned((earnedHalf + 1) / 2)
+        isEarningSessionActive = false
+        earnSessionTotal = 0
+        earnSessionEndDate = nil
+        clearPersistedEarnSession()
+        earnTimer?.invalidate()
+        playSessionExpiredAnimation()
+        toast("+\(TimePayFormat.halfMinutes(earnedHalf)) gutgeschrieben!")
+        NotificationManager.shared.notifyEarnComplete(minutes: (earnedHalf + 1) / 2)
+        LiveActivityManager.endAll()
+        refreshStreak()
     }
 
     private func startUnlockCountdown() {
@@ -458,18 +519,22 @@ final class TimePayStore: ObservableObject {
         let kind: String
         let remaining: Int
         let title: String
+        let total: Int
         if unlockSessionRemaining > 0 {
             kind = "unlock"
             remaining = unlockSessionRemaining
             title = "Freigabe aktiv"
+            total = unlockSessionTotal
         } else if isEarningSessionActive {
             kind = "earn"
             remaining = earnSessionRemaining
             title = selectedTask.title
+            total = earnSessionTotal
         } else {
             kind = "none"
             remaining = 0
             title = ""
+            total = 0
         }
         let blocked = TimePaySharedStorage.defaults?.integer(forKey: TimePayKeys.widgetBlockedCount) ?? 0
         let endTS = activeSessionEndDate?.timeIntervalSince1970 ?? 0
@@ -481,10 +546,29 @@ final class TimePayStore: ObservableObject {
             sessionKind: kind,
             sessionRemaining: remaining,
             sessionTitle: title,
-            sessionEndTimestamp: endTS
+            sessionEndTimestamp: endTS,
+            sessionTotalSeconds: total
         )
         #if canImport(WidgetKit)
         WidgetCenter.shared.reloadAllTimelines()
         #endif
+    }
+
+    private func persistEarnSession() {
+        let defaults = TimePaySharedStorage.defaults
+        defaults?.set(true, forKey: TimePayKeys.earnSessionActiveKey)
+        defaults?.set(earnSessionEndDate?.timeIntervalSince1970 ?? 0, forKey: TimePayKeys.earnSessionEndKey)
+        defaults?.set(earnSessionTotal, forKey: TimePayKeys.earnSessionTotalKey)
+        defaults?.set(selectedTask.id, forKey: TimePayKeys.earnTaskIdKey)
+        defaults?.set(earnMinutes, forKey: TimePayKeys.earnMinutesTargetKey)
+    }
+
+    private func clearPersistedEarnSession() {
+        let defaults = TimePaySharedStorage.defaults
+        defaults?.set(false, forKey: TimePayKeys.earnSessionActiveKey)
+        defaults?.removeObject(forKey: TimePayKeys.earnSessionEndKey)
+        defaults?.removeObject(forKey: TimePayKeys.earnSessionTotalKey)
+        defaults?.removeObject(forKey: TimePayKeys.earnTaskIdKey)
+        defaults?.removeObject(forKey: TimePayKeys.earnMinutesTargetKey)
     }
 }

@@ -54,9 +54,27 @@ enum TimePayKeys {
     static let unlockBookedHalfKey = "timepay.unlock.bookedHalf"
     static let unlockSessionTotalKey = "timepay.unlock.sessionTotal"
     static let pendingDeepLinkKey = "timepay.pendingDeepLink"
+    static let earnSessionEndKey = "timepay.earn.end"
+    static let earnSessionTotalKey = "timepay.earn.total"
+    static let earnTaskIdKey = "timepay.earn.taskId"
+    static let earnMinutesTargetKey = "timepay.earn.minutesTarget"
+    static let earnSessionActiveKey = "timepay.earn.active"
+    static let widgetSessionTotal = "timepay.widget.sessionTotal"
+    static let widgetLastSyncKey = "timepay.widget.lastSync"
 }
 
 enum TimePaySharedStorage {
+    static func storageTargets() -> [UserDefaults] {
+        var targets: [UserDefaults] = []
+        if let group = UserDefaults(suiteName: TimePayKeys.appGroup) {
+            targets.append(group)
+        }
+        if !targets.contains(where: { $0 === UserDefaults.standard }) {
+            targets.append(.standard)
+        }
+        return targets
+    }
+
     static var defaults: UserDefaults? {
         UserDefaults(suiteName: TimePayKeys.appGroup) ?? .standard
     }
@@ -103,17 +121,37 @@ enum TimePaySharedStorage {
         sessionKind: String,
         sessionRemaining: Int,
         sessionTitle: String,
-        sessionEndTimestamp: TimeInterval
+        sessionEndTimestamp: TimeInterval,
+        sessionTotalSeconds: Int = 0
     ) {
-        let d = defaults
-        d?.set(balance, forKey: TimePayKeys.balanceKey)
-        d?.set(balanceHalfMinutes, forKey: TimePayKeys.widgetBalanceHalfMinutes)
-        d?.set(streak, forKey: TimePayKeys.widgetStreakDays)
-        d?.set(blockedCount, forKey: TimePayKeys.widgetBlockedCount)
-        d?.set(sessionKind, forKey: TimePayKeys.widgetSessionKind)
-        d?.set(sessionRemaining, forKey: TimePayKeys.widgetSessionRemaining)
-        d?.set(sessionTitle, forKey: TimePayKeys.widgetSessionTitle)
-        d?.set(sessionEndTimestamp, forKey: TimePayKeys.widgetSessionEndTimestamp)
+        let now = Date().timeIntervalSince1970
+        for d in storageTargets() {
+            d.set(balance, forKey: TimePayKeys.balanceKey)
+            d.set(balanceHalfMinutes, forKey: TimePayKeys.widgetBalanceHalfMinutes)
+            d.set(balanceHalfMinutes, forKey: TimePayKeys.balanceHalfMinutesKey)
+            d.set(streak, forKey: TimePayKeys.widgetStreakDays)
+            d.set(blockedCount, forKey: TimePayKeys.widgetBlockedCount)
+            d.set(sessionKind, forKey: TimePayKeys.widgetSessionKind)
+            d.set(sessionRemaining, forKey: TimePayKeys.widgetSessionRemaining)
+            d.set(sessionTitle, forKey: TimePayKeys.widgetSessionTitle)
+            d.set(sessionEndTimestamp, forKey: TimePayKeys.widgetSessionEndTimestamp)
+            d.set(sessionTotalSeconds, forKey: TimePayKeys.widgetSessionTotal)
+            d.set(now, forKey: TimePayKeys.widgetLastSyncKey)
+        }
+    }
+
+    /// Liest Widget-Daten — App Group zuerst, dann Standard-Fallback (Sideload).
+    static func widgetSnapshotData() -> UserDefaults? {
+        if let group = UserDefaults(suiteName: TimePayKeys.appGroup) {
+            let half = group.integer(forKey: TimePayKeys.widgetBalanceHalfMinutes)
+            let balanceHalf = group.integer(forKey: TimePayKeys.balanceHalfMinutesKey)
+            if half > 0 || balanceHalf > 0 { return group }
+        }
+        let standard = UserDefaults.standard
+        let half = standard.integer(forKey: TimePayKeys.widgetBalanceHalfMinutes)
+        let balanceHalf = standard.integer(forKey: TimePayKeys.balanceHalfMinutesKey)
+        if half > 0 || balanceHalf > 0 { return standard }
+        return UserDefaults(suiteName: TimePayKeys.appGroup) ?? standard
     }
 }
 
