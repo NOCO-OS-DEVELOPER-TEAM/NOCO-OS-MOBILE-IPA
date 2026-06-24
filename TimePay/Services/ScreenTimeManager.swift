@@ -68,20 +68,33 @@ final class ScreenTimeManager: ObservableObject {
     func refreshAuthorizationStatus() {
         #if canImport(FamilyControls)
         let status = AuthorizationCenter.shared.authorizationStatus
-        isAuthorized = status == .approved || status == .approvedWithDataAccess
+        isAuthorized = Self.familyControlsIsAuthorized(status)
         switch status {
-        case .approved, .approvedWithDataAccess:
+        case .approved:
             authError = nil
         case .denied:
             authError = "Bildschirmzeit blockiert. iOS: Einstellungen → Bildschirmzeit → Apps mit Bildschirmzeit-Zugriff → TimePay erlauben."
             showSideloadHelp = true
         case .notDetermined:
             authError = "Tippe „Berechtigung erteilen“ — nicht die normalen App-Einstellungen (dort gibt es keinen Schalter)."
-        @unknown default:
-            authError = "Bildschirmzeit-Status unbekannt. Bitte erneut erlauben."
+        default:
+            if isAuthorized {
+                authError = nil
+            } else {
+                authError = "Bildschirmzeit-Status unbekannt. Bitte erneut erlauben."
+            }
         }
         #endif
     }
+
+    #if canImport(FamilyControls)
+    private static func familyControlsIsAuthorized(_ status: AuthorizationStatus) -> Bool {
+        if case .approved = status { return true }
+        // iOS 26+ SDK adds .approvedWithDataAccess; avoid referencing it for Xcode 16.x builds.
+        if String(describing: status) == "approvedWithDataAccess" { return true }
+        return false
+    }
+    #endif
 
     func noteFamilyControlsUnavailable() {
         showSideloadHelp = true
