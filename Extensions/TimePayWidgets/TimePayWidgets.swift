@@ -61,7 +61,7 @@ struct TimePayLiveActivityWidget: Widget {
             .activityBackgroundTint(Color(red: 0.04, green: 0.06, blue: 0.12))
         } dynamicIsland: { context in
             let teal = Color(red: 0.35, green: 0.88, blue: 0.82)
-            DynamicIsland {
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Image(systemName: "hourglass.circle.fill")
                         .foregroundStyle(teal)

@@ -35,6 +35,10 @@ final class TimePayShieldActionHandler: ShieldActionDelegate {
             completionHandler(.close)
         case .secondaryButtonPressed:
             completionHandler(.close)
+        case .firstSecondarySubmenuItemPressed,
+             .secondSecondarySubmenuItemPressed,
+             .thirdSecondarySubmenuItemPressed:
+            completionHandler(.close)
         @unknown default:
             completionHandler(.close)
         }
