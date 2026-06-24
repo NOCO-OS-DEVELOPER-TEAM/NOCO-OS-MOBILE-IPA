@@ -73,8 +73,12 @@ final class ScreenTimeManager: ObservableObject {
             store.shield.applications = nil
             store.shield.applicationCategories = nil
         } else {
-            store.shield.applications = selection.applicationTokens
-            store.shield.applicationCategories = ShieldSettings.ActivityCategoryPolicy<Application>.specific(selection.categoryTokens)
+            store.shield.applications = selection.applicationTokens.isEmpty
+                ? nil
+                : selection.applicationTokens
+            store.shield.applicationCategories = selection.categoryTokens.isEmpty
+                ? nil
+                : .specific(selection.categoryTokens)
         }
     }
 
