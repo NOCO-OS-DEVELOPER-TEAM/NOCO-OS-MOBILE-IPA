@@ -21,11 +21,18 @@ jobs:
             -scheme TimePay \
             -configuration Release \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_STYLE=Manual
+            CODE_SIGNING_STYLE=Manual \
+            ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon \
+            2>&1 | tee build/xcodebuild.log || {
+              echo "=== BUILD FAILED — last 80 lines ==="
+              tail -80 build/xcodebuild.log
+              exit 1
+            }
 
           APP_PATH=$(find build/DerivedData -name "TimePay.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then

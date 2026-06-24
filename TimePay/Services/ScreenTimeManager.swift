@@ -44,6 +44,21 @@ final class ScreenTimeManager: ObservableObject {
         #endif
     }
 
+    func temporaryUnlock(minutes: Int) {
+        #if canImport(FamilyControls)
+        guard isAuthorized else { return }
+        _ = minutes
+        store.shield.applications = nil
+        store.shield.applicationCategories = nil
+        #endif
+    }
+
+    func relock() {
+        #if canImport(FamilyControls)
+        applyShield()
+        #endif
+    }
+
     #if canImport(FamilyControls)
     func updateSelection(_ newValue: FamilyActivitySelection) {
         selection = newValue
@@ -59,18 +74,8 @@ final class ScreenTimeManager: ObservableObject {
             store.shield.applicationCategories = nil
         } else {
             store.shield.applications = selection.applicationTokens
-            store.shield.applicationCategories = ShieldSettings.ActivityCategoryPolicy.specific(selection.categoryTokens)
+            store.shield.applicationCategories = .specific(selection.categoryTokens)
         }
-    }
-
-    func temporaryUnlock(minutes: Int) {
-        guard isAuthorized else { return }
-        store.shield.applications = nil
-        store.shield.applicationCategories = nil
-    }
-
-    func relock() {
-        applyShield()
     }
 
     private func saveSelection() {
