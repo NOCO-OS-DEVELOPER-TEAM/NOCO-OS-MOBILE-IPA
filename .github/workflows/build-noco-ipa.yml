@@ -41,6 +41,21 @@ jobs:
             exit 1
           fi
 
+          echo "=== PlugIns before sign ==="
+          ls -la "$APP_PATH/PlugIns/" || { echo "No PlugIns folder"; exit 1; }
+
+          sign_bundle() {
+            codesign --force --sign - --entitlements "$2" "$1"
+          }
+
+          sign_bundle "$APP_PATH/PlugIns/TimePayShieldConfiguration.appex" Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements
+          sign_bundle "$APP_PATH/PlugIns/TimePayShieldAction.appex" Extensions/TimePayShieldAction/TimePayShieldAction.entitlements
+          sign_bundle "$APP_PATH/PlugIns/TimePayMonitor.appex" Extensions/TimePayMonitor/TimePayMonitor.entitlements
+          sign_bundle "$APP_PATH" TimePay/TimePay.entitlements
+
+          echo "=== Entitlements embedded ==="
+          codesign -d --entitlements :- "$APP_PATH" 2>/dev/null | head -30 || true
+
           mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/TimePay.app
           cd build && zip -rq NOCO-TIMEPAY.ipa Payload

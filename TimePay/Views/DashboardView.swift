@@ -218,6 +218,17 @@ struct DashboardView: View {
                         .foregroundStyle(.orange)
                 }
 
+                if screenTime.needsAppSelection {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Noch keine Apps gewaehlt")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.orange)
+                        Text("Waehle mindestens eine App — erst dann greift die Sperre.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                }
+
                 HStack {
                     Text("\(screenTime.blockedAppCount) ausgewählt")
                         .font(.subheadline.weight(.medium))

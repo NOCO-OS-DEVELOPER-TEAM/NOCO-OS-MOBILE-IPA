@@ -71,6 +71,6 @@ enum TimePaySharedStorage {
             let s = remaining % 60
             return "Freigabe endet in \(m):\(String(format: "%02d", s)) — Zeitkonto nutzen zum Freischalten"
         }
-        return "Tippe „Zeit freischalten“ — du erhältst eine Benachrichtigung, um TimePay zu öffnen."
+        return "Tippe „Mehr Zeit“ — Benachrichtigung antippen — TimePay oeffnet sich zum Freischalten."
     }
 }

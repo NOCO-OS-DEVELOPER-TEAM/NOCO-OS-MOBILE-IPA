@@ -32,12 +32,12 @@ final class TimePayShieldConfigurationProvider: ShieldConfigurationDataSource {
                 color: UIColor(white: 1, alpha: 0.55)
             ),
             primaryButtonLabel: ShieldConfiguration.Label(
-                text: "Zeit freischalten",
+                text: "Mehr Zeit",
                 color: .black
             ),
             primaryButtonBackgroundColor: teal,
             secondaryButtonLabel: ShieldConfiguration.Label(
-                text: "Schließen",
+                text: "Schliessen",
                 color: UIColor(white: 1, alpha: 0.7)
             )
         )

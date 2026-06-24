@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject private var store: TimePayStore
     @EnvironmentObject private var screenTime: ScreenTimeManager
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -41,5 +42,11 @@ struct RootView: View {
             }
         }
         .animation(.spring(), value: store.toastMessage)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                screenTime.refreshAuthorizationStatus()
+                store.checkPendingUnlockFromShield()
+            }
+        }
     }
 }

@@ -13,16 +13,25 @@ final class ScreenTimeManager: ObservableObject {
     @Published var authError: String?
     @Published var blockedAppCount = 0
     @Published var shieldsActive = false
+    @Published var needsAppSelection = false
 
     #if canImport(FamilyControls)
     @Published var selection = FamilyActivitySelection()
+    private var authorizationObserver: Task<Void, Never>?
     #endif
 
     func bootstrap() async {
-        await requestAuthorization()
+        #if canImport(FamilyControls)
+        refreshAuthorizationStatus()
+        startAuthorizationObserver()
+        if AuthorizationCenter.shared.authorizationStatus == .notDetermined {
+            await requestAuthorization()
+        }
+        #endif
         await NotificationManager.shared.requestPermission()
         #if canImport(FamilyControls)
         loadSelection()
+        updateNeedsAppSelection()
         ShieldRelockHelper.syncUnlockStateIfExpired()
         restoreUnlockCountdownIfNeeded()
         if isAuthorized && !TimePaySharedStorage.isUnlocked {
@@ -35,21 +44,37 @@ final class ScreenTimeManager: ObservableObject {
         #if canImport(FamilyControls)
         do {
             try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
-            isAuthorized = AuthorizationCenter.shared.authorizationStatus == .approved
-            if !isAuthorized {
-                authError = "Bildschirmzeit-Zugriff nicht erlaubt. Ohne diese Berechtigung kann TimePay Apps nicht sperren."
-            } else {
-                authError = nil
+            refreshAuthorizationStatus()
+            if isAuthorized {
+                loadSelection()
+                updateNeedsAppSelection()
                 if !TimePaySharedStorage.isUnlocked {
                     applyShield()
                 }
             }
         } catch {
-            authError = error.localizedDescription
+            authError = "Bildschirmzeit-Freigabe fehlgeschlagen: \(error.localizedDescription)"
             isAuthorized = false
         }
         #else
-        authError = "Screen Time API nicht verfügbar."
+        authError = "Screen Time API nicht verfuegbar."
+        #endif
+    }
+
+    func refreshAuthorizationStatus() {
+        #if canImport(FamilyControls)
+        let status = AuthorizationCenter.shared.authorizationStatus
+        isAuthorized = status == .approved
+        switch status {
+        case .approved:
+            authError = nil
+        case .denied:
+            authError = "Bildschirmzeit blockiert. Einstellungen → Bildschirmzeit → App- und Website-Beschraenkungen → TimePay erlauben."
+        case .notDetermined:
+            authError = "TimePay braucht die Bildschirmzeit-Berechtigung, um Apps zu sperren."
+        @unknown default:
+            authError = "Bildschirmzeit-Status unbekannt. Bitte erneut erlauben."
+        }
         #endif
     }
 
@@ -83,6 +108,7 @@ final class ScreenTimeManager: ObservableObject {
         selection = newValue
         blockedAppCount = selection.applicationTokens.count + selection.categoryTokens.count
         ShieldRelockHelper.saveSelection(selection)
+        updateNeedsAppSelection()
         if !TimePaySharedStorage.isUnlocked {
             applyShield()
         }
@@ -90,8 +116,12 @@ final class ScreenTimeManager: ObservableObject {
 
     func applyShield() {
         guard isAuthorized else { return }
+        guard blockedAppCount > 0 else {
+            shieldsActive = false
+            return
+        }
         ShieldRelockHelper.applyShield(selection: selection)
-        shieldsActive = blockedAppCount > 0
+        shieldsActive = true
     }
 
     private func loadSelection() {
@@ -101,12 +131,36 @@ final class ScreenTimeManager: ObservableObject {
         }
     }
 
+    private func updateNeedsAppSelection() {
+        needsAppSelection = isAuthorized && blockedAppCount == 0
+    }
+
     private func restoreUnlockCountdownIfNeeded() {
         guard TimePaySharedStorage.isUnlocked else { return }
         let remaining = TimePaySharedStorage.remainingUnlockSeconds()
         if remaining <= 0 {
             relock()
             NotificationManager.shared.postRelockNotificationNow()
+        }
+    }
+
+    private func startAuthorizationObserver() {
+        authorizationObserver?.cancel()
+        authorizationObserver = Task {
+            for await status in AuthorizationCenter.shared.authorizationStatusUpdates {
+                guard !Task.isCancelled else { return }
+                isAuthorized = status == .approved
+                if isAuthorized {
+                    authError = nil
+                    loadSelection()
+                    updateNeedsAppSelection()
+                    if !TimePaySharedStorage.isUnlocked {
+                        applyShield()
+                    }
+                } else if status == .denied {
+                    authError = "Bildschirmzeit blockiert. Bitte in den iOS-Einstellungen erlauben."
+                }
+            }
         }
     }
     #endif
