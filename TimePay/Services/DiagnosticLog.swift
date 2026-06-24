@@ -4,6 +4,7 @@ import Foundation
 import FamilyControls
 #endif
 
+@MainActor
 enum DiagnosticLog {
     static func export(screenTime: ScreenTimeManager) -> String {
         var lines: [String] = []
