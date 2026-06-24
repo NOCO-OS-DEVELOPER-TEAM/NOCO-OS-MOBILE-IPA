@@ -105,19 +105,105 @@ struct GlassCard<Content: View>: View {
                     RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
                         .fill(.ultraThinMaterial)
                     RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
-                        .fill(Color.white.opacity(0.035))
+                        .fill(
+                            LinearGradient(
+                                colors: [.white.opacity(0.09), .white.opacity(0.02), .clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                     if let glow {
                         RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
-                            .fill(glow.opacity(0.07))
-                            .blur(radius: 14)
+                            .fill(glow.opacity(0.09))
+                            .blur(radius: 18)
                     }
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: NOCOTheme.cardRadius, style: .continuous)
-                        .stroke(NOCOTheme.glassBorder, lineWidth: 1)
+                        .stroke(NOCOTheme.glassBorder, lineWidth: 1.2)
                 }
-                .shadow(color: (glow ?? NOCOTheme.teal).opacity(0.1), radius: 20, y: 8)
+                .shadow(color: (glow ?? NOCOTheme.teal).opacity(0.14), radius: 24, y: 10)
             }
+    }
+}
+
+/// Große Setup-Schritt-Karte mit Nummer und Status.
+struct SetupStepGlassCard<Content: View>: View {
+    let step: Int
+    let title: String
+    let subtitle: String
+    let isDone: Bool
+    let accent: Color
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        GlassCard(glow: isDone ? NOCOTheme.mint : accent, padding: 18) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .top, spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(isDone ? NOCOTheme.mint.opacity(0.2) : accent.opacity(0.15))
+                            .frame(width: 44, height: 44)
+                        if isDone {
+                            Image(systemName: "checkmark")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(NOCOTheme.mint)
+                        } else {
+                            Text("\(step)")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(accent)
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.headline.weight(.bold))
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                    Spacer(minLength: 0)
+                }
+                content
+            }
+        }
+    }
+}
+
+/// Tippbare Glas-Zeile (z. B. „Fertig“ markieren).
+struct GlassCheckRow: View {
+    let title: String
+    let detail: String
+    let isOn: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(isOn ? NOCOTheme.mint : .white.opacity(0.28))
+                    .symbolEffect(.bounce, value: isOn)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                Spacer()
+            }
+            .padding(14)
+            .background {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(isOn ? NOCOTheme.mint.opacity(0.45) : .white.opacity(0.1), lineWidth: 1)
+                    }
+            }
+        }
+        .buttonStyle(GlassScaleButtonStyle())
     }
 }
 
@@ -547,8 +633,11 @@ struct CategoryChip: View {
 struct GlassScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.94 : 1)
-            .animation(.spring(response: 0.28, dampingFraction: 0.7), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.65), value: configuration.isPressed)
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.85), trigger: configuration.isPressed) { _, pressed in
+                pressed
+            }
     }
 }
 
@@ -592,8 +681,11 @@ struct NOCOPrimaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(.white.opacity(enabled ? 0.3 : 0.1), lineWidth: 1)
             }
-            .scaleEffect(configuration.isPressed && enabled ? 0.98 : 1)
+            .scaleEffect(configuration.isPressed && enabled ? 0.97 : 1)
             .animation(.spring(response: 0.25), value: configuration.isPressed)
+            .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: configuration.isPressed) { _, pressed in
+                pressed && enabled
+            }
     }
 }
 
@@ -615,7 +707,10 @@ struct NOCOSecondaryButtonStyle: ButtonStyle {
             }
             .foregroundStyle(enabled ? .white : .white.opacity(0.35))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .scaleEffect(configuration.isPressed && enabled ? 0.98 : 1)
+            .scaleEffect(configuration.isPressed && enabled ? 0.97 : 1)
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.75), trigger: configuration.isPressed) { _, pressed in
+                pressed && enabled
+            }
     }
 }
 

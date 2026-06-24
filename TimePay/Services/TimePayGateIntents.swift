@@ -107,6 +107,8 @@ struct EndUnlockSessionIntent: LiveActivityIntent {
 }
 
 struct TimePayShortcuts: AppShortcutsProvider {
+    static var appShortcutTileColor = ShortcutTileColor.teal
+
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -140,19 +142,9 @@ struct TimePayShortcuts: AppShortcutsProvider {
             intent: EnforceTimePayGateIntent(),
             phrases: [
                 "TimePay Gate durchsetzen mit \(.applicationName)",
-                "Apps schützen mit \(.applicationName)",
             ],
             shortTitle: "Gate durchsetzen",
             systemImageName: "lock.shield.fill"
-        )
-        AppShortcut(
-            intent: IsGateOpenIntent(),
-            phrases: [
-                "Prüfe TimePay Gate mit \(.applicationName)",
-                "Ist TimePay Gate offen in \(.applicationName)",
-            ],
-            shortTitle: "Gate prüfen",
-            systemImageName: "lock.shield"
         )
     }
 }

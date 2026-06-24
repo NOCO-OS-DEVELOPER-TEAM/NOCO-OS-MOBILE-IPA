@@ -9,155 +9,186 @@ struct OneTapSetupView: View {
     var isOnboarding: Bool = false
     var embeddedInTab: Bool = false
     var onFinish: (() -> Void)?
+    var onSwitchToAppsTab: (() -> Void)?
 
-    @State private var phase = 0
     @State private var showCelebration = false
-    @State private var copiedGuide = false
     @State private var openedAutomation = false
 
-    private let phases = ["Willkommen", "Automation", "Fertig"]
+    private var appsDone: Bool { !gate.enabledApps.isEmpty }
+    private var automationDone: Bool { settings.automationConfirmed }
+    private var allDone: Bool { appsDone && automationDone }
 
     var body: some View {
         NavigationStack {
             ZStack {
                 LiquidGlassBackground()
 
-                VStack(spacing: 0) {
-                    phaseHeader
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-
-                    phaseContent
-                        .frame(maxHeight: .infinity)
-
-                    bottomBar
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
-                        .padding(.bottom, 8)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        heroHeader
+                        progressStrip
+                        stepApps
+                        stepAutomation
+                        if allDone { finishCard }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, embeddedInTab ? 100 : 32)
                 }
-                .safeAreaPadding(.bottom, 8)
 
                 if showCelebration {
                     celebrationOverlay
                 }
             }
-            .navigationTitle("TimePay Setup")
+            .navigationTitle("Setup")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !isOnboarding && !embeddedInTab {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Schließen") { dismiss() }
-                            .foregroundStyle(NOCOTheme.teal)
+                        Button("Schließen") {
+                            settings.selection()
+                            dismiss()
+                        }
+                        .foregroundStyle(NOCOTheme.teal)
                     }
                 }
             }
         }
     }
 
-    @ViewBuilder
-    private var phaseContent: some View {
-        switch phase {
-        case 0: welcomePhase
-        case 1: automationPhase
-        default: donePhase
-        }
-    }
-
-    private var phaseHeader: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 6) {
-                ForEach(0..<phases.count, id: \.self) { index in
-                    Capsule()
-                        .fill(index <= phase ? NOCOTheme.teal : .white.opacity(0.12))
-                        .frame(height: 4)
+    private var heroHeader: some View {
+        GlassCard(glow: NOCOTheme.lavender, padding: 22) {
+            HStack(spacing: 18) {
+                GateOrbView(isOpen: allDone, progress: allDone ? 1 : 0.35, size: 88)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("2 Schritte")
+                        .font(.title2.weight(.bold))
+                    Text("Apps wählen → Automation mit einer Aktion. Fertig.")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.58))
+                    HStack(spacing: 8) {
+                        StatusBadge(
+                            text: appsDone ? "\(gate.enabledApps.count) Apps" : "Apps offen",
+                            color: appsDone ? NOCOTheme.mint : .orange,
+                            icon: "apps.iphone"
+                        )
+                        StatusBadge(
+                            text: automationDone ? "Automation OK" : "Automation offen",
+                            color: automationDone ? NOCOTheme.mint : .orange,
+                            icon: "bolt.fill"
+                        )
+                    }
                 }
             }
-            HStack {
-                SetupProgressRing(progress: settings.setupProgress)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(phases[phase])
-                        .font(.subheadline.weight(.bold))
-                    Text(phaseSubtitle)
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.45))
-                }
-                Spacer()
-            }
         }
     }
 
-    private var phaseSubtitle: String {
-        switch phase {
-        case 1: return "Nur eine Aktion — kein Kurzbefehl bauen"
-        default: return "Bereit zum Testen"
+    private var progressStrip: some View {
+        HStack(spacing: 10) {
+            progressChip("1 · Apps", done: appsDone, color: NOCOTheme.teal)
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white.opacity(0.25))
+            progressChip("2 · Automation", done: automationDone, color: NOCOTheme.lavender)
+            Spacer()
+            SetupProgressRing(progress: setupFraction)
         }
     }
 
-    private var welcomePhase: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                GateOrbView(isOpen: false, progress: 0, size: 150)
-                    .padding(.top, 8)
+    private var setupFraction: Double {
+        (appsDone ? 0.5 : 0) + (automationDone ? 0.5 : 0)
+    }
 
-                VStack(spacing: 8) {
-                    Text("In 2 Minuten fertig")
-                        .font(.title.bold())
-                    Text("Du musst keinen Kurzbefehl selbst zusammenbauen. In der Automation fügst du nur eine fertige TimePay-Aktion hinzu: „Gate durchsetzen“.")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.62))
-                        .multilineTextAlignment(.center)
-                }
+    private func progressChip(_ label: String, done: Bool, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(done ? NOCOTheme.mint : color.opacity(0.7))
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(done ? .white : .white.opacity(0.55))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay { Capsule().stroke(done ? NOCOTheme.mint.opacity(0.35) : .white.opacity(0.1), lineWidth: 1) }
+    }
 
-                GlassCard(glow: NOCOTheme.teal) {
-                    VStack(alignment: .leading, spacing: 14) {
-                        ForEach(Array(ShortcutInstaller.quickSetupSteps.enumerated()), id: \.offset) { _, step in
-                            HStack(alignment: .top, spacing: 12) {
-                                Image(systemName: step.icon)
-                                    .foregroundStyle(NOCOTheme.teal)
-                                    .frame(width: 24)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(step.title)
-                                        .font(.caption.weight(.bold))
-                                    Text(step.detail)
-                                        .font(.caption2)
-                                        .foregroundStyle(.white.opacity(0.55))
-                                }
-                            }
+    private var stepApps: some View {
+        SetupStepGlassCard(
+            step: 1,
+            title: "Apps schützen",
+            subtitle: "Welche Apps sollen TimePay abfangen?",
+            isDone: appsDone,
+            accent: NOCOTheme.teal
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                if appsDone {
+                    FlowLayout(spacing: 8) {
+                        ForEach(gate.enabledApps.prefix(8)) { app in
+                            GlassPill(text: app.name, color: app.accent)
+                        }
+                        if gate.enabledApps.count > 8 {
+                            GlassPill(text: "+\(gate.enabledApps.count - 8)", color: NOCOTheme.teal)
                         }
                     }
+                } else {
+                    Text("Tippe „Empfohlen“ — oder wähle im Tab Apps.")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+
+                HStack(spacing: 10) {
+                    Button {
+                        settings.impact(.medium)
+                        withAnimation(.spring(response: 0.35)) {
+                            gate.applySelectionPreset(.recommended)
+                        }
+                        settings.success()
+                    } label: {
+                        Label("Empfohlen", systemImage: "sparkles")
+                            .font(.caption.weight(.bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(NOCOPrimaryButtonStyle())
+
+                    Button {
+                        settings.selection()
+                        onSwitchToAppsTab?()
+                    } label: {
+                        Label("Apps-Tab", systemImage: "square.grid.3x3.fill")
+                            .font(.caption.weight(.bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(NOCOSecondaryButtonStyle())
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 120)
         }
     }
 
-    private var automationPhase: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 18) {
-                if gate.enabledApps.isEmpty {
-                    GlassCard(glow: .orange, padding: 14) {
-                        Label("Zuerst Apps im Tab „Apps“ wählen (z. B. Empfohlen)", systemImage: "apps.iphone")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.orange)
-                    }
-                } else {
-                    GlassCard(glow: NOCOTheme.mint, padding: 14) {
-                        Text("\(gate.enabledApps.count) Apps geschützt")
-                            .font(.subheadline.weight(.bold))
-                    }
-                }
-
-                GlassCard(glow: NOCOTheme.teal) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Die einzige Aktion", systemImage: "lock.shield.fill")
-                            .font(.headline)
+    private var stepAutomation: some View {
+        SetupStepGlassCard(
+            step: 2,
+            title: "Automation",
+            subtitle: "Nur eine Aktion — kein Kurzbefehl bauen",
+            isDone: automationDone,
+            accent: NOCOTheme.lavender
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 12) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.title2)
+                        .foregroundStyle(NOCOTheme.teal)
+                        .frame(width: 48, height: 48)
+                        .background(NOCOTheme.teal.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("Gate durchsetzen")
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(NOCOTheme.teal)
-                        Text("Unter Kurzbefehle → Aktion hinzufügen → Apps → TimePay. Kein Wenn, keine URL, kein eigener Kurzbefehl.")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.58))
+                            .font(.headline.weight(.bold))
+                        Text("TimePay → diese Aktion in der Automation")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.5))
                     }
                 }
 
@@ -166,157 +197,92 @@ struct OneTapSetupView: View {
                     settings.impact(.medium)
                     ShortcutInstaller.openAutomations()
                 } label: {
-                    Label("Automation anlegen", systemImage: "bolt.fill")
+                    Label("Automation öffnen", systemImage: "bolt.fill")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(NOCOPrimaryButtonStyle())
+                .buttonStyle(NOCOPrimaryButtonStyle(enabled: appsDone))
+                .disabled(!appsDone)
 
-                Button {
-                    openedAutomation = true
-                    settings.impact(.light)
-                    ShortcutInstaller.openTimePayInShortcuts()
-                } label: {
-                    Label("TimePay-Aktionen anzeigen", systemImage: "square.grid.2x2.fill")
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 8) {
+                    miniStep("App wird geöffnet", icon: "hand.tap.fill")
+                    miniStep("Aktion: Gate durchsetzen", icon: "lock.shield.fill")
+                    miniStep("Sofort ausführen AN", icon: "checkmark.seal.fill")
                 }
-                .buttonStyle(NOCOSecondaryButtonStyle())
 
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Schritt für Schritt")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.5))
-                        ForEach(Array(ShortcutInstaller.automationRecipeSteps.enumerated()), id: \.offset) { index, step in
-                            HStack(alignment: .top, spacing: 10) {
-                                Text("\(index + 1)")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(NOCOTheme.teal)
-                                    .frame(width: 20, height: 20)
-                                    .background(NOCOTheme.teal.opacity(0.15), in: Circle())
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(step.title)
-                                        .font(.caption.weight(.semibold))
-                                    Text(step.detail)
-                                        .font(.caption2)
-                                        .foregroundStyle(.white.opacity(0.55))
-                                }
-                            }
-                        }
+                GlassCheckRow(
+                    title: "Automation ist fertig",
+                    detail: openedAutomation ? "Tippe zum Bestätigen" : "Zuerst „Automation öffnen“",
+                    isOn: automationDone
+                ) {
+                    guard appsDone, openedAutomation else {
+                        settings.rigid()
+                        return
+                    }
+                    settings.automationConfirmed.toggle()
+                    if settings.automationConfirmed {
+                        settings.shortcutImported = true
+                        settings.success()
+                    } else {
+                        settings.selection()
                     }
                 }
-
-                Button {
-                    UIPasteboard.general.string = ShortcutInstaller.automationClipboardText(apps: gate.enabledApps)
-                    copiedGuide = true
-                    settings.success()
-                } label: {
-                    Label(copiedGuide ? "Kopiert!" : "Kurzanleitung kopieren", systemImage: "doc.on.doc.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(NOCOSecondaryButtonStyle())
-
-                Toggle(isOn: Binding(
-                    get: { settings.automationConfirmed },
-                    set: { newValue in
-                        guard !newValue || canConfirmAutomation else { return }
-                        settings.automationConfirmed = newValue
-                        if newValue {
-                            settings.shortcutImported = true
-                            settings.success()
-                        }
-                    }
-                )) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Automation ist fertig")
-                            .font(.caption.weight(.semibold))
-                        if !canConfirmAutomation {
-                            Text("Apps wählen und Automation öffnen")
-                                .font(.caption2)
-                                .foregroundStyle(.orange)
-                        }
-                    }
-                }
-                .tint(NOCOTheme.teal)
-                .padding(.horizontal, 4)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 120)
         }
     }
 
-    private var donePhase: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 28) {
-                GateOrbView(isOpen: true, progress: 1, size: 130)
-                Text("Alles bereit")
-                    .font(.title.bold())
-                Text("Öffne eine geschützte App zum Testen. Ohne Zeit springt TimePay auf — mit Zeit bleibt die App offen.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.62))
+    private func miniStep(_ text: String, icon: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(NOCOTheme.teal)
+                .frame(width: 22)
+            Text(text)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white.opacity(0.65))
+        }
+    }
+
+    private var finishCard: some View {
+        GlassCard(glow: NOCOTheme.mint) {
+            VStack(spacing: 16) {
+                Label("Alles bereit", systemImage: "checkmark.seal.fill")
+                    .font(.headline)
+                    .foregroundStyle(NOCOTheme.mint)
+                Text("Teste eine geschützte App. Ohne Zeit öffnet sich TimePay.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.55))
                     .multilineTextAlignment(.center)
 
                 Button {
                     finishSetup()
                 } label: {
-                    Label("TimePay starten", systemImage: "sparkles")
+                    Label(isOnboarding ? "TimePay starten" : "Setup abschließen", systemImage: "sparkles")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(NOCOPrimaryButtonStyle())
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 24)
-            .padding(.bottom, 100)
-        }
-    }
-
-    private var bottomBar: some View {
-        HStack {
-            if phase > 0 && phase < 2 {
-                Button("Zurück") {
-                    withAnimation(.spring(response: 0.35)) { phase -= 1 }
-                }
-                .foregroundStyle(.white.opacity(0.55))
-            }
-            Spacer()
-            if phase < 2 {
-                Button(phase == 0 ? "Los geht's" : "Weiter") {
-                    withAnimation(.spring(response: 0.35)) { phase += 1 }
-                }
-                .buttonStyle(NOCOPrimaryButtonStyle(enabled: canAdvance))
-                .frame(maxWidth: 180)
-                .disabled(!canAdvance)
-            }
-        }
-    }
-
-    private var canConfirmAutomation: Bool {
-        !gate.enabledApps.isEmpty && openedAutomation
-    }
-
-    private var canAdvance: Bool {
-        switch phase {
-        case 1:
-            return !gate.enabledApps.isEmpty && settings.automationConfirmed && openedAutomation
-        default:
-            return true
         }
     }
 
     private var celebrationOverlay: some View {
         ZStack {
-            Color.black.opacity(0.35).ignoresSafeArea()
+            Color.black.opacity(0.4).ignoresSafeArea()
             VStack(spacing: 16) {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 64))
                     .foregroundStyle(NOCOTheme.mint)
-                    .symbolEffect(.pulse)
+                    .symbolEffect(.bounce, value: showCelebration)
                 Text("Setup abgeschlossen")
                     .font(.title3.bold())
             }
-            .padding(32)
+            .padding(36)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .stroke(NOCOTheme.glassBorder, lineWidth: 1.2)
+            }
         }
-        .transition(.opacity)
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
     }
 
     private func finishSetup() {
@@ -324,11 +290,11 @@ struct OneTapSetupView: View {
         settings.hasSeenOnboarding = true
         settings.shortcutImported = true
         settings.success()
-        withAnimation { showCelebration = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+        withAnimation(.spring(response: 0.4)) { showCelebration = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
             if isOnboarding {
                 onFinish?()
-            } else {
+            } else if !embeddedInTab {
                 dismiss()
             }
         }

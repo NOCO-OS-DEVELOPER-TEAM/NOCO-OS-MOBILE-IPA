@@ -38,6 +38,7 @@ final class TimePayStore: ObservableObject {
     @Published var shortcutRequestedApp: String?
     @Published var showUnlockSheet = false
     @Published var showEarnSheet = false
+    @Published var openSetupTab = false
     @Published var toastMessage: String?
 
     @Published var earnedToday: Int = 0
@@ -168,6 +169,8 @@ final class TimePayStore: ObservableObject {
         switch action {
         case "gate":
             openUnlockFromShortcut(appName: nil)
+        case "setup":
+            openSetupTab = true
         case "unlock":
             tryOpenUnlockSheet()
         case "earn":

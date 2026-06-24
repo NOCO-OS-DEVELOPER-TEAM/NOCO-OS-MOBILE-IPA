@@ -20,7 +20,7 @@ struct RootView: View {
             }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
-            OneTapSetupView(isOnboarding: true) {
+            OneTapSetupView(isOnboarding: true, onSwitchToAppsTab: nil) {
                 settings.hasSeenOnboarding = true
                 showOnboarding = false
             }

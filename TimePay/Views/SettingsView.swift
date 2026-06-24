@@ -27,6 +27,16 @@ struct SettingsView: View {
                     }
                 }
 
+                GlassCard(glow: NOCOTheme.teal) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("App-Icon Shortcuts", systemImage: "app.badge.checkmark.fill")
+                            .font(.subheadline.weight(.bold))
+                        Text("TimePay-Icon lang gedrückt halten: Zeit abbuchen, Session, Freigabe beenden, Setup. Nach Neuinstallation einmal App öffnen.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                }
+
                 GlassCard(glow: NOCOTheme.lavender) {
                     VStack(alignment: .leading, spacing: 12) {
                         Label("Live Activity (Sperrbildschirm)", systemImage: "lock.display")

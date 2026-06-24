@@ -46,6 +46,16 @@ final class AppSettings: ObservableObject {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
+    func selection() {
+        guard hapticsEnabled else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    func rigid() {
+        guard hapticsEnabled else { return }
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+    }
+
     private func persist() {
         let d = TimePaySharedStorage.defaults
         d?.set(hapticsEnabled, forKey: TimePayKeys.hapticsEnabledKey)

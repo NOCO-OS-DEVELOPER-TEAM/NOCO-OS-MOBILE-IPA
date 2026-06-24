@@ -49,6 +49,7 @@
 		D10000010000000000000006 /* ProtectedApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000020000000000000006 /* ProtectedApp.swift */; };
 		E10000010000000000000001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000020000000000000001 /* AppSettings.swift */; };
 		E10000010000000000000002 /* ShortcutInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000020000000000000002 /* ShortcutInstaller.swift */; };
+		F10000010000000000000001 /* TimePayAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000020000000000000001 /* TimePayAppDelegate.swift */; };
 		E10000010000000000000003 /* OneTapSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000020000000000000003 /* OneTapSetupView.swift */; };
 		E10000010000000000000004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000020000000000000004 /* SettingsView.swift */; };
 		E10000010000000000000005 /* NOCOTimePayGate.shortcut in Resources */ = {isa = PBXBuildFile; fileRef = E10000020000000000000005 /* NOCOTimePayGate.shortcut */; };
@@ -141,6 +142,7 @@
 		D10000020000000000000006 /* ProtectedApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectedApp.swift; sourceTree = "<group>"; };
 		E10000020000000000000001 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		E10000020000000000000002 /* ShortcutInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutInstaller.swift; sourceTree = "<group>"; };
+		F10000020000000000000001 /* TimePayAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimePayAppDelegate.swift; sourceTree = "<group>"; };
 		E10000020000000000000003 /* OneTapSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OneTapSetupView.swift; sourceTree = "<group>"; };
 		E10000020000000000000004 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E10000020000000000000005 /* NOCOTimePayGate.shortcut */ = {isa = PBXFileReference; lastKnownFileType = file; path = NOCOTimePayGate.shortcut; sourceTree = "<group>"; };
@@ -279,6 +281,7 @@
 				D10000020000000000000004 /* ShortcutGateManager.swift */,
 				D10000020000000000000005 /* TimePayGateIntents.swift */,
 				E10000020000000000000002 /* ShortcutInstaller.swift */,
+				F10000020000000000000001 /* TimePayAppDelegate.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -584,6 +587,7 @@
 				D10000010000000000000006 /* ProtectedApp.swift in Sources */,
 				E10000010000000000000001 /* AppSettings.swift in Sources */,
 				E10000010000000000000002 /* ShortcutInstaller.swift in Sources */,
+				F10000010000000000000001 /* TimePayAppDelegate.swift in Sources */,
 				E10000010000000000000003 /* OneTapSetupView.swift in Sources */,
 				E10000010000000000000004 /* SettingsView.swift in Sources */,
 				B10000010000000000000016 /* ShareTextSheet.swift in Sources */,
@@ -699,7 +703,7 @@
 				CODE_SIGN_ENTITLEMENTS = TimePay/TimePay.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TimePay/Info.plist;
@@ -717,7 +721,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -736,7 +740,7 @@
 				CODE_SIGN_ENTITLEMENTS = TimePay/TimePay.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TimePay/Info.plist;
@@ -754,7 +758,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -772,7 +776,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldConfiguration/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -781,7 +785,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldconfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -798,7 +802,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldConfiguration/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -807,7 +811,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldconfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -825,7 +829,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldAction/TimePayShieldAction.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldAction/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -834,7 +838,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldaction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -851,7 +855,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayShieldAction/TimePayShieldAction.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayShieldAction/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -860,7 +864,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldaction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -878,7 +882,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayMonitor/TimePayMonitor.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayMonitor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -887,7 +891,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.monitor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -904,7 +908,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayMonitor/TimePayMonitor.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayMonitor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -913,7 +917,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.monitor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -931,7 +935,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayWidgets/TimePayWidgets.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -940,7 +944,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -957,7 +961,7 @@
 				CODE_SIGN_ENTITLEMENTS = Extensions/TimePayWidgets/TimePayWidgets.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/TimePayWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -966,7 +970,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
