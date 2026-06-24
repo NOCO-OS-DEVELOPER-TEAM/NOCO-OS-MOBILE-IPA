@@ -16,9 +16,6 @@
 		B10000010000000000000007 /* UnlockSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000007 /* UnlockSheetView.swift */; };
 		B10000010000000000000008 /* EarnTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000008 /* EarnTimeView.swift */; };
 		B10000010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000009 /* Assets.xcassets */; };
-		B1000001000000000000000A /* FamilyControls.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000A /* FamilyControls.framework */; };
-		B1000001000000000000000B /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000B /* ManagedSettings.framework */; };
-		B1000001000000000000000C /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000C /* DeviceActivity.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,9 +40,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1000001000000000000000A /* FamilyControls.framework in Frameworks */,
-				B1000001000000000000000B /* ManagedSettings.framework in Frameworks */,
-				B1000001000000000000000C /* DeviceActivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,7 +246,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = TimePay/TimePay.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CURRENT_PROJECT_VERSION = 1;
@@ -283,7 +277,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = TimePay/TimePay.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CURRENT_PROJECT_VERSION = 1;
