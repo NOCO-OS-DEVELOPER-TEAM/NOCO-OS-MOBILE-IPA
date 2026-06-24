@@ -85,6 +85,7 @@ jobs:
             cp Extensions/TimePayWidgets/TimePayWidgets.entitlements \
               build/sidestore-entitlements/TimePayWidgets.plist
           fi
+          cp sidestore-entitlements/ANLEITUNG.txt build/sidestore-entitlements/ANLEITUNG.txt
           cd build && zip -rq NOCO-TIMEPAY.ipa Payload sidestore-entitlements
           ls -la NOCO-TIMEPAY.ipa
 

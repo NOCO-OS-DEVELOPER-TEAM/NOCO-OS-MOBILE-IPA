@@ -2,7 +2,6 @@ import SwiftUI
 
 struct UnlockSheetView: View {
     @EnvironmentObject private var store: TimePayStore
-    @EnvironmentObject private var screenTime: ScreenTimeManager
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -22,6 +21,11 @@ struct UnlockSheetView: View {
                     VStack(spacing: 4) {
                         Text("Zeit abbuchen")
                             .font(.title2.bold())
+                        if let app = store.shortcutRequestedApp, !app.isEmpty {
+                            Text("Du wolltest „\(app)“ öffnen")
+                                .font(.subheadline)
+                                .foregroundStyle(.orange)
+                        }
                         Text("Konto: \(store.formattedBalance)")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(NOCOTheme.teal)
@@ -63,14 +67,16 @@ struct UnlockSheetView: View {
                             }
                         }
 
+                        Text("Der Kurzbefehl lässt Apps für diese Zeit durch — ohne Fokus-Modus.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.45))
+                            .multilineTextAlignment(.center)
+
                         Button {
-                            store.confirmUnlock(
-                                onUnlock: { minutes in screenTime.temporaryUnlock(minutes: minutes) },
-                                onRelock: { screenTime.relock() }
-                            )
+                            store.confirmUnlock()
                             dismiss()
                         } label: {
-                            Label("Apps freischalten", systemImage: "lock.open.fill")
+                            Label("Gate öffnen & Apps freigeben", systemImage: "lock.open.fill")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(NOCOPrimaryButtonStyle())

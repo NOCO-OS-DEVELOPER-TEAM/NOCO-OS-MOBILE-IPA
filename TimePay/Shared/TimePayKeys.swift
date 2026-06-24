@@ -39,6 +39,14 @@ enum TimePayKeys {
     static let widgetSessionTitle = "timepay.widget.sessionTitle"
     static let widgetStreakDays = "timepay.widget.streak"
     static let widgetBlockedCount = "timepay.widget.blockedCount"
+    static let protectedAppsKey = "timepay.protectedApps"
+    static let shortcutSetupCompletedKey = "timepay.shortcutSetupDone"
+    static let pendingShortcutAppKey = "timepay.pendingShortcutApp"
+    static let hapticsEnabledKey = "timepay.settings.haptics"
+    static let defaultUnlockMinutesKey = "timepay.settings.defaultMinutes"
+    static let hasSeenOnboardingKey = "timepay.onboarding.seen"
+    static let shortcutImportedKey = "timepay.setup.shortcutImported"
+    static let automationConfirmedKey = "timepay.setup.automationConfirmed"
 }
 
 enum TimePaySharedStorage {

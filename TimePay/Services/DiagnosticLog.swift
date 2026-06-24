@@ -1,35 +1,32 @@
 import Foundation
 
-#if canImport(FamilyControls)
-import FamilyControls
-#endif
-
 @MainActor
 enum DiagnosticLog {
-    static func export(screenTime: ScreenTimeManager) -> String {
+    static func export(store: TimePayStore, gate: ShortcutGateManager) -> String {
         var lines: [String] = []
         let formatter = ISO8601DateFormatter()
         lines.append("NOCO TimePay Diagnose")
         lines.append("Zeit: \(formatter.string(from: Date()))")
-        lines.append("Version: 1.4")
+        lines.append("Version: \(TimePayEnvironmentDiagnostics.appVersion)")
+        lines.append("Modus: Kurzbefehl-Gate (ohne Bildschirmzeit)")
         lines.append("---")
-        lines.append("Bildschirmzeit erlaubt: \(screenTime.isAuthorized)")
-        lines.append("Apps gesperrt: \(screenTime.blockedAppCount)")
-        lines.append("Sperre aktiv: \(screenTime.shieldsActive)")
-        lines.append("SideStore-Hilfe: \(screenTime.showSideloadHelp)")
-        #if canImport(FamilyControls)
-        lines.append("Auth-Status: \(String(describing: AuthorizationCenter.shared.authorizationStatus))")
-        #endif
-        if let error = screenTime.authError {
-            lines.append("Fehler: \(error)")
-        }
+        lines.append("Gate offen: \(ShortcutGateManager.isGateOpen)")
+        lines.append("Gate Rest (s): \(TimePaySharedStorage.remainingUnlockSeconds())")
+        lines.append("Geschützte Apps aktiv: \(gate.enabledApps.count)")
+        lines.append("Kurzbefehl-Setup erledigt: \(gate.setupCompleted)")
+        lines.append("App-Gruppe: \(TimePayEnvironmentDiagnostics.appGroupAvailable ? "OK" : "FEHLT")")
+        lines.append(TimePayEnvironmentDiagnostics.embeddedPlugInReport)
         lines.append("---")
-        lines.append("Freigabe aktiv: \(TimePaySharedStorage.isUnlocked)")
-        lines.append("Freigabe Rest (s): \(TimePaySharedStorage.remainingUnlockSeconds())")
-        lines.append("Guthaben (Min): \(TimePaySharedStorage.defaults?.integer(forKey: TimePayKeys.balanceKey) ?? 0)")
+        lines.append("Guthaben (Min): \(store.balanceMinutes)")
+        lines.append("Freigabe UI Rest (s): \(store.unlockSessionRemaining)")
         lines.append("Live Activities: \(LiveActivityManager.isSupported)")
         lines.append("---")
-        lines.append(screenTime.sideloadHelpSteps)
+        lines.append("Aktive Apps:")
+        for app in gate.enabledApps {
+            lines.append("  • \(app.name)")
+        }
+        lines.append("---")
+        lines.append(ShortcutGateManager.shortcutBuildGuide)
         return lines.joined(separator: "\n")
     }
 }

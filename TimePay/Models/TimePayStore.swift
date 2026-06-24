@@ -35,6 +35,7 @@ final class TimePayStore: ObservableObject {
     @Published var unlockSessionRemaining: Int = 0
     @Published var unlockSessionTotal: Int = 0
     @Published var pendingUnlockFromShield = false
+    @Published var shortcutRequestedApp: String?
     @Published var showUnlockSheet = false
     @Published var showEarnSheet = false
     @Published var toastMessage: String?
@@ -113,7 +114,7 @@ final class TimePayStore: ObservableObject {
         spendMinutes = Double(min(minutes, balanceMinutes))
     }
 
-    func confirmUnlock(onUnlock: @escaping (Int) -> Void, onRelock: @escaping () -> Void) {
+    func confirmUnlock() {
         guard canBookTime else {
             toast("Session läuft — kein Abbuchen möglich.")
             return
@@ -127,14 +128,15 @@ final class TimePayStore: ObservableObject {
         recordSpent(minutes)
         unlockSessionRemaining = minutes * 60
         unlockSessionTotal = minutes * 60
-        toast("Apps für \(minutes) Min freigeschaltet.")
+        ShortcutGateManager.openGate(minutes: minutes)
+        shortcutRequestedApp = nil
+        toast("Apps für \(minutes) Min freigeschaltet — Kurzbefehl lässt sie durch.")
         NotificationManager.shared.notifyUnlockStarted(minutes: minutes)
         if balanceMinutes <= 5 && balanceMinutes > 0 {
             NotificationManager.shared.notifyLowBalance(remaining: balanceMinutes)
         }
-        onUnlock(minutes)
         LiveActivityManager.startUnlock(totalSeconds: minutes * 60)
-        startUnlockCountdown(onRelock: onRelock)
+        startUnlockCountdown()
         showUnlockSheet = false
     }
 
@@ -169,14 +171,27 @@ final class TimePayStore: ObservableObject {
         toast("Session abgebrochen — keine Gutschrift.")
     }
 
-    func resumeUnlockTimerIfNeeded(onRelock: @escaping () -> Void) {
+    func resumeUnlockTimerIfNeeded() {
         unlockSessionRemaining = TimePaySharedStorage.remainingUnlockSeconds()
         guard unlockSessionRemaining > 0 else { return }
         if unlockSessionTotal == 0 {
             unlockSessionTotal = unlockSessionRemaining
         }
         LiveActivityManager.startUnlock(totalSeconds: unlockSessionRemaining)
-        startUnlockCountdown(onRelock: onRelock)
+        startUnlockCountdown()
+    }
+
+    func openUnlockFromShortcut(appName: String?) {
+        shortcutRequestedApp = appName
+        if ShortcutGateManager.isGateOpen {
+            toast("Freigabe läuft noch — App sollte sich öffnen lassen.")
+            return
+        }
+        if canBookTime {
+            showUnlockSheet = true
+        } else {
+            toast("Session läuft — erst warten, dann freischalten.")
+        }
     }
 
     func checkPendingUnlockFromShield() {
@@ -218,7 +233,7 @@ final class TimePayStore: ObservableObject {
         }
     }
 
-    private func startUnlockCountdown(onRelock: @escaping () -> Void) {
+    private func startUnlockCountdown() {
         unlockTimer?.invalidate()
         unlockTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -236,9 +251,9 @@ final class TimePayStore: ObservableObject {
                 self.unlockTimer?.invalidate()
                 self.unlockSessionTotal = 0
                 LiveActivityManager.endAll()
-                self.toast("Zeit abgelaufen — Apps wieder gesperrt.")
+                ShortcutGateManager.closeGate()
+                self.toast("Zeit abgelaufen — Kurzbefehl sperrt wieder.")
                 NotificationManager.shared.postRelockNotificationNow()
-                onRelock()
             }
         }
     }

@@ -2,37 +2,33 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var store: TimePayStore
-    @EnvironmentObject private var screenTime: ScreenTimeManager
+    @EnvironmentObject private var settings: AppSettings
     @Environment(\.scenePhase) private var scenePhase
+    @State private var showOnboarding = false
 
     var body: some View {
         ZStack {
             LiquidGlassBackground()
-
-            if screenTime.isAuthorized {
-                MainTabView()
-            } else {
-                PermissionView()
-            }
+            MainTabView()
         }
         .task {
-            await screenTime.bootstrap()
-            store.resumeUnlockTimerIfNeeded(onRelock: { screenTime.relock() })
-            store.checkPendingUnlockFromShield()
+            store.resumeUnlockTimerIfNeeded()
+            store.spendMinutes = Double(settings.defaultUnlockMinutes)
+            if !settings.hasSeenOnboarding {
+                showOnboarding = true
+            }
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OneTapSetupView(isOnboarding: true) {
+                settings.hasSeenOnboarding = true
+                showOnboarding = false
+            }
         }
         .sheet(isPresented: $store.showUnlockSheet) {
             UnlockSheetView()
         }
         .sheet(isPresented: $store.showEarnSheet) {
             EarnTimeView()
-        }
-        .onChange(of: store.pendingUnlockFromShield) { _, pending in
-            if pending {
-                if store.canBookTime {
-                    store.showUnlockSheet = true
-                }
-                store.pendingUnlockFromShield = false
-            }
         }
         .overlay(alignment: .top) {
             if let toast = store.toastMessage {
@@ -44,8 +40,7 @@ struct RootView: View {
         .animation(.spring(), value: store.toastMessage)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                screenTime.refreshAuthorizationStatus()
-                store.checkPendingUnlockFromShield()
+                store.resumeUnlockTimerIfNeeded()
             }
         }
     }

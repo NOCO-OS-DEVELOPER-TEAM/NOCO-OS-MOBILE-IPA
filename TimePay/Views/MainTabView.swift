@@ -7,21 +7,29 @@ struct MainTabView: View {
         TabView(selection: $selectedTab) {
             HomeTabView()
                 .tabItem {
-                    Label("Start", systemImage: "house.fill")
+                    Label("Übersicht", systemImage: "sparkles")
                 }
                 .tag(0)
 
-            AppsTabView()
+            GateTabView()
                 .tabItem {
-                    Label("Sperren", systemImage: "lock.app.dashed.fill")
+                    Label("Apps", systemImage: "square.grid.3x3.fill")
                 }
                 .tag(1)
 
-            MoreTabView()
+            NavigationStack {
+                OneTapSetupView()
+            }
+            .tabItem {
+                Label("Setup", systemImage: "wand.and.stars")
+            }
+            .tag(2)
+
+            SettingsView()
                 .tabItem {
-                    Label("iOS", systemImage: "square.grid.2x2.fill")
+                    Label("Einstellungen", systemImage: "gearshape.fill")
                 }
-                .tag(2)
+                .tag(3)
         }
         .tint(NOCOTheme.teal)
     }

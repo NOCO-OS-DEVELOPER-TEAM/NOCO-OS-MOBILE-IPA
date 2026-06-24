@@ -61,10 +61,16 @@ struct PermissionView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(NOCOTheme.teal)
 
-                if screenTime.showSideloadHelp {
+                Button("Berechtigung zurücksetzen") {
+                    Task { await screenTime.revokeAuthorization() }
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.orange)
+
+                if screenTime.showSideloadHelp || !screenTime.isAuthorized {
                     GlassCard(glow: .orange, padding: 16) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("SideStore-Hinweis")
+                            Text("Bildschirmzeit einrichten")
                                 .font(.subheadline.weight(.bold))
                             Text(screenTime.sideloadHelpSteps)
                                 .font(.caption)
@@ -91,6 +97,9 @@ struct PermissionView: View {
         }
         .onAppear {
             screenTime.refreshAuthorizationStatus()
+            if !screenTime.isAuthorized {
+                screenTime.showSideloadHelp = true
+            }
         }
     }
 }

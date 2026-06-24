@@ -279,33 +279,207 @@ struct LiquidProgressRing: View {
 struct NOCOLogoMark: View {
     var size: CGFloat = 44
     @State private var shimmer = false
+    @State private var pulse = false
 
     var body: some View {
-        Image("AppLogo")
-            .resizable()
-            .scaledToFill()
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.32, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [.white.opacity(shimmer ? 0.28 : 0.04), .clear],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [NOCOTheme.deepNavy, NOCOTheme.midnight],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
+                )
+
+            Image("AppLogo")
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.32, style: .continuous))
+                .opacity(0.92)
+
+            Image(systemName: "hourglass.circle.fill")
+                .font(.system(size: size * 0.52, weight: .semibold))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(NOCOTheme.teal, .white.opacity(0.85))
+                .opacity(0.18)
+
+            RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(shimmer ? 0.32 : 0.06), .clear],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
+                .stroke(NOCOTheme.glassBorder, lineWidth: 1.2)
+
+            Circle()
+                .stroke(NOCOTheme.holoGradient, lineWidth: 1.5)
+                .scaleEffect(pulse ? 1.08 : 0.94)
+                .opacity(pulse ? 0.35 : 0.12)
+                .blur(radius: 1)
+        }
+        .frame(width: size, height: size)
+        .shadow(color: NOCOTheme.teal.opacity(0.28), radius: 14, y: 5)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                shimmer = true
             }
-            .overlay {
-                RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                    .stroke(NOCOTheme.glassBorder, lineWidth: 1)
+            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
+                pulse = true
             }
-            .shadow(color: NOCOTheme.teal.opacity(0.22), radius: 12, y: 4)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
-                    shimmer = true
+        }
+    }
+}
+
+struct GateOrbView: View {
+    let isOpen: Bool
+    let progress: Double
+    var size: CGFloat = 180
+
+    @State private var breathe = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill((isOpen ? NOCOTheme.teal : Color.orange).opacity(0.12))
+                .frame(width: size * 1.15, height: size * 1.15)
+                .blur(radius: 28)
+                .scaleEffect(breathe ? 1.05 : 0.92)
+
+            LiquidProgressRing(
+                progress: isOpen ? progress : 0,
+                color: isOpen ? NOCOTheme.teal : .orange,
+                lineWidth: 8
+            )
+            .frame(width: size, height: size)
+
+            Circle()
+                .fill(.ultraThinMaterial)
+                .frame(width: size * 0.72, height: size * 0.72)
+                .overlay {
+                    Circle()
+                        .stroke(NOCOTheme.glassBorder, lineWidth: 1)
+                }
+
+            Image(systemName: isOpen ? "lock.open.fill" : "lock.fill")
+                .font(.system(size: size * 0.22, weight: .semibold))
+                .foregroundStyle(isOpen ? NOCOTheme.teal : .orange)
+                .symbolEffect(.pulse, options: isOpen ? .repeating : .nonRepeating)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true)) {
+                breathe = true
+            }
+        }
+    }
+}
+
+struct GlassAppTile: View {
+    let app: ProtectedApp
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 10) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: app.symbol)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(app.isEnabled ? app.accent : .white.opacity(0.35))
+                        .frame(width: 52, height: 52)
+                        .background {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(app.isEnabled ? app.accent.opacity(0.14) : .white.opacity(0.04))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(app.isEnabled ? app.accent.opacity(0.35) : .white.opacity(0.08), lineWidth: 1)
+                                }
+                        }
+
+                    if app.isEnabled {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(NOCOTheme.mint)
+                            .offset(x: 6, y: -6)
+                    }
+                }
+
+                Text(app.name)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 8)
+            .background {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(app.isEnabled ? app.accent.opacity(0.25) : .white.opacity(0.06), lineWidth: 1)
+                    }
+            }
+        }
+        .buttonStyle(GlassScaleButtonStyle())
+    }
+}
+
+struct CategoryChip: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption2.weight(.bold))
+                Text(title)
+                    .font(.caption.weight(.bold))
+            }
+            .foregroundStyle(isSelected ? .black.opacity(0.85) : .white.opacity(0.7))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background {
+                if isSelected {
+                    Capsule().fill(NOCOTheme.accentGradient)
+                } else {
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .overlay { Capsule().stroke(.white.opacity(0.1), lineWidth: 1) }
                 }
             }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct GlassScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+struct SetupProgressRing: View {
+    let progress: Double
+
+    var body: some View {
+        ZStack {
+            LiquidProgressRing(progress: progress, color: NOCOTheme.mint, lineWidth: 5)
+                .frame(width: 44, height: 44)
+            Text("\(Int(progress * 100))%")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(NOCOTheme.mint)
+        }
     }
 }
 

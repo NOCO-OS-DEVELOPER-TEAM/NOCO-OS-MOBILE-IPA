@@ -4,7 +4,8 @@ import SwiftUI
 struct TimePayApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store = TimePayStore()
-    @StateObject private var screenTime = ScreenTimeManager()
+    @StateObject private var gate = ShortcutGateManager()
+    @StateObject private var settings = AppSettings()
 
     init() {
         NotificationManager.shared.installDelegate()
@@ -14,24 +15,15 @@ struct TimePayApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(store)
-                .environmentObject(screenTime)
+                .environmentObject(gate)
+                .environmentObject(settings)
                 .preferredColorScheme(.dark)
-                .onAppear {
-                    NotificationManager.shared.onShieldUnlockRequested = {
-                        store.openUnlockFromShield()
-                    }
-                }
                 .onOpenURL { url in
-                    if url.host == "unlock" {
-                        store.openUnlockFromShield()
-                    }
+                    gate.handleIncomingURL(url, store: store)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
-                        store.checkPendingUnlockFromShield()
-                        store.resumeUnlockTimerIfNeeded(
-                            onRelock: { screenTime.relock() }
-                        )
+                        store.resumeUnlockTimerIfNeeded()
                     }
                 }
         }

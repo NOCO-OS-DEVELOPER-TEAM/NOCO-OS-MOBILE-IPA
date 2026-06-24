@@ -1,0 +1,63 @@
+NOCO TimePay — sidestore-entitlements Anleitung
+==============================================
+
+Dieser Ordner enthält Entitlement-Vorlagen für jedes Binary in der App.
+SideStore wendet diese Dateien NICHT automatisch an beim Installieren!
+
+Warum Bildschirmzeit scheitert
+------------------------------
+Die Meldung „Kommunikation mit der Hilfs-App nicht möglich“ bedeutet:
+iOS kann die Screen-Time-Erweiterungen (.appex) nicht mit der Haupt-App
+verbinden. Ursache: Family Controls fehlt in der Code-Signatur.
+
+Dateien in diesem Ordner
+------------------------
+TimePay.plist                  → Haupt-App TimePay.app
+TimePayShieldConfiguration.plist → PlugIns/TimePayShieldConfiguration.appex
+TimePayShieldAction.plist      → PlugIns/TimePayShieldAction.appex
+TimePayMonitor.plist           → PlugIns/TimePayMonitor.appex
+TimePayWidgets.plist           → PlugIns/TimePayWidgets.appex (nur App-Gruppe)
+
+Voraussetzung: Bezahltes Apple Developer Program (99 €/Jahr)
+------------------------------------------------------------
+Kostenlose Apple-ID (Personal Team) kann Family Controls NICHT nutzen.
+
+Auf developer.apple.com für JEDE Bundle-ID:
+  de.noco.timepay
+  de.noco.timepay.shieldconfig
+  de.noco.timepay.shieldaction
+  de.noco.timepay.monitor
+  de.noco.timepay.widgets
+
+Aktivieren:
+  - App-Gruppe: group.de.noco.timepay (alle 5 IDs)
+  - Family Controls (Development): Haupt-App + 3 Screen-Time-Extensions
+    (shieldconfig, shieldaction, monitor — NICHT widgets)
+
+Option A — Xcode auf dem Mac (empfohlen)
+----------------------------------------
+1. Repo klonen, Xcode öffnen
+2. Team mit bezahltem Account wählen, automatisches Signieren
+3. Auf iPhone bauen oder Archive → IPA exportieren
+4. IPA in SideStore installieren (oder direkt per Xcode)
+
+Option B — ESign / Feather auf dem iPhone
+-----------------------------------------
+1. IPA entpacken oder in ESign importieren
+2. Jedes Binary einzeln signieren mit passender .plist aus diesem Ordner
+3. Neu packen und in SideStore installieren
+
+Option C — SideStore direkt
+---------------------------
+Nur wenn SideStore mit BEZAHLTEM Developer-Account verbunden ist UND
+alle App-IDs + Capabilities im Portal korrekt eingerichtet sind.
+SideStore erzeugt dann Profile mit Family Controls automatisch.
+
+Nach der Installation
+-----------------------
+1. TimePay löschen, neu installieren
+2. iOS: Einstellungen → Bildschirmzeit → Apps mit Bildschirmzeit-Zugriff
+   → TimePay erlauben
+3. TimePay öffnen → „Bildschirmzeit erlauben“
+
+Diagnose in der App: Mehr → Diagnose-Log teilen

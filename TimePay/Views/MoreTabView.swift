@@ -3,7 +3,7 @@ import WidgetKit
 
 struct MoreTabView: View {
     @EnvironmentObject private var store: TimePayStore
-    @EnvironmentObject private var screenTime: ScreenTimeManager
+    @EnvironmentObject private var gate: ShortcutGateManager
     @State private var showDiagnosticShare = false
 
     var body: some View {
@@ -32,11 +32,11 @@ struct MoreTabView: View {
                 )
 
                 iosFeatureCard(
-                    icon: "bell.badge.fill",
-                    title: "Mitteilungen",
-                    detail: "Erinnerungen bei Ablauf, Focus-Start und „Mehr Zeit“ vom Sperrbildschirm.",
-                    badge: "Push",
-                    color: NOCOTheme.mint
+                    icon: "square.and.pencil",
+                    title: "Kurzbefehl-Gate",
+                    detail: "Apps werden per Automation abgefangen — ohne Fokus-Modus. Gate offen = Apps dürfen durch.",
+                    badge: gate.setupCompleted ? "Aktiv" : "Setup",
+                    color: NOCOTheme.coral
                 )
 
                 GlassCard {
@@ -62,7 +62,7 @@ struct MoreTabView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Hilfe & Diagnose")
                             .font(.subheadline.weight(.bold))
-                        Text("Wenn Bildschirmzeit nicht funktioniert, liegt es meist am SideStore-Signieren. Teile das Log für Support.")
+                        Text("Teile das Log bei Problemen mit dem Kurzbefehl-Gate.")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.55))
                         Button("Diagnose-Log teilen") { showDiagnosticShare = true }
@@ -70,7 +70,7 @@ struct MoreTabView: View {
                     }
                 }
 
-                Text("Version 1.4 · NOCO-OS")
+                Text("Version 2.0 · Kurzbefehl-Gate")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.35))
                     .padding(.top, 8)
@@ -80,7 +80,7 @@ struct MoreTabView: View {
             .padding(.bottom, 28)
         }
         .sheet(isPresented: $showDiagnosticShare) {
-            ShareTextSheet(text: DiagnosticLog.export(screenTime: screenTime))
+            ShareTextSheet(text: DiagnosticLog.export(store: store, gate: gate))
         }
     }
 

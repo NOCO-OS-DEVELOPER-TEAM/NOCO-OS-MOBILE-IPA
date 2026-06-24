@@ -16,16 +16,9 @@ final class ScreenTimeManager: ObservableObject {
     @Published var needsAppSelection = false
     @Published var showSideloadHelp = false
 
-    let sideloadHelpSteps = """
-    SideStore / Sideload — Bildschirmzeit aktivieren:
+    var sideloadHelpSteps: String { TimePayEnvironmentDiagnostics.screenTimeSetupGuide }
 
-    1. Neuen Build installieren (NEUER BUILD.bat → IPA in SideStore).
-    2. In SideStore beim Signieren die Entitlements aus sidestore-entitlements/ nutzen (Family Controls).
-    3. iOS: Einstellungen → Bildschirmzeit → Apps mit Bildschirmzeit-Zugriff → TimePay aktivieren.
-
-    Hinweis: In den TimePay-App-Einstellungen gibt es keinen Bildschirmzeit-Schalter — das ist normal bei Sideload-Apps.
-    Die gelbe Meldung „Kommunikation mit der Hilfe-App“ bedeutet meist: Erweiterungen sind nicht korrekt signiert.
-    """
+    @Published var lastAuthErrorDetail: String?
 
     #if canImport(FamilyControls)
     @Published var selection = FamilyActivitySelection()
@@ -36,9 +29,6 @@ final class ScreenTimeManager: ObservableObject {
         #if canImport(FamilyControls)
         refreshAuthorizationStatus()
         startAuthorizationObserver()
-        if AuthorizationCenter.shared.authorizationStatus == .notDetermined {
-            await requestAuthorization()
-        }
         #endif
         await NotificationManager.shared.requestPermission()
         #if canImport(FamilyControls)
@@ -65,6 +55,7 @@ final class ScreenTimeManager: ObservableObject {
                 }
             }
         } catch {
+            lastAuthErrorDetail = Self.describeAuthError(error)
             authError = "Bildschirmzeit-Freigabe fehlgeschlagen: \(error.localizedDescription)"
             isAuthorized = false
             noteFamilyControlsUnavailable()
@@ -95,8 +86,30 @@ final class ScreenTimeManager: ObservableObject {
     func noteFamilyControlsUnavailable() {
         showSideloadHelp = true
         if authError == nil {
-            authError = "Bildschirmzeit-Erweiterungen nicht erreichbar. Siehe SideStore-Hilfe unten."
+            authError = "Bildschirmzeit-Erweiterungen nicht erreichbar. Siehe Einrichtungs-Hilfe unten."
         }
+    }
+
+    func revokeAuthorization() async {
+        #if canImport(FamilyControls)
+        AuthorizationCenter.shared.revokeAuthorization { _ in }
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        refreshAuthorizationStatus()
+        authError = "Berechtigung zurückgesetzt. Tippe erneut auf „Bildschirmzeit erlauben“."
+        lastAuthErrorDetail = nil
+        #endif
+    }
+
+    private static func describeAuthError(_ error: Error) -> String {
+        let ns = error as NSError
+        var parts = ["Domain: \(ns.domain)", "Code: \(ns.code)"]
+        if let reason = ns.localizedFailureReason, !reason.isEmpty {
+            parts.append("Grund: \(reason)")
+        }
+        if let suggestion = ns.localizedRecoverySuggestion, !suggestion.isEmpty {
+            parts.append("Tipp: \(suggestion)")
+        }
+        return parts.joined(separator: " | ")
     }
 
     func noteAppPickerIssue() {
