@@ -68,9 +68,9 @@ final class ScreenTimeManager: ObservableObject {
     func refreshAuthorizationStatus() {
         #if canImport(FamilyControls)
         let status = AuthorizationCenter.shared.authorizationStatus
-        isAuthorized = status == .approved
+        isAuthorized = status == .approved || status == .approvedWithDataAccess
         switch status {
-        case .approved:
+        case .approved, .approvedWithDataAccess:
             authError = nil
         case .denied:
             authError = "Bildschirmzeit blockiert. iOS: Einstellungen → Bildschirmzeit → Apps mit Bildschirmzeit-Zugriff → TimePay erlauben."

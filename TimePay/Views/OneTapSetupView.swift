@@ -158,17 +158,15 @@ struct OneTapSetupView: View {
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.58))
 
-                if #available(iOS 17.0, *) {
-                    ShortcutsLink(intent: IsGateOpenIntent()) {
-                        Label("TimePay Gate-Aktion hinzufügen", systemImage: "plus.circle.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(NOCOPrimaryButtonStyle())
-                    .simultaneousGesture(TapGesture().onEnded {
-                        openedShortcuts = true
-                        settings.impact(.medium)
-                    })
+                Button {
+                    openedShortcuts = true
+                    settings.impact(.medium)
+                    ShortcutInstaller.openTimePayInShortcuts()
+                } label: {
+                    Label("TimePay Gate-Aktion hinzufügen", systemImage: "plus.circle.fill")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(NOCOPrimaryButtonStyle())
 
                 Button {
                     openedShortcuts = true
