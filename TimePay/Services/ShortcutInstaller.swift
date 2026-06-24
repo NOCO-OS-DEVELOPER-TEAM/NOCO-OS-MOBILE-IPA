@@ -7,7 +7,8 @@ enum ShortcutInstaller {
     static let hostedShortcutURL =
         "https://raw.githubusercontent.com/NOCO-OS-DEVELOPER-TEAM/NOCO-OS-MOBILE-IPA/main/TimePay/Resources/NOCOTimePayGate.shortcut"
 
-    static func openShortcutsApp() {
+    @discardableResult
+    static func openShortcutsApp() -> Bool {
         openURL("shortcuts://")
     }
 

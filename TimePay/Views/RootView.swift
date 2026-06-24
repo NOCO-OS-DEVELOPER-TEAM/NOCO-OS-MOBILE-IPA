@@ -22,10 +22,15 @@ struct RootView: View {
             }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
-            OneTapSetupView(isOnboarding: true, onSwitchToAppsTab: nil) {
-                settings.hasSeenOnboarding = true
-                showOnboarding = false
-            }
+            OneTapSetupView(
+                isOnboarding: true,
+                embeddedInTab: false,
+                onFinish: {
+                    settings.hasSeenOnboarding = true
+                    showOnboarding = false
+                },
+                onSwitchToAppsTab: nil
+            )
         }
         .sheet(isPresented: $store.showUnlockSheet) {
             UnlockSheetView()
