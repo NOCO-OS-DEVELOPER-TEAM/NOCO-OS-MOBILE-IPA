@@ -113,17 +113,6 @@ enum TimePaySharedStorage {
         return false
     }
 
-    static func takePendingEndUnlock() -> Bool {
-        for d in storageTargets() {
-            guard d.bool(forKey: TimePayKeys.pendingEndUnlockKey) else { continue }
-            for target in storageTargets() {
-                target.set(false, forKey: TimePayKeys.pendingEndUnlockKey)
-            }
-            return true
-        }
-        return false
-    }
-
     static func unlockUntilTimestamp() -> TimeInterval {
         var best: TimeInterval = 0
         for d in storageTargets() {

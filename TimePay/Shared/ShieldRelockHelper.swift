@@ -56,13 +56,16 @@ enum ShieldRelockHelper {
     }
 
     static func relockAll() {
-        GateEngine.closeUnlock()
+        TimePaySharedStorage.setUnlockUntil(nil)
         applySavedShield()
     }
 
     static func syncUnlockStateIfExpired() {
-        GateEngine.syncExpiredUnlock()
-        guard GateEngine.isOpen else {
+        if TimePaySharedStorage.remainingUnlockSeconds() <= 0,
+           TimePaySharedStorage.hasAnyUnlockState() {
+            TimePaySharedStorage.setUnlockUntil(nil)
+        }
+        guard TimePaySharedStorage.isUnlocked else {
             applySavedShield()
             return
         }
