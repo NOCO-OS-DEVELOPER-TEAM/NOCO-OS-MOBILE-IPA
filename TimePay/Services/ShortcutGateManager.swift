@@ -41,7 +41,7 @@ final class ShortcutGateManager: ObservableObject {
         return "Geschlossen"
     }
 
-    var gateStatusLabel: String {
+    func openGate(minutes: Int) {
         Self.openGate(minutes: minutes)
     }
 
@@ -175,7 +175,7 @@ final class ShortcutGateManager: ObservableObject {
 
     5. „Sonst“-Zweig: leer lassen (App darf öffnen)
 
-  AUTOMATION (pro App oder mehrere zusammen)
+    AUTOMATION (pro App oder mehrere zusammen)
     ─────────────────────────────────────────────
     1. Kurzbefehle → Automation → + → App
     2. Apps wählen (z. B. Instagram, TikTok, …)

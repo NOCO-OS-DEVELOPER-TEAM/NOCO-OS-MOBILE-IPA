@@ -129,7 +129,7 @@ struct OneTapSetupView: View {
                 Image(systemName: "square.and.arrow.down.on.square.fill")
                     .font(.system(size: 48))
                     .foregroundStyle(NOCOTheme.holoGradient)
-                    .symbolEffect(.bounce, value: phase)
+                    .symbolEffect(.pulse, value: phase)
 
                 Text("Kurzbefehl importieren")
                     .font(.title3.bold())
@@ -312,7 +312,7 @@ struct OneTapSetupView: View {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 64))
                     .foregroundStyle(NOCOTheme.mint)
-                    .symbolEffect(.bounce)
+                    .symbolEffect(.pulse)
                 Text("Setup abgeschlossen")
                     .font(.title3.bold())
             }

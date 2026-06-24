@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PermissionView: View {
+    @EnvironmentObject private var store: TimePayStore
+    @EnvironmentObject private var gate: ShortcutGateManager
     @EnvironmentObject private var screenTime: ScreenTimeManager
     @State private var isRequesting = false
     @State private var showDiagnosticShare = false
@@ -93,7 +95,7 @@ struct PermissionView: View {
             .padding(24)
         }
         .sheet(isPresented: $showDiagnosticShare) {
-            ShareTextSheet(text: DiagnosticLog.export(screenTime: screenTime))
+            ShareTextSheet(text: DiagnosticLog.export(store: store, gate: gate))
         }
         .onAppear {
             screenTime.refreshAuthorizationStatus()

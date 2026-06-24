@@ -6,6 +6,7 @@ import FamilyControls
 
 struct AppsTabView: View {
     @EnvironmentObject private var store: TimePayStore
+    @EnvironmentObject private var gate: ShortcutGateManager
     @EnvironmentObject private var screenTime: ScreenTimeManager
     @State private var showAppPicker = false
     @State private var showDiagnosticShare = false
@@ -112,7 +113,7 @@ struct AppsTabView: View {
         }
         #endif
         .sheet(isPresented: $showDiagnosticShare) {
-            ShareTextSheet(text: DiagnosticLog.export(screenTime: screenTime))
+            ShareTextSheet(text: DiagnosticLog.export(store: store, gate: gate))
         }
     }
 
