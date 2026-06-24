@@ -159,13 +159,15 @@ final class TimePayStore: ObservableObject {
     }
 
     var maxSpendMinutes: Double {
-        max(Double(balanceHalfMinutes) / 2.0, 0.5)
+        max(Double(balanceHalfMinutes) / 2.0, 1)
     }
 
     func consumePendingDeepLink() {
         guard let action = TimePaySharedStorage.defaults?.string(forKey: TimePayKeys.pendingDeepLinkKey) else { return }
         TimePaySharedStorage.defaults?.removeObject(forKey: TimePayKeys.pendingDeepLinkKey)
         switch action {
+        case "gate":
+            openUnlockFromShortcut(appName: nil)
         case "unlock":
             tryOpenUnlockSheet()
         case "earn":
@@ -256,7 +258,7 @@ final class TimePayStore: ObservableObject {
         } else if unlockSessionTotal == 0 {
             unlockSessionTotal = max(unlockBookedHalfMinutes * 30, unlockSessionRemaining)
         }
-        LiveActivityManager.startUnlock(totalSeconds: unlockSessionRemaining)
+        LiveActivityManager.startUnlock(remainingSeconds: unlockSessionRemaining, totalSeconds: unlockSessionTotal)
         startUnlockCountdown()
     }
 

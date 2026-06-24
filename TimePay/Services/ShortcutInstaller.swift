@@ -19,38 +19,64 @@ enum ShortcutInstaller {
         }
     }
 
-    /// 3 Schritte — Kurzbefehl + Automation zusammengefasst.
+    /// Kurz-Anleitung — nur noch Automation, kein eigener Kurzbefehl.
     static let setupSteps: [(icon: String, title: String, detail: String)] = [
-        ("apps.iphone", "Apps wählen", "Im Tab „Apps“ Schnellauswahl tippen (z. B. Empfohlen)."),
-        ("plus.circle.fill", "Gate-Aktion", "Kurzbefehle → TimePay → „TimePay Gate prüfen“ hinzufügen."),
-        ("bolt.fill", "Automation", "Automation → App → deine Apps → Gate-Kurzbefehl ausführen."),
-    ]
-
-    static let shortcutRecipeSteps: [(icon: String, title: String, detail: String)] = [
-        ("1.circle.fill", "Neuer Kurzbefehl", "Name: NOCO TimePay Gate"),
-        ("2.circle.fill", "Gate prüfen", "Aktion: TimePay Gate prüfen (unter Apps → TimePay)."),
-        ("3.circle.fill", "Wenn → falsch", "Wenn Ergebnis falsch → URL timepay://gate → Zum Home-Bildschirm."),
-        ("4.circle.fill", "Sonst leer", "Sonst-Zweig leer — Gate offen = App bleibt."),
+        ("apps.iphone", "Apps wählen", "Tab „Apps“ → z. B. „Empfohlen“ tippen."),
+        ("bolt.fill", "Automation", "App öffnet → eine Aktion: „Gate durchsetzen“ (TimePay)."),
+        ("checkmark.seal", "Fertig", "Sofort ausführen AN · Vor Ausführen AUS."),
     ]
 
     static let automationRecipeSteps: [(icon: String, title: String, detail: String)] = [
-        ("plus.circle", "Automation → App", "Deine geschützten Apps auswählen."),
-        ("app.badge.checkmark", "Ist geöffnet", "Trigger: App wird geöffnet."),
-        ("play.fill", "Kurzbefehl", "„NOCO TimePay Gate“ ausführen."),
-        ("checkmark.seal", "Einstellungen", "Sofort ausführen AN · Vor Ausführen AUS."),
+        ("plus.circle.fill", "Neue Automation", "Automation → Persönliche Automation → App."),
+        ("app.badge.checkmark", "Apps wählen", "Deine geschützten Apps (mehrere möglich)."),
+        ("hand.tap.fill", "Ist geöffnet", "Trigger: „Wird geöffnet“."),
+        ("lock.shield.fill", "Eine Aktion", "Aktion hinzufügen → TimePay → „Gate durchsetzen“."),
+        ("checkmark.seal.fill", "Einstellungen", "„Sofort ausführen“ AN · „Vor Ausführen fragen“ AUS."),
     ]
 
     static func automationClipboardText(apps: [ProtectedApp]) -> String {
         let names = apps.map(\.name).joined(separator: ", ")
         return """
-        NOCO TimePay — 3 Schritte
+        NOCO TimePay — Automation (2 Min.)
+
         Apps: \(names)
 
-        1. Kurzbefehl „NOCO TimePay Gate“ (siehe App-Setup)
-        2. Automation → App → \(names)
-        3. Kurzbefehl ausführen · Sofort AN
+        1. Automation → App → \(names) → Wird geöffnet
+        2. Aktion: TimePay → „Gate durchsetzen“
+        3. Sofort ausführen AN · Vor Ausführen AUS
+
+        Kein eigener Kurzbefehl nötig.
         """
     }
 
     static let quickSetupSteps = setupSteps
+
+    /// Optional: vorgefertigten Kurzbefehl aus dem Bundle teilen (falls du lieber einen Kurzbefehl importierst).
+    static func bundledGateShortcutURL() -> URL? {
+        Bundle.main.url(forResource: "NOCOTimePayGate", withExtension: "shortcut")
+    }
+
+    static func presentShareGateShortcut(from presenter: UIViewController) {
+        guard let url = bundledGateShortcutURL() else { return }
+        let activity = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        if let popover = activity.popoverPresentationController {
+            popover.sourceView = presenter.view
+            popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: 80, width: 1, height: 1)
+        }
+        presenter.present(activity, animated: true)
+    }
+}
+
+/// Share-Sheet für den optionalen Gate-Kurzbefehl.
+struct GateShortcutShareButton: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+
+    static func share(from root: UIViewController?) {
+        guard let root else { return }
+        ShortcutInstaller.presentShareGateShortcut(from: root)
+    }
 }

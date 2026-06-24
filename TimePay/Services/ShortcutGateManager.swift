@@ -199,45 +199,24 @@ final class ShortcutGateManager: ObservableObject {
     }
 
     static let shortcutBuildGuide = """
-    KURZBEFEHL „NOCO TimePay Gate“ (einmal anlegen)
-    ─────────────────────────────────────────────
-    1. App „Kurzbefehle“ öffnen → + → Name: NOCO TimePay Gate
-
-    2. Aktion hinzufügen: „TimePay Gate prüfen“
-       (unter Apps → NOCO TimePay / TimePay suchen)
-
-    3. Aktion „Wenn“ hinzufügen:
-       • Bedingung: Ergebnis von „TimePay Gate prüfen“ ist falsch
-
-    4. UNTER „Wenn“ (dann-Zweig):
-       a) „URL öffnen“ → timepay://gate?app=App
-          (Optional: Variable „App“ aus Automation nutzen)
-       b) „Zum Home-Bildschirm“
-
-    5. „Sonst“-Zweig: leer lassen (App darf öffnen)
-
-    AUTOMATION (pro App oder mehrere zusammen)
+    AUTOMATION (einmal — kein Kurzbefehl bauen)
     ─────────────────────────────────────────────
     1. Kurzbefehle → Automation → + → App
-    2. Apps wählen (z. B. Instagram, TikTok, …)
-    3. „Ist geöffnet“ → Weiter
-    4. Aktion: „Kurzbefehl ausführen“ → NOCO TimePay Gate
-    5. „Sofort ausführen“ AN, „Vor Ausführen fragen“ AUS
+    2. Geschützte Apps wählen → „Wird geöffnet“
+    3. Aktion: TimePay → „Gate durchsetzen“
+    4. „Sofort ausführen“ AN · „Vor Ausführen fragen“ AUS
+
+    Ohne Freigabe öffnet TimePay automatisch.
+    Mit Freigabe bleibt die App offen.
 
     WICHTIG: Kein Fokus-Modus nötig!
-    TimePay speichert die Freigabe-Zeit intern.
-    Der Kurzbefehl prüft nur: Gate offen? → App bleibt.
-    Gate zu? → TimePay öffnen + zurück zum Home-Bildschirm.
-
-    Nach Freischaltung in TimePay ist das Gate zeitlich offen —
-    du musst die Automation NICHT manuell ausschalten.
     """
 
     static let howItWorks = """
     So funktioniert’s:
 
     1. Du öffnest Instagram (oder eine andere geschützte App).
-    2. Die Automation startet den Kurzbefehl „NOCO TimePay Gate“.
+    2. Die Automation führt „Gate durchsetzen“ aus.
     3. TimePay prüft: Läuft gerade eine Freigabe?
        • Ja → nichts passiert, App bleibt offen.
        • Nein → TimePay öffnet sich, du gibst dir Minuten.

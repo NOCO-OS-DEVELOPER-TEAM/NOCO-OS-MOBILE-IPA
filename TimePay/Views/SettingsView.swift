@@ -135,7 +135,6 @@ struct SettingsView: View {
     private var setupChecklist: some View {
         VStack(alignment: .leading, spacing: 8) {
             checklistRow("Apps gewählt", done: !gate.enabledApps.isEmpty)
-            checklistRow("Kurzbefehl gebaut", done: settings.shortcutImported)
             checklistRow("Automation aktiv", done: settings.automationConfirmed)
         }
     }

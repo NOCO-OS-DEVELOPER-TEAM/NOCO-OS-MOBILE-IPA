@@ -1,4 +1,7 @@
 import AppIntents
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Deep-link helpers (Icon long-press, Widgets, Siri)
 
@@ -45,13 +48,37 @@ struct EndUnlockEarlyIntent: AppIntent {
 struct IsGateOpenIntent: AppIntent {
     static var title: LocalizedStringResource = "TimePay Gate prüfen"
     static var description = IntentDescription(
-        "Gibt wahr zurück, wenn Apps gerade freigeschaltet sind. Der Kurzbefehl leitet nur um, wenn falsch."
+        "Gibt wahr zurück, wenn Apps gerade freigeschaltet sind. Nur für eigene Kurzbefehle — für Automation „Gate durchsetzen“ nutzen."
     )
     static var openAppWhenRun = false
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
         return .result(value: ShortcutGateManager.isGateOpen)
+    }
+}
+
+/// Eine Aktion für Personal Automation — kein eigener Kurzbefehl nötig.
+struct EnforceTimePayGateIntent: AppIntent {
+    static var title: LocalizedStringResource = "Gate durchsetzen"
+    static var description = IntentDescription(
+        "Für Automation „App wird geöffnet“: Ohne Freigabe öffnet TimePay. Mit Freigabe passiert nichts."
+    )
+    static var openAppWhenRun = false
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        if ShortcutGateManager.isGateOpen {
+            return .result()
+        }
+        queueDeepLink("gate")
+        guard let url = URL(string: "timepay://gate") else {
+            return .result()
+        }
+        #if canImport(UIKit)
+        await UIApplication.shared.open(url)
+        #endif
+        return .result()
     }
 }
 
@@ -108,6 +135,15 @@ struct TimePayShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Freigabe beenden",
             systemImageName: "stop.circle.fill"
+        )
+        AppShortcut(
+            intent: EnforceTimePayGateIntent(),
+            phrases: [
+                "TimePay Gate durchsetzen mit \(.applicationName)",
+                "Apps schützen mit \(.applicationName)",
+            ],
+            shortTitle: "Gate durchsetzen",
+            systemImageName: "lock.shield.fill"
         )
         AppShortcut(
             intent: IsGateOpenIntent(),

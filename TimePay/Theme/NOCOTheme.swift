@@ -290,6 +290,23 @@ struct LiveSessionProgressBar: View {
     }
 }
 
+/// Flüssiger Fortschrittsring — aktualisiert per Timeline, nicht per Sekunden-Tick.
+struct SmoothSessionProgressRing: View {
+    let start: Date
+    let end: Date
+    let color: Color
+    var lineWidth: CGFloat = 6
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+            let total = max(end.timeIntervalSince(start), 1)
+            let remaining = max(end.timeIntervalSince(context.date), 0)
+            let progress = min(max(1 - remaining / total, 0), 1)
+            LiquidProgressRing(progress: progress, color: color, lineWidth: lineWidth)
+        }
+    }
+}
+
 struct LiquidProgressRing: View {
     let progress: Double
     let color: Color
@@ -380,6 +397,8 @@ struct GateOrbView: View {
     var size: CGFloat = 180
     var flashExpired: Bool = false
     var isUrgent: Bool = false
+    var sessionStart: Date?
+    var sessionEnd: Date?
 
     @State private var breathe = false
     @State private var expirePulse = false
@@ -401,11 +420,17 @@ struct GateOrbView: View {
                     .opacity(expirePulse ? 0 : 0.9)
             }
 
-            LiquidProgressRing(
-                progress: isOpen ? progress : 0,
-                color: flashExpired ? NOCOTheme.coral : (isOpen ? NOCOTheme.teal : .orange),
-                lineWidth: 8
-            )
+            Group {
+                if let start = sessionStart, let end = sessionEnd, isOpen {
+                    SmoothSessionProgressRing(start: start, end: end, color: flashExpired ? NOCOTheme.coral : NOCOTheme.teal, lineWidth: 8)
+                } else {
+                    LiquidProgressRing(
+                        progress: isOpen ? progress : 0,
+                        color: flashExpired ? NOCOTheme.coral : (isOpen ? NOCOTheme.teal : .orange),
+                        lineWidth: 8
+                    )
+                }
+            }
             .frame(width: size, height: size)
 
             Circle()

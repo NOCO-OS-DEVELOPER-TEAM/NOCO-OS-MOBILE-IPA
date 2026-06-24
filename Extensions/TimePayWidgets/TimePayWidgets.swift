@@ -443,10 +443,7 @@ struct TimePayLiveActivityWidget: Widget {
                         .shadow(color: accent.opacity(0.35), radius: 6)
                 }
 
-                ProgressView(timerInterval: context.attributes.startedAt...context.state.endDate, countsDown: true)
-                    .tint(accent)
-
-                Text("Live — Sekunde für Sekunde")
+                Text("Sperrbildschirm · Live")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.45))
 

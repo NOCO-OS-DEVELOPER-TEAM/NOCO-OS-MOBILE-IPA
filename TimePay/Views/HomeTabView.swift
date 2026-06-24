@@ -67,7 +67,9 @@ struct HomeTabView: View {
                     progress: store.unlockSessionRemaining > 0 ? store.unlockProgress : 0,
                     size: 110,
                     flashExpired: store.sessionExpiredFlash,
-                    isUrgent: sessionUrgent && ShortcutGateManager.isGateOpen
+                    isUrgent: sessionUrgent && ShortcutGateManager.isGateOpen,
+                    sessionStart: store.activeSessionStartDate,
+                    sessionEnd: store.activeSessionEndDate
                 )
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Gate-Status")
@@ -99,9 +101,9 @@ struct HomeTabView: View {
                         .font(.title2)
                         .foregroundStyle(NOCOTheme.coral)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Fast fertig — Setup abschließen")
+                        Text("Fast fertig — Automation anlegen")
                             .font(.subheadline.weight(.bold))
-                        Text("Kurzbefehl in Kurzbefehle anlegen — Schritt-für-Schritt im Setup.")
+                        Text("Nur eine Aktion: „Gate durchsetzen“ in Kurzbefehle — kein Kurzbefehl selbst bauen.")
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.55))
                     }
@@ -130,9 +132,12 @@ struct HomeTabView: View {
                 }
 
                 ZStack {
-                    if store.isSessionActive {
-                        LiquidProgressRing(
-                            progress: store.unlockSessionRemaining > 0 ? store.unlockProgress : store.earnProgress,
+                    if store.isSessionActive,
+                       let start = store.activeSessionStartDate,
+                       let end = store.activeSessionEndDate {
+                        SmoothSessionProgressRing(
+                            start: start,
+                            end: end,
                             color: sessionUrgent ? NOCOTheme.coral : (store.unlockSessionRemaining > 0 ? NOCOTheme.teal : NOCOTheme.lavender),
                             lineWidth: 6
                         )
@@ -153,22 +158,11 @@ struct HomeTabView: View {
                                 .font(.system(size: 56, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
                                 .contentTransition(.numericText())
-                            Text(store.balanceHalfMinutes % 2 == 0 ? "Minuten Guthaben" : "Minuten (inkl. 30 Sek)")
+                            Text(store.balanceHalfMinutes % 2 == 0 ? "Minuten Guthaben" : "Minuten Guthaben")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(NOCOTheme.teal)
                         }
                     }
-                }
-
-                if store.isSessionActive,
-                   let start = store.activeSessionStartDate,
-                   let end = store.activeSessionEndDate {
-                    LiveSessionProgressBar(
-                        start: start,
-                        end: end,
-                        tint: sessionUrgent ? NOCOTheme.coral : (store.unlockSessionRemaining > 0 ? NOCOTheme.teal : NOCOTheme.lavender)
-                    )
-                    .padding(.horizontal, 8)
                 }
 
                 Text(heroSubtitle)

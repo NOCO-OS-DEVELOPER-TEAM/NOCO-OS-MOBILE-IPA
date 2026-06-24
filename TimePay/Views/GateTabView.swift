@@ -203,7 +203,7 @@ struct GateTabView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Setup abschließen")
                             .font(.subheadline.weight(.bold))
-                        Text("3 Schritte — Kurzbefehl & Automation")
+                        Text("2 Schritte — nur Automation")
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.55))
                     }

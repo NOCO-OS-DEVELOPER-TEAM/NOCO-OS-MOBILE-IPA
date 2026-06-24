@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Minuten-Auswahl in 0,5-Minuten-Schritten mit Slider, Stepper und Direkteingabe.
+/// Minuten-Auswahl in 1-Minuten-Schritten.
 struct MinuteStepperView: View {
     @Binding var minutes: Double
     let maxMinutes: Double
@@ -10,7 +10,7 @@ struct MinuteStepperView: View {
     @State private var textInput = ""
     @FocusState private var fieldFocused: Bool
 
-    private var minMinutes: Double { 0.5 }
+    private var minMinutes: Double { 1 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -27,16 +27,16 @@ struct MinuteStepperView: View {
             Slider(
                 value: $minutes,
                 in: minMinutes...max(minMinutes, maxMinutes),
-                step: 0.5
+                step: 1
             )
             .tint(accent)
 
             HStack(spacing: 10) {
-                stepButton("-0,5", delta: -0.5)
+                stepButton("-5", delta: -5)
                 stepButton("-1", delta: -1)
                 Spacer()
                 TextField("Min", text: $textInput)
-                    .keyboardType(.decimalPad)
+                    .keyboardType(.numberPad)
                     .multilineTextAlignment(.center)
                     .font(.body.monospacedDigit().weight(.semibold))
                     .frame(width: 72)
@@ -49,7 +49,7 @@ struct MinuteStepperView: View {
                     }
                 Spacer()
                 stepButton("+1", delta: 1)
-                stepButton("+0,5", delta: 0.5)
+                stepButton("+5", delta: 5)
             }
 
             if maxMinutes < minMinutes {
@@ -65,14 +65,13 @@ struct MinuteStepperView: View {
     }
 
     private var displayText: String {
-        let half = Int((minutes * 2).rounded())
-        return TimePayFormat.halfMinutes(half)
+        let whole = Int(minutes.rounded())
+        return whole == 1 ? "1 Min" : "\(whole) Min"
     }
 
     private func stepButton(_ title: String, delta: Double) -> some View {
         Button {
-            let next = (minutes + delta * 2).rounded() / 2
-            minutes = clamp(next)
+            minutes = clamp(minutes + delta)
             syncTextFromValue()
         } label: {
             Text(title)
@@ -90,26 +89,20 @@ struct MinuteStepperView: View {
         let normalized = textInput
             .replacingOccurrences(of: ",", with: ".")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let value = Double(normalized), value > 0 else {
+        guard let value = Double(normalized), value >= 1 else {
             syncTextFromValue()
             return
         }
-        let snapped = (value * 2).rounded() / 2
-        minutes = clamp(snapped)
+        minutes = clamp(value.rounded())
         syncTextFromValue()
     }
 
     private func syncTextFromValue() {
-        let half = Int((minutes * 2).rounded())
-        if half % 2 == 0 {
-            textInput = "\(half / 2)"
-        } else {
-            textInput = "\(half / 2),5"
-        }
+        textInput = "\(Int(minutes.rounded()))"
     }
 
     private func clamp(_ value: Double) -> Double {
-        let snapped = (value * 2).rounded() / 2
+        let snapped = value.rounded()
         return min(max(snapped, minMinutes), max(minMinutes, maxMinutes))
     }
 }

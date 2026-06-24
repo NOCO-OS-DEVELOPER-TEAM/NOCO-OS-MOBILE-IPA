@@ -20,6 +20,9 @@ enum DiagnosticLog {
         lines.append("Guthaben (Min): \(store.balanceMinutes)")
         lines.append("Freigabe UI Rest (s): \(store.unlockSessionRemaining)")
         lines.append("Live Activities: \(LiveActivityManager.isSupported)")
+        if let laError = LiveActivityManager.lastError {
+            lines.append("Live Activity Fehler: \(laError)")
+        }
         lines.append("---")
         lines.append("Aktive Apps:")
         for app in gate.enabledApps {

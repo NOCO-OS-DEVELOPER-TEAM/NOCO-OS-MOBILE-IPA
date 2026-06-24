@@ -6,6 +6,8 @@ import ActivityKit
 
 @MainActor
 enum LiveActivityManager {
+    static var lastError: String?
+
     static var isSupported: Bool {
         #if canImport(ActivityKit)
         return ActivityAuthorizationInfo().areActivitiesEnabled
@@ -15,22 +17,33 @@ enum LiveActivityManager {
     }
 
     static func startUnlock(totalSeconds: Int) {
+        startUnlock(remainingSeconds: totalSeconds, totalSeconds: totalSeconds)
+    }
+
+    static func startUnlock(remainingSeconds: Int, totalSeconds: Int) {
         #if canImport(ActivityKit)
-        guard isSupported, totalSeconds > 0 else { return }
+        guard isSupported, remainingSeconds > 0 else { return }
         endAll()
-        let end = Date().addingTimeInterval(TimeInterval(totalSeconds))
-        let attributes = TimePaySessionAttributes(totalSeconds: totalSeconds, startedAt: Date())
+        let total = max(totalSeconds, remainingSeconds)
+        let end = Date().addingTimeInterval(TimeInterval(remainingSeconds))
+        let startedAt = end.addingTimeInterval(-TimeInterval(total))
+        let attributes = TimePaySessionAttributes(totalSeconds: total, startedAt: startedAt)
         let state = TimePaySessionAttributes.ContentState(
             endDate: end,
-            remainingSeconds: totalSeconds,
+            remainingSeconds: remainingSeconds,
             sessionTitle: "Freigabe aktiv",
             sessionKind: "unlock"
         )
-        _ = try? Activity.request(
-            attributes: attributes,
-            content: .init(state: state, staleDate: end),
-            pushType: nil
-        )
+        do {
+            _ = try Activity.request(
+                attributes: attributes,
+                content: .init(state: state, staleDate: end),
+                pushType: nil
+            )
+            lastError = nil
+        } catch {
+            lastError = error.localizedDescription
+        }
         #endif
     }
 
@@ -46,11 +59,16 @@ enum LiveActivityManager {
             sessionTitle: title,
             sessionKind: "earn"
         )
-        _ = try? Activity.request(
-            attributes: attributes,
-            content: .init(state: state, staleDate: end),
-            pushType: nil
-        )
+        do {
+            _ = try Activity.request(
+                attributes: attributes,
+                content: .init(state: state, staleDate: end),
+                pushType: nil
+            )
+            lastError = nil
+        } catch {
+            lastError = error.localizedDescription
+        }
         #endif
     }
 

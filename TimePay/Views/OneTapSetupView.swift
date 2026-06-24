@@ -1,6 +1,5 @@
 import SwiftUI
 import UIKit
-import AppIntents
 
 struct OneTapSetupView: View {
     @EnvironmentObject private var gate: ShortcutGateManager
@@ -13,11 +12,10 @@ struct OneTapSetupView: View {
 
     @State private var phase = 0
     @State private var showCelebration = false
-    @State private var copiedApps = false
-    @State private var openedShortcuts = false
-    @State private var confirmedShortcutBuilt = false
+    @State private var copiedGuide = false
+    @State private var openedAutomation = false
 
-    private let phases = ["Willkommen", "Einrichtung", "Fertig"]
+    private let phases = ["Willkommen", "Automation", "Fertig"]
 
     var body: some View {
         NavigationStack {
@@ -43,7 +41,7 @@ struct OneTapSetupView: View {
                     celebrationOverlay
                 }
             }
-            .navigationTitle("NOCO Glass Setup")
+            .navigationTitle("TimePay Setup")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !isOnboarding && !embeddedInTab {
@@ -60,7 +58,7 @@ struct OneTapSetupView: View {
     private var phaseContent: some View {
         switch phase {
         case 0: welcomePhase
-        case 1: combinedSetupPhase
+        case 1: automationPhase
         default: donePhase
         }
     }
@@ -90,7 +88,7 @@ struct OneTapSetupView: View {
 
     private var phaseSubtitle: String {
         switch phase {
-        case 1: return "Kurzbefehl + Automation — einmalig"
+        case 1: return "Nur eine Aktion — kein Kurzbefehl bauen"
         default: return "Bereit zum Testen"
         }
     }
@@ -102,9 +100,9 @@ struct OneTapSetupView: View {
                     .padding(.top, 8)
 
                 VStack(spacing: 8) {
-                    Text("NOCO Liquid Glass")
+                    Text("In 2 Minuten fertig")
                         .font(.title.bold())
-                    Text("Apps blockieren ohne Fokus-Modus. Ein Kurzbefehl prüft dein Zeitkonto — Apple erlaubt keinen automatischen Import, aber wir führen dich Schritt für Schritt.")
+                    Text("Du musst keinen Kurzbefehl selbst zusammenbauen. In der Automation fügst du nur eine fertige TimePay-Aktion hinzu: „Gate durchsetzen“.")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.62))
                         .multilineTextAlignment(.center)
@@ -134,7 +132,7 @@ struct OneTapSetupView: View {
         }
     }
 
-    private var combinedSetupPhase: some View {
+    private var automationPhase: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
                 if gate.enabledApps.isEmpty {
@@ -150,100 +148,51 @@ struct OneTapSetupView: View {
                     }
                 }
 
-                Text("Kurzbefehl & Automation")
-                    .font(.title3.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Text("iOS blockiert unsigned Shortcut-URLs. Stattdessen fügst du die TimePay-Aktion direkt in Kurzbefehle hinzu und erweiterst sie mit Wenn/URL.")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.58))
+                GlassCard(glow: NOCOTheme.teal) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Die einzige Aktion", systemImage: "lock.shield.fill")
+                            .font(.headline)
+                        Text("Gate durchsetzen")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(NOCOTheme.teal)
+                        Text("Unter Kurzbefehle → Aktion hinzufügen → Apps → TimePay. Kein Wenn, keine URL, kein eigener Kurzbefehl.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.58))
+                    }
+                }
 
                 Button {
-                    openedShortcuts = true
+                    openedAutomation = true
                     settings.impact(.medium)
-                    ShortcutInstaller.openTimePayInShortcuts()
+                    ShortcutInstaller.openAutomations()
                 } label: {
-                    Label("TimePay Gate-Aktion hinzufügen", systemImage: "plus.circle.fill")
+                    Label("Automation anlegen", systemImage: "bolt.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(NOCOPrimaryButtonStyle())
 
                 Button {
-                    openedShortcuts = true
-                    settings.impact(.medium)
+                    openedAutomation = true
+                    settings.impact(.light)
                     ShortcutInstaller.openTimePayInShortcuts()
                 } label: {
-                    Label("Kurzbefehle öffnen", systemImage: "arrow.up.forward.app.fill")
+                    Label("TimePay-Aktionen anzeigen", systemImage: "square.grid.2x2.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(NOCOSecondaryButtonStyle())
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Dann im Kurzbefehl ergänzen")
+                        Text("Schritt für Schritt")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(.white.opacity(0.5))
-                        ForEach(Array(ShortcutInstaller.shortcutRecipeSteps.enumerated()), id: \.offset) { _, step in
+                        ForEach(Array(ShortcutInstaller.automationRecipeSteps.enumerated()), id: \.offset) { index, step in
                             HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: step.icon)
+                                Text("\(index + 1)")
+                                    .font(.caption2.weight(.bold))
                                     .foregroundStyle(NOCOTheme.teal)
-                                    .frame(width: 22)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(step.title)
-                                        .font(.caption.weight(.semibold))
-                                    Text(step.detail)
-                                        .font(.caption2)
-                                        .foregroundStyle(.white.opacity(0.55))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Toggle(isOn: $confirmedShortcutBuilt) {
-                    Text("Kurzbefehl „NOCO TimePay Gate“ ist fertig")
-                        .font(.caption.weight(.semibold))
-                }
-                .tint(NOCOTheme.teal)
-                .padding(.horizontal, 4)
-                .onChange(of: confirmedShortcutBuilt) { _, on in
-                    if on {
-                        guard openedShortcuts else {
-                            confirmedShortcutBuilt = false
-                            settings.impact(.rigid)
-                            return
-                        }
-                        settings.shortcutImported = true
-                        settings.success()
-                    } else {
-                        settings.shortcutImported = false
-                    }
-                }
-
-                if !openedShortcuts {
-                    Text("Bitte zuerst „Kurzbefehle öffnen“ tippen.")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-
-                Button {
-                    ShortcutInstaller.openAutomations()
-                } label: {
-                    Label("Automation anlegen", systemImage: "bolt.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(NOCOSecondaryButtonStyle())
-
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Automation")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.5))
-                        ForEach(Array(ShortcutInstaller.automationRecipeSteps.enumerated()), id: \.offset) { _, step in
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: step.icon)
-                                    .foregroundStyle(NOCOTheme.teal)
-                                    .frame(width: 22)
+                                    .frame(width: 20, height: 20)
+                                    .background(NOCOTheme.teal.opacity(0.15), in: Circle())
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(step.title)
                                         .font(.caption.weight(.semibold))
@@ -258,10 +207,10 @@ struct OneTapSetupView: View {
 
                 Button {
                     UIPasteboard.general.string = ShortcutInstaller.automationClipboardText(apps: gate.enabledApps)
-                    copiedApps = true
+                    copiedGuide = true
                     settings.success()
                 } label: {
-                    Label(copiedApps ? "Kopiert!" : "Kurzanleitung kopieren", systemImage: "doc.on.doc.fill")
+                    Label(copiedGuide ? "Kopiert!" : "Kurzanleitung kopieren", systemImage: "doc.on.doc.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(NOCOSecondaryButtonStyle())
@@ -269,13 +218,23 @@ struct OneTapSetupView: View {
                 Toggle(isOn: Binding(
                     get: { settings.automationConfirmed },
                     set: { newValue in
-                        guard !newValue || !gate.enabledApps.isEmpty else { return }
+                        guard !newValue || canConfirmAutomation else { return }
                         settings.automationConfirmed = newValue
-                        if newValue { settings.success() }
+                        if newValue {
+                            settings.shortcutImported = true
+                            settings.success()
+                        }
                     }
                 )) {
-                    Text("Automation ist angelegt")
-                        .font(.caption.weight(.semibold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Automation ist fertig")
+                            .font(.caption.weight(.semibold))
+                        if !canConfirmAutomation {
+                            Text("Apps wählen und Automation öffnen")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
+                    }
                 }
                 .tint(NOCOTheme.teal)
                 .padding(.horizontal, 4)
@@ -291,7 +250,7 @@ struct OneTapSetupView: View {
                 GateOrbView(isOpen: true, progress: 1, size: 130)
                 Text("Alles bereit")
                     .font(.title.bold())
-                Text("Teste mit einer geschützten App. TimePay schließt das Gate automatisch — oder beende früh per Live Activity.")
+                Text("Öffne eine geschützte App zum Testen. Ohne Zeit springt TimePay auf — mit Zeit bleibt die App offen.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.62))
                     .multilineTextAlignment(.center)
@@ -330,15 +289,16 @@ struct OneTapSetupView: View {
         }
     }
 
+    private var canConfirmAutomation: Bool {
+        !gate.enabledApps.isEmpty && openedAutomation
+    }
+
     private var canAdvance: Bool {
         switch phase {
         case 1:
-            return !gate.enabledApps.isEmpty
-                && settings.shortcutImported
-                && confirmedShortcutBuilt
-                && openedShortcuts
-                && settings.automationConfirmed
-        default: return true
+            return !gate.enabledApps.isEmpty && settings.automationConfirmed && openedAutomation
+        default:
+            return true
         }
     }
 
@@ -362,6 +322,7 @@ struct OneTapSetupView: View {
     private func finishSetup() {
         gate.markSetupCompleted()
         settings.hasSeenOnboarding = true
+        settings.shortcutImported = true
         settings.success()
         withAnimation { showCelebration = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
