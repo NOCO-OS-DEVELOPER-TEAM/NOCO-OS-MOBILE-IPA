@@ -1,7 +1,10 @@
-name: Build NOCO AI IPA
+name: Build NOCO TimePay IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build-ipa:
@@ -10,56 +13,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Install dependencies
-        working-directory: mobile-app
-        run: npm install
-
-      - name: Prepare iOS project
-        working-directory: mobile-app
-        run: |
-          set -e
-          npx cap add ios
-          npx cap sync ios
-          cd ios/App
-          pod install
-
       - name: Build unsigned IPA
-        working-directory: mobile-app
         run: |
           set -e
-          cd ios/App
           xcodebuild clean build \
-            -workspace App.xcworkspace \
-            -scheme App \
+            -project TimePay.xcodeproj \
+            -scheme TimePay \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath "$GITHUB_WORKSPACE/mobile-app/build/DerivedData" \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_STYLE=Manual
 
-          APP_PATH=$(find "$GITHUB_WORKSPACE/mobile-app/build/DerivedData" -name "App.app" -type d | head -1)
+          APP_PATH=$(find build/DerivedData -name "TimePay.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "App.app not found"
-            find "$GITHUB_WORKSPACE/mobile-app/build" -type d
+            echo "TimePay.app not found"
+            find build -type d
             exit 1
           fi
 
-          mkdir -p "$GITHUB_WORKSPACE/mobile-app/build/Payload"
-          cp -R "$APP_PATH" "$GITHUB_WORKSPACE/mobile-app/build/Payload/App.app"
-          cd "$GITHUB_WORKSPACE/mobile-app/build"
-          zip -rq NOCO-AI.ipa Payload
-          ls -la NOCO-AI.ipa
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/TimePay.app
+          cd build && zip -rq NOCO-TIMEPAY.ipa Payload
+          ls -la NOCO-TIMEPAY.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: NOCO-AI-ipa
-          path: mobile-app/build/NOCO-AI.ipa
+          name: NOCO-TIMEPAY-ipa
+          path: build/NOCO-TIMEPAY.ipa
           retention-days: 90
