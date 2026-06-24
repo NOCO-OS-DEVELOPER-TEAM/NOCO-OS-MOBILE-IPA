@@ -7,9 +7,18 @@ struct RootView: View {
     var body: some View {
         ZStack {
             LiquidGlassBackground()
-            DashboardView()
+
+            if screenTime.isAuthorized {
+                DashboardView()
+            } else {
+                PermissionView()
+            }
         }
-        .task { await screenTime.bootstrap() }
+        .task {
+            await screenTime.bootstrap()
+            store.resumeUnlockTimerIfNeeded(onRelock: { screenTime.relock() })
+            store.checkPendingUnlockFromShield()
+        }
         .sheet(isPresented: $store.showUnlockSheet) {
             UnlockSheetView()
         }
@@ -18,17 +27,15 @@ struct RootView: View {
         }
         .onChange(of: store.pendingUnlockFromShield) { _, pending in
             if pending {
-                store.showUnlockSheet = true
+                if store.canBookTime {
+                    store.showUnlockSheet = true
+                }
                 store.pendingUnlockFromShield = false
             }
         }
         .overlay(alignment: .top) {
             if let toast = store.toastMessage {
-                Text(toast)
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
+                GlassToast(message: toast)
                     .padding(.top, 56)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }

@@ -2,11 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.developer.family-controls</key>
-	<true/>
-	<key>com.apple.security.application-groups</key>
+	<key>CFBundleURLTypes</key>
 	<array>
-		<string>group.de.noco.timepay</string>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>de.noco.timepay</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>timepay</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

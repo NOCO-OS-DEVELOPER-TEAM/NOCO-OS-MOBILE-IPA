@@ -12,18 +12,22 @@ final class ScreenTimeManager: ObservableObject {
     @Published var isAuthorized = false
     @Published var authError: String?
     @Published var blockedAppCount = 0
+    @Published var shieldsActive = false
 
     #if canImport(FamilyControls)
     @Published var selection = FamilyActivitySelection()
-    private let store = ManagedSettingsStore()
-    private let selectionKey = "timepay.selection"
     #endif
 
     func bootstrap() async {
         await requestAuthorization()
+        await NotificationManager.shared.requestPermission()
         #if canImport(FamilyControls)
         loadSelection()
-        applyShield()
+        ShieldRelockHelper.syncUnlockStateIfExpired()
+        restoreUnlockCountdownIfNeeded()
+        if isAuthorized && !TimePaySharedStorage.isUnlocked {
+            applyShield()
+        }
         #endif
     }
 
@@ -33,7 +37,12 @@ final class ScreenTimeManager: ObservableObject {
             try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
             isAuthorized = AuthorizationCenter.shared.authorizationStatus == .approved
             if !isAuthorized {
-                authError = "Bildschirmzeit-Zugriff nicht erlaubt."
+                authError = "Bildschirmzeit-Zugriff nicht erlaubt. Ohne diese Berechtigung kann TimePay Apps nicht sperren."
+            } else {
+                authError = nil
+                if !TimePaySharedStorage.isUnlocked {
+                    applyShield()
+                }
             }
         } catch {
             authError = error.localizedDescription
@@ -46,16 +55,26 @@ final class ScreenTimeManager: ObservableObject {
 
     func temporaryUnlock(minutes: Int) {
         #if canImport(FamilyControls)
-        guard isAuthorized else { return }
-        _ = minutes
-        store.shield.applications = nil
-        store.shield.applicationCategories = nil
+        guard isAuthorized, minutes > 0 else { return }
+
+        let endDate = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        TimePaySharedStorage.isUnlocked = true
+        TimePaySharedStorage.unlockUntilDate = endDate
+
+        ShieldRelockHelper.clearShields()
+        shieldsActive = false
+
+        DeviceActivityScheduler.scheduleRelock(at: endDate)
+        NotificationManager.shared.scheduleRelockNotification(afterSeconds: minutes * 60)
         #endif
     }
 
     func relock() {
         #if canImport(FamilyControls)
-        applyShield()
+        DeviceActivityScheduler.cancelRelockSchedule()
+        NotificationManager.shared.cancelUnlockNotifications()
+        ShieldRelockHelper.relockAll()
+        shieldsActive = blockedAppCount > 0
         #endif
     }
 
@@ -63,36 +82,32 @@ final class ScreenTimeManager: ObservableObject {
     func updateSelection(_ newValue: FamilyActivitySelection) {
         selection = newValue
         blockedAppCount = selection.applicationTokens.count + selection.categoryTokens.count
-        saveSelection()
-        applyShield()
+        ShieldRelockHelper.saveSelection(selection)
+        if !TimePaySharedStorage.isUnlocked {
+            applyShield()
+        }
     }
 
     func applyShield() {
         guard isAuthorized else { return }
-        if selection.applicationTokens.isEmpty && selection.categoryTokens.isEmpty {
-            store.shield.applications = nil
-            store.shield.applicationCategories = nil
-        } else {
-            store.shield.applications = selection.applicationTokens.isEmpty
-                ? nil
-                : selection.applicationTokens
-            store.shield.applicationCategories = selection.categoryTokens.isEmpty
-                ? nil
-                : .specific(selection.categoryTokens)
-        }
-    }
-
-    private func saveSelection() {
-        if let data = try? JSONEncoder().encode(selection) {
-            UserDefaults.standard.set(data, forKey: selectionKey)
-        }
+        ShieldRelockHelper.applyShield(selection: selection)
+        shieldsActive = blockedAppCount > 0
     }
 
     private func loadSelection() {
-        guard let data = UserDefaults.standard.data(forKey: selectionKey),
-              let decoded = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) else { return }
-        selection = decoded
-        blockedAppCount = selection.applicationTokens.count + selection.categoryTokens.count
+        if let decoded = ShieldRelockHelper.loadSelection() {
+            selection = decoded
+            blockedAppCount = selection.applicationTokens.count + selection.categoryTokens.count
+        }
+    }
+
+    private func restoreUnlockCountdownIfNeeded() {
+        guard TimePaySharedStorage.isUnlocked else { return }
+        let remaining = TimePaySharedStorage.remainingUnlockSeconds()
+        if remaining <= 0 {
+            relock()
+            NotificationManager.shared.postRelockNotificationNow()
+        }
     }
     #endif
 }
