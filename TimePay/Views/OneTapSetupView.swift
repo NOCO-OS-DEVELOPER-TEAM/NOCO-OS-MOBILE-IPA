@@ -159,11 +159,9 @@ struct OneTapSetupView: View {
                     .foregroundStyle(.white.opacity(0.58))
 
                 if #available(iOS 17.0, *) {
-                    ShortcutsLink {
+                    ShortcutsLink(intent: IsGateOpenIntent()) {
                         Label("TimePay Gate-Aktion hinzufügen", systemImage: "plus.circle.fill")
                             .frame(maxWidth: .infinity)
-                    } intent: {
-                        IsGateOpenIntent()
                     }
                     .buttonStyle(NOCOPrimaryButtonStyle())
                     .simultaneousGesture(TapGesture().onEnded {

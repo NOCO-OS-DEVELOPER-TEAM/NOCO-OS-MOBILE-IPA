@@ -31,7 +31,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Label("Live Activity (Sperrbildschirm)", systemImage: "lock.display")
                             .font(.subheadline.weight(.bold))
-                        Text("Während einer Session zeigt iOS einen Live-Timer auf dem Sperrbildschirm — Sekunde für Sekunde, ohne alte Benachrichtigung.")
+                        Text("Auf deinem iPhone (ohne Dynamic Island) erscheint der Live-Timer auf dem Sperrbildschirm — Sekunde für Sekunde. Dynamic Island gibt es nur ab iPhone 14 Pro.")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.55))
                         if LiveActivityManager.isSupported {
