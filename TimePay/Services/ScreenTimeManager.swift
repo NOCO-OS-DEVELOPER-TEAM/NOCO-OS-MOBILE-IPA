@@ -147,18 +147,22 @@ final class ScreenTimeManager: ObservableObject {
     private func startAuthorizationObserver() {
         authorizationObserver?.cancel()
         authorizationObserver = Task {
-            for await status in AuthorizationCenter.shared.authorizationStatusUpdates {
-                guard !Task.isCancelled else { return }
-                isAuthorized = status == .approved
-                if isAuthorized {
-                    authError = nil
-                    loadSelection()
-                    updateNeedsAppSelection()
-                    if !TimePaySharedStorage.isUnlocked {
-                        applyShield()
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                let status = AuthorizationCenter.shared.authorizationStatus
+                let approved = status == .approved
+                if approved != isAuthorized {
+                    isAuthorized = approved
+                    if approved {
+                        authError = nil
+                        loadSelection()
+                        updateNeedsAppSelection()
+                        if !TimePaySharedStorage.isUnlocked {
+                            applyShield()
+                        }
+                    } else if status == .denied {
+                        authError = "Bildschirmzeit blockiert. Bitte in den iOS-Einstellungen erlauben."
                     }
-                } else if status == .denied {
-                    authError = "Bildschirmzeit blockiert. Bitte in den iOS-Einstellungen erlauben."
                 }
             }
         }

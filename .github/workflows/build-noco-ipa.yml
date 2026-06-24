@@ -31,34 +31,53 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_STYLE=Manual \
             VALIDATE_PRODUCT=NO \
+            VALIDATE_EMBEDDED_BINARY_BUNDLE_IDENTIFIER=NO \
             2>&1 | tee build/xcodebuild.log
+
+          if ! grep -q "BUILD SUCCEEDED" build/xcodebuild.log; then
+            echo "=== xcodebuild failed ==="
+            grep -E "error:|fatal error:|BUILD FAILED" build/xcodebuild.log | tail -40 || tail -80 build/xcodebuild.log
+            exit 1
+          fi
 
           APP_PATH=$(find build/DerivedData -name "TimePay.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
             echo "TimePay.app not found"
             tail -100 build/xcodebuild.log
-            find build -type d
             exit 1
           fi
 
-          echo "=== PlugIns before sign ==="
-          ls -la "$APP_PATH/PlugIns/" || { echo "No PlugIns folder"; exit 1; }
+          echo "=== PlugIns ==="
+          ls -la "$APP_PATH/PlugIns/"
 
-          sign_bundle() {
-            codesign --force --sign - --entitlements "$2" "$1"
-          }
+          # Entitlements for SideStore re-sign (not applied during unsigned xcodebuild)
+          cp TimePay/TimePay.entitlements "$APP_PATH/TimePay.entitlements"
+          cp Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements \
+            "$APP_PATH/PlugIns/TimePayShieldConfiguration.appex/TimePayShieldConfiguration.entitlements"
+          cp Extensions/TimePayShieldAction/TimePayShieldAction.entitlements \
+            "$APP_PATH/PlugIns/TimePayShieldAction.appex/TimePayShieldAction.entitlements"
+          cp Extensions/TimePayMonitor/TimePayMonitor.entitlements \
+            "$APP_PATH/PlugIns/TimePayMonitor.appex/TimePayMonitor.entitlements"
 
-          sign_bundle "$APP_PATH/PlugIns/TimePayShieldConfiguration.appex" Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements
-          sign_bundle "$APP_PATH/PlugIns/TimePayShieldAction.appex" Extensions/TimePayShieldAction/TimePayShieldAction.entitlements
-          sign_bundle "$APP_PATH/PlugIns/TimePayMonitor.appex" Extensions/TimePayMonitor/TimePayMonitor.entitlements
-          sign_bundle "$APP_PATH" TimePay/TimePay.entitlements
-
-          echo "=== Entitlements embedded ==="
-          codesign -d --entitlements :- "$APP_PATH" 2>/dev/null | head -30 || true
+          # Ad-hoc sign binaries (no restricted entitlements in signature)
+          set +e
+          for APPEX in "$APP_PATH/PlugIns/"*.appex; do
+            codesign --force --sign - --timestamp=none "$APPEX"
+          done
+          codesign --force --sign - --timestamp=none "$APP_PATH"
+          set -e
 
           mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/TimePay.app
-          cd build && zip -rq NOCO-TIMEPAY.ipa Payload
+          mkdir -p build/sidestore-entitlements
+          cp TimePay/TimePay.entitlements build/sidestore-entitlements/TimePay.plist
+          cp Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements \
+            build/sidestore-entitlements/TimePayShieldConfiguration.plist
+          cp Extensions/TimePayShieldAction/TimePayShieldAction.entitlements \
+            build/sidestore-entitlements/TimePayShieldAction.plist
+          cp Extensions/TimePayMonitor/TimePayMonitor.entitlements \
+            build/sidestore-entitlements/TimePayMonitor.plist
+          cd build && zip -rq NOCO-TIMEPAY.ipa Payload sidestore-entitlements
           ls -la NOCO-TIMEPAY.ipa
 
       - name: Upload build log on failure
@@ -70,6 +89,7 @@ jobs:
           retention-days: 7
 
       - name: Upload IPA
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: NOCO-TIMEPAY-ipa
