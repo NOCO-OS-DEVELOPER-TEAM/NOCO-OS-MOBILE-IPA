@@ -33,6 +33,12 @@ enum TimePayKeys {
     static let streakDaysKey = "timepay.stats.streak"
     static let lastActiveDayKey = "timepay.stats.lastDay"
     static let lastStreakDayKey = "timepay.stats.lastStreakDay"
+    static let balanceKey = "timepay.balance"
+    static let widgetSessionKind = "timepay.widget.sessionKind"
+    static let widgetSessionRemaining = "timepay.widget.sessionRemaining"
+    static let widgetSessionTitle = "timepay.widget.sessionTitle"
+    static let widgetStreakDays = "timepay.widget.streak"
+    static let widgetBlockedCount = "timepay.widget.blockedCount"
 }
 
 enum TimePaySharedStorage {
@@ -71,6 +77,23 @@ enum TimePaySharedStorage {
             let s = remaining % 60
             return "Freigabe endet in \(m):\(String(format: "%02d", s)) — Zeitkonto nutzen zum Freischalten"
         }
-        return "Tippe „Mehr Zeit“ — Benachrichtigung antippen — TimePay oeffnet sich zum Freischalten."
+        return "Tippe „Mehr Zeit“ — Benachrichtigung antippen — TimePay öffnet sich zum Freischalten."
+    }
+
+    static func syncWidgetSnapshot(
+        balance: Int,
+        streak: Int,
+        blockedCount: Int,
+        sessionKind: String,
+        sessionRemaining: Int,
+        sessionTitle: String
+    ) {
+        let d = defaults
+        d?.set(balance, forKey: TimePayKeys.balanceKey)
+        d?.set(streak, forKey: TimePayKeys.widgetStreakDays)
+        d?.set(blockedCount, forKey: TimePayKeys.widgetBlockedCount)
+        d?.set(sessionKind, forKey: TimePayKeys.widgetSessionKind)
+        d?.set(sessionRemaining, forKey: TimePayKeys.widgetSessionRemaining)
+        d?.set(sessionTitle, forKey: TimePayKeys.widgetSessionTitle)
     }
 }

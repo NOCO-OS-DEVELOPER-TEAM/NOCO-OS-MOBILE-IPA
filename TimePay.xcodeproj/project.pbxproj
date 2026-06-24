@@ -12,7 +12,10 @@
 		B10000010000000000000003 /* TimePayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000003 /* TimePayStore.swift */; };
 		B10000010000000000000004 /* ScreenTimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000004 /* ScreenTimeManager.swift */; };
 		B10000010000000000000005 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000005 /* RootView.swift */; };
-		B10000010000000000000006 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000006 /* DashboardView.swift */; };
+		B10000010000000000000006 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000006 /* HomeTabView.swift */; };
+		B10000010000000000000017 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000019 /* MainTabView.swift */; };
+		B10000010000000000000018 /* AppsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000001A /* AppsTabView.swift */; };
+		B10000010000000000000019 /* MoreTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000001B /* MoreTabView.swift */; };
 		B10000010000000000000007 /* UnlockSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000007 /* UnlockSheetView.swift */; };
 		B10000010000000000000008 /* EarnTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000008 /* EarnTimeView.swift */; };
 		B10000010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000009 /* Assets.xcassets */; };
@@ -33,6 +36,14 @@
 		B20000010000000000000006 /* TimePayKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000E /* TimePayKeys.swift */; };
 		B20000010000000000000007 /* ShieldRelockHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000F /* ShieldRelockHelper.swift */; };
 		B20000010000000000000008 /* ShieldUnlockNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000013 /* ShieldUnlockNotifier.swift */; };
+		B10000010000000000000013 /* TimePayActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000015 /* TimePayActivityAttributes.swift */; };
+		B10000010000000000000014 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000016 /* LiveActivityManager.swift */; };
+		B10000010000000000000015 /* DiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000017 /* DiagnosticLog.swift */; };
+		B10000010000000000000016 /* ShareTextSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000018 /* ShareTextSheet.swift */; };
+		C10000010000000000000001 /* TimePayWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000020000000000000001 /* TimePayWidgets.swift */; };
+		C10000010000000000000002 /* TimePayActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000015 /* TimePayActivityAttributes.swift */; };
+		C10000010000000000000003 /* TimePayKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000E /* TimePayKeys.swift */; };
+		C10000010000000000000004 /* TimePayWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C10000030000000000000001 /* TimePayWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +68,13 @@
 			remoteGlobalIDString = B10000060000000000000004;
 			remoteInfo = TimePayMonitor;
 		};
+		C100000D0000000000000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B100000A0000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C10000060000000000000005;
+			remoteInfo = TimePayWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -69,6 +87,7 @@
 				B1000001000000000000000F /* TimePayShieldConfiguration.appex in Embed Foundation Extensions */,
 				B10000010000000000000010 /* TimePayShieldAction.appex in Embed Foundation Extensions */,
 				B10000010000000000000011 /* TimePayMonitor.appex in Embed Foundation Extensions */,
+				C10000010000000000000004 /* TimePayWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -81,7 +100,10 @@
 		B10000020000000000000003 /* TimePayStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimePayStore.swift; sourceTree = "<group>"; };
 		B10000020000000000000004 /* ScreenTimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeManager.swift; sourceTree = "<group>"; };
 		B10000020000000000000005 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		B10000020000000000000006 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		B10000020000000000000006 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
+		B10000020000000000000019 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		B1000002000000000000001A /* AppsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsTabView.swift; sourceTree = "<group>"; };
+		B1000002000000000000001B /* MoreTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTabView.swift; sourceTree = "<group>"; };
 		B10000020000000000000007 /* UnlockSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockSheetView.swift; sourceTree = "<group>"; };
 		B10000020000000000000008 /* EarnTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarnTimeView.swift; sourceTree = "<group>"; };
 		B10000020000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -93,6 +115,10 @@
 		B10000020000000000000012 /* PermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
 		B10000020000000000000013 /* ShieldUnlockNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldUnlockNotifier.swift; sourceTree = "<group>"; };
 		B10000020000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000020000000000000015 /* TimePayActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimePayActivityAttributes.swift; sourceTree = "<group>"; };
+		B10000020000000000000016 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		B10000020000000000000017 /* DiagnosticLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticLog.swift; sourceTree = "<group>"; };
+		B10000020000000000000018 /* ShareTextSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareTextSheet.swift; sourceTree = "<group>"; };
 		B10000030000000000000001 /* TimePay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TimePay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000030000000000000002 /* TimePayShieldConfiguration.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimePayShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000030000000000000003 /* TimePayShieldAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimePayShieldAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,6 +132,10 @@
 		B20000020000000000000007 /* TimePayShieldAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TimePayShieldAction.entitlements; sourceTree = "<group>"; };
 		B20000020000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B20000020000000000000009 /* TimePayMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TimePayMonitor.entitlements; sourceTree = "<group>"; };
+		C10000030000000000000001 /* TimePayWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimePayWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000020000000000000001 /* TimePayWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimePayWidgets.swift; sourceTree = "<group>"; };
+		C10000020000000000000002 /* TimePayWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TimePayWidgets.entitlements; sourceTree = "<group>"; };
+		C20000020000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +161,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B20000040000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000040000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -172,6 +209,7 @@
 				B10000030000000000000002 /* TimePayShieldConfiguration.appex */,
 				B10000030000000000000003 /* TimePayShieldAction.appex */,
 				B10000030000000000000004 /* TimePayMonitor.appex */,
+				C10000030000000000000001 /* TimePayWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -198,6 +236,8 @@
 				B10000020000000000000004 /* ScreenTimeManager.swift */,
 				B10000020000000000000010 /* NotificationManager.swift */,
 				B10000020000000000000011 /* DeviceActivityScheduler.swift */,
+				B10000020000000000000016 /* LiveActivityManager.swift */,
+				B10000020000000000000017 /* DiagnosticLog.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -206,10 +246,14 @@
 			isa = PBXGroup;
 			children = (
 				B10000020000000000000005 /* RootView.swift */,
-				B10000020000000000000006 /* DashboardView.swift */,
+				B10000020000000000000019 /* MainTabView.swift */,
+				B10000020000000000000006 /* HomeTabView.swift */,
+				B1000002000000000000001A /* AppsTabView.swift */,
+				B1000002000000000000001B /* MoreTabView.swift */,
 				B10000020000000000000007 /* UnlockSheetView.swift */,
 				B10000020000000000000008 /* EarnTimeView.swift */,
 				B10000020000000000000012 /* PermissionView.swift */,
+				B10000020000000000000018 /* ShareTextSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -220,6 +264,7 @@
 				B1000002000000000000000E /* TimePayKeys.swift */,
 				B1000002000000000000000F /* ShieldRelockHelper.swift */,
 				B10000020000000000000013 /* ShieldUnlockNotifier.swift */,
+				B10000020000000000000015 /* TimePayActivityAttributes.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -230,6 +275,7 @@
 				B20000050000000000000002 /* TimePayShieldConfiguration */,
 				B20000050000000000000003 /* TimePayShieldAction */,
 				B20000050000000000000004 /* TimePayMonitor */,
+				C10000050000000000000005 /* TimePayWidgets */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -264,6 +310,16 @@
 			path = TimePayMonitor;
 			sourceTree = "<group>";
 		};
+		C10000050000000000000005 /* TimePayWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				C10000020000000000000001 /* TimePayWidgets.swift */,
+				C20000020000000000000001 /* Info.plist */,
+				C10000020000000000000002 /* TimePayWidgets.entitlements */,
+			);
+			path = TimePayWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -282,6 +338,7 @@
 				B100000E0000000000000001 /* PBXTargetDependency */,
 				B100000E0000000000000002 /* PBXTargetDependency */,
 				B100000E0000000000000003 /* PBXTargetDependency */,
+				C100000E0000000000000004 /* PBXTargetDependency */,
 			);
 			name = TimePay;
 			productName = TimePay;
@@ -339,6 +396,23 @@
 			productReference = B10000030000000000000004 /* TimePayMonitor.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		C10000060000000000000005 /* TimePayWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C10000090000000000000006 /* Build configuration list for PBXNativeTarget "TimePayWidgets" */;
+			buildPhases = (
+				C10000070000000000000005 /* Sources */,
+				C10000040000000000000001 /* Frameworks */,
+				C10000080000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TimePayWidgets;
+			productName = TimePayWidgets;
+			productReference = C10000030000000000000001 /* TimePayWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -361,6 +435,9 @@
 					B10000060000000000000004 = {
 						CreatedOnToolsVersion = 15.0;
 					};
+					C10000060000000000000005 = {
+						CreatedOnToolsVersion = 15.0;
+					};
 				};
 			};
 			buildConfigurationList = B10000090000000000000002 /* Build configuration list for PBXProject "TimePay" */;
@@ -380,6 +457,7 @@
 				B10000060000000000000002 /* TimePayShieldConfiguration */,
 				B10000060000000000000003 /* TimePayShieldAction */,
 				B10000060000000000000004 /* TimePayMonitor */,
+				C10000060000000000000005 /* TimePayWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -414,6 +492,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C10000080000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -426,7 +511,10 @@
 				B10000010000000000000003 /* TimePayStore.swift in Sources */,
 				B10000010000000000000004 /* ScreenTimeManager.swift in Sources */,
 				B10000010000000000000005 /* RootView.swift in Sources */,
-				B10000010000000000000006 /* DashboardView.swift in Sources */,
+				B10000010000000000000017 /* MainTabView.swift in Sources */,
+				B10000010000000000000006 /* HomeTabView.swift in Sources */,
+				B10000010000000000000018 /* AppsTabView.swift in Sources */,
+				B10000010000000000000019 /* MoreTabView.swift in Sources */,
 				B10000010000000000000007 /* UnlockSheetView.swift in Sources */,
 				B10000010000000000000008 /* EarnTimeView.swift in Sources */,
 				B1000001000000000000000A /* TimePayKeys.swift in Sources */,
@@ -435,6 +523,10 @@
 				B1000001000000000000000C /* NotificationManager.swift in Sources */,
 				B1000001000000000000000D /* DeviceActivityScheduler.swift in Sources */,
 				B1000001000000000000000E /* PermissionView.swift in Sources */,
+				B10000010000000000000013 /* TimePayActivityAttributes.swift in Sources */,
+				B10000010000000000000014 /* LiveActivityManager.swift in Sources */,
+				B10000010000000000000015 /* DiagnosticLog.swift in Sources */,
+				B10000010000000000000016 /* ShareTextSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -467,6 +559,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C10000070000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C10000010000000000000001 /* TimePayWidgets.swift in Sources */,
+				C10000010000000000000002 /* TimePayActivityAttributes.swift in Sources */,
+				C10000010000000000000003 /* TimePayKeys.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -484,6 +586,11 @@
 			isa = PBXTargetDependency;
 			target = B10000060000000000000004 /* TimePayMonitor */;
 			targetProxy = B100000D0000000000000003 /* PBXContainerItemProxy */;
+		};
+		C100000E0000000000000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C10000060000000000000005 /* TimePayWidgets */;
+			targetProxy = C100000D0000000000000004 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -540,6 +647,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSFamilyControlsUsageDescription = "TimePay nutzt Bildschirmzeit, um Apps zu sperren und freizuschalten.";
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "TimePay sendet dir eine Erinnerung, wenn deine Freigabe-Zeit abgelaufen ist.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -549,7 +657,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -576,6 +684,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSFamilyControlsUsageDescription = "TimePay nutzt Bildschirmzeit, um Apps zu sperren und freizuschalten.";
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "TimePay sendet dir eine Erinnerung, wenn deine Freigabe-Zeit abgelaufen ist.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -585,7 +694,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -612,7 +721,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldconfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -638,7 +747,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldconfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -665,7 +774,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldaction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -691,7 +800,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldaction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -718,7 +827,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.monitor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -744,8 +853,61 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.monitor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = NO;
+			};
+			name = Release;
+		};
+		C100000B0000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/TimePayWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C100000B0000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/TimePayWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -799,6 +961,15 @@
 			buildConfigurations = (
 				B200000B0000000000000005 /* Debug */,
 				B200000B0000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C10000090000000000000006 /* Build configuration list for PBXNativeTarget "TimePayWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C100000B0000000000000007 /* Debug */,
+				C100000B0000000000000008 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

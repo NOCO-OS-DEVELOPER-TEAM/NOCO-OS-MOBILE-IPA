@@ -1,6 +1,9 @@
 import Foundation
 import SwiftUI
 import Combine
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 struct ProductiveTask: Identifiable, Codable, Hashable {
     let id: String
@@ -42,7 +45,7 @@ final class TimePayStore: ObservableObject {
 
     private var earnTimer: Timer?
     private var unlockTimer: Timer?
-    private let balanceKey = "timepay.balance"
+    private let balanceKey = TimePayKeys.balanceKey
 
     /// True wenn Freigabe oder Focus-Session läuft — kein Buchen möglich.
     var isSessionActive: Bool {
@@ -84,6 +87,7 @@ final class TimePayStore: ObservableObject {
         }
         loadStats()
         refreshStreak()
+        syncWidgetData()
     }
 
     func tryOpenUnlockSheet() {
@@ -129,6 +133,7 @@ final class TimePayStore: ObservableObject {
             NotificationManager.shared.notifyLowBalance(remaining: balanceMinutes)
         }
         onUnlock(minutes)
+        LiveActivityManager.startUnlock(totalSeconds: minutes * 60)
         startUnlockCountdown(onRelock: onRelock)
         showUnlockSheet = false
     }
@@ -150,6 +155,7 @@ final class TimePayStore: ObservableObject {
             }
         }
         NotificationManager.shared.notifyEarnStarted(task: selectedTask.title, minutes: target)
+        LiveActivityManager.startEarn(title: selectedTask.title, totalSeconds: target * 60)
         showEarnSheet = false
     }
 
@@ -159,6 +165,7 @@ final class TimePayStore: ObservableObject {
         earnSessionRemaining = 0
         earnSessionTotal = 0
         NotificationManager.shared.notifyEarnCancelled()
+        LiveActivityManager.endAll()
         toast("Session abgebrochen — keine Gutschrift.")
     }
 
@@ -168,6 +175,7 @@ final class TimePayStore: ObservableObject {
         if unlockSessionTotal == 0 {
             unlockSessionTotal = unlockSessionRemaining
         }
+        LiveActivityManager.startUnlock(totalSeconds: unlockSessionRemaining)
         startUnlockCountdown(onRelock: onRelock)
     }
 
@@ -190,6 +198,12 @@ final class TimePayStore: ObservableObject {
     private func tickEarn() {
         guard earnSessionRemaining > 0 else { return }
         earnSessionRemaining -= 1
+        LiveActivityManager.update(
+            remainingSeconds: earnSessionRemaining,
+            title: selectedTask.title,
+            kind: "earn"
+        )
+        syncWidgetData()
         if earnSessionRemaining == 0 {
             let earned = Int(earnMinutes.rounded())
             balanceMinutes += earned
@@ -199,6 +213,7 @@ final class TimePayStore: ObservableObject {
             earnTimer?.invalidate()
             toast("+\(earned) Min gutgeschrieben!")
             NotificationManager.shared.notifyEarnComplete(minutes: earned)
+            LiveActivityManager.endAll()
             refreshStreak()
         }
     }
@@ -209,9 +224,18 @@ final class TimePayStore: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 self.unlockSessionRemaining = TimePaySharedStorage.remainingUnlockSeconds()
-                if self.unlockSessionRemaining > 0 { return }
+                if self.unlockSessionRemaining > 0 {
+                    LiveActivityManager.update(
+                        remainingSeconds: self.unlockSessionRemaining,
+                        title: "Apps freigeschaltet",
+                        kind: "unlock"
+                    )
+                    self.syncWidgetData()
+                    return
+                }
                 self.unlockTimer?.invalidate()
                 self.unlockSessionTotal = 0
+                LiveActivityManager.endAll()
                 self.toast("Zeit abgelaufen — Apps wieder gesperrt.")
                 NotificationManager.shared.postRelockNotificationNow()
                 onRelock()
@@ -287,5 +311,37 @@ final class TimePayStore: ObservableObject {
 
     private func persist() {
         TimePaySharedStorage.defaults?.set(balanceMinutes, forKey: balanceKey)
+        syncWidgetData()
+    }
+
+    func syncWidgetData() {
+        let kind: String
+        let remaining: Int
+        let title: String
+        if unlockSessionRemaining > 0 {
+            kind = "unlock"
+            remaining = unlockSessionRemaining
+            title = "Freigabe aktiv"
+        } else if isEarningSessionActive {
+            kind = "earn"
+            remaining = earnSessionRemaining
+            title = selectedTask.title
+        } else {
+            kind = "none"
+            remaining = 0
+            title = ""
+        }
+        let blocked = TimePaySharedStorage.defaults?.integer(forKey: TimePayKeys.widgetBlockedCount) ?? 0
+        TimePaySharedStorage.syncWidgetSnapshot(
+            balance: balanceMinutes,
+            streak: streakDays,
+            blockedCount: blocked,
+            sessionKind: kind,
+            sessionRemaining: remaining,
+            sessionTitle: title
+        )
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 }

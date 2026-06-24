@@ -10,7 +10,7 @@ struct RootView: View {
             LiquidGlassBackground()
 
             if screenTime.isAuthorized {
-                DashboardView()
+                MainTabView()
             } else {
                 PermissionView()
             }

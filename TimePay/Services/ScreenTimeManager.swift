@@ -14,6 +14,18 @@ final class ScreenTimeManager: ObservableObject {
     @Published var blockedAppCount = 0
     @Published var shieldsActive = false
     @Published var needsAppSelection = false
+    @Published var showSideloadHelp = false
+
+    let sideloadHelpSteps = """
+    SideStore / Sideload — Bildschirmzeit aktivieren:
+
+    1. Neuen Build installieren (NEUER BUILD.bat → IPA in SideStore).
+    2. In SideStore beim Signieren die Entitlements aus sidestore-entitlements/ nutzen (Family Controls).
+    3. iOS: Einstellungen → Bildschirmzeit → Apps mit Bildschirmzeit-Zugriff → TimePay aktivieren.
+
+    Hinweis: In den TimePay-App-Einstellungen gibt es keinen Bildschirmzeit-Schalter — das ist normal bei Sideload-Apps.
+    Die gelbe Meldung „Kommunikation mit der Hilfe-App“ bedeutet meist: Erweiterungen sind nicht korrekt signiert.
+    """
 
     #if canImport(FamilyControls)
     @Published var selection = FamilyActivitySelection()
@@ -55,6 +67,7 @@ final class ScreenTimeManager: ObservableObject {
         } catch {
             authError = "Bildschirmzeit-Freigabe fehlgeschlagen: \(error.localizedDescription)"
             isAuthorized = false
+            noteFamilyControlsUnavailable()
         }
         #else
         authError = "Screen Time API nicht verfuegbar."
@@ -69,13 +82,27 @@ final class ScreenTimeManager: ObservableObject {
         case .approved:
             authError = nil
         case .denied:
-            authError = "Bildschirmzeit blockiert. Einstellungen → Bildschirmzeit → App- und Website-Beschraenkungen → TimePay erlauben."
+            authError = "Bildschirmzeit blockiert. iOS: Einstellungen → Bildschirmzeit → Apps mit Bildschirmzeit-Zugriff → TimePay erlauben."
+            showSideloadHelp = true
         case .notDetermined:
-            authError = "TimePay braucht die Bildschirmzeit-Berechtigung, um Apps zu sperren."
+            authError = "Tippe „Berechtigung erteilen“ — nicht die normalen App-Einstellungen (dort gibt es keinen Schalter)."
         @unknown default:
             authError = "Bildschirmzeit-Status unbekannt. Bitte erneut erlauben."
         }
         #endif
+    }
+
+    func noteFamilyControlsUnavailable() {
+        showSideloadHelp = true
+        if authError == nil {
+            authError = "Bildschirmzeit-Erweiterungen nicht erreichbar. Siehe SideStore-Hilfe unten."
+        }
+    }
+
+    func noteAppPickerIssue() {
+        guard isAuthorized, blockedAppCount == 0 else { return }
+        showSideloadHelp = true
+        authError = "App-Auswahl fehlgeschlagen? Meist fehlt Family-Controls beim SideStore-Signieren."
     }
 
     func temporaryUnlock(minutes: Int) {
@@ -100,6 +127,7 @@ final class ScreenTimeManager: ObservableObject {
         NotificationManager.shared.cancelUnlockNotifications()
         ShieldRelockHelper.relockAll()
         shieldsActive = blockedAppCount > 0
+        LiveActivityManager.endAll()
         #endif
     }
 
@@ -108,6 +136,7 @@ final class ScreenTimeManager: ObservableObject {
         selection = newValue
         blockedAppCount = selection.applicationTokens.count + selection.categoryTokens.count
         ShieldRelockHelper.saveSelection(selection)
+        TimePaySharedStorage.defaults?.set(blockedAppCount, forKey: TimePayKeys.widgetBlockedCount)
         updateNeedsAppSelection()
         if !TimePaySharedStorage.isUnlocked {
             applyShield()
@@ -128,6 +157,7 @@ final class ScreenTimeManager: ObservableObject {
         if let decoded = ShieldRelockHelper.loadSelection() {
             selection = decoded
             blockedAppCount = selection.applicationTokens.count + selection.categoryTokens.count
+            TimePaySharedStorage.defaults?.set(blockedAppCount, forKey: TimePayKeys.widgetBlockedCount)
         }
     }
 
@@ -161,7 +191,8 @@ final class ScreenTimeManager: ObservableObject {
                             applyShield()
                         }
                     } else if status == .denied {
-                        authError = "Bildschirmzeit blockiert. Bitte in den iOS-Einstellungen erlauben."
+                        authError = "Bildschirmzeit blockiert. iOS: Einstellungen → Bildschirmzeit → Apps mit Bildschirmzeit-Zugriff."
+                        showSideloadHelp = true
                     }
                 }
             }
