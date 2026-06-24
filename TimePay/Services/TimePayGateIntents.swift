@@ -3,7 +3,7 @@ import AppIntents
 import UIKit
 #endif
 
-// MARK: - Deep-link helpers (Icon long-press, Widgets, Siri)
+// MARK: - Deep-link helpers (Icon long-press, Widgets — nicht für Automation)
 
 private func queueDeepLink(_ action: String) {
     TimePaySharedStorage.defaults?.set(action, forKey: TimePayKeys.pendingDeepLinkKey)
@@ -11,7 +11,7 @@ private func queueDeepLink(_ action: String) {
 
 struct OpenUnlockIntent: AppIntent {
     static var title: LocalizedStringResource = "Zeit abbuchen"
-    static var description = IntentDescription("TimePay öffnen und Apps freischalten.")
+    static var description = IntentDescription("Öffnet TimePay zum Freischalten. Nur fürs App-Icon oder Widgets — nicht für Automation.")
     static var openAppWhenRun = true
 
     @MainActor
@@ -22,8 +22,8 @@ struct OpenUnlockIntent: AppIntent {
 }
 
 struct OpenEarnIntent: AppIntent {
-    static var title: LocalizedStringResource = "Session starten"
-    static var description = IntentDescription("Focus-Session starten und Zeit verdienen.")
+    static var title: LocalizedStringResource = "Zeit verdienen"
+    static var description = IntentDescription("Startet eine Verdien-Session. Nur fürs App-Icon — nicht für Automation.")
     static var openAppWhenRun = true
 
     @MainActor
@@ -35,7 +35,7 @@ struct OpenEarnIntent: AppIntent {
 
 struct EndUnlockEarlyIntent: AppIntent {
     static var title: LocalizedStringResource = "Freigabe beenden"
-    static var description = IntentDescription("Freigabe stoppen und Restzeit erstatten.")
+    static var description = IntentDescription("Beendet die laufende Freigabe früh. Nur fürs App-Icon — nicht für Automation.")
     static var openAppWhenRun = true
 
     @MainActor
@@ -46,9 +46,9 @@ struct EndUnlockEarlyIntent: AppIntent {
 }
 
 struct IsGateOpenIntent: AppIntent {
-    static var title: LocalizedStringResource = "TimePay Gate prüfen"
+    static var title: LocalizedStringResource = "Hat Freigabe-Zeit?"
     static var description = IntentDescription(
-        "Gibt wahr zurück, wenn Apps gerade freigeschaltet sind. Nur für eigene Kurzbefehle — für Automation „Gate durchsetzen“ nutzen."
+        "Nur für eigene Kurzbefehle mit Wenn/Dann. Für Automation immer „Apps sperren“ nutzen."
     )
     static var openAppWhenRun = false
 
@@ -58,11 +58,11 @@ struct IsGateOpenIntent: AppIntent {
     }
 }
 
-/// Eine Aktion für Personal Automation — kein eigener Kurzbefehl nötig.
+/// Hauptaktion für Personal Automation — prüft Zeit, öffnet TimePay nur ohne Freigabe.
 struct EnforceTimePayGateIntent: AppIntent {
-    static var title: LocalizedStringResource = "Gate durchsetzen"
+    static var title: LocalizedStringResource = "Apps sperren"
     static var description = IntentDescription(
-        "Für Automation „App wird geöffnet“: Ohne Freigabe öffnet TimePay. Mit Freigabe passiert nichts."
+        "Für Automation „App wird geöffnet“: Ohne Freigabe öffnet sich TimePay. Mit Freigabe passiert nichts — die App bleibt offen."
     )
     static var openAppWhenRun = false
 
@@ -83,8 +83,8 @@ struct EnforceTimePayGateIntent: AppIntent {
 }
 
 struct GateRemainingMinutesIntent: AppIntent {
-    static var title: LocalizedStringResource = "TimePay Restzeit"
-    static var description = IntentDescription("Verbleibende Freigabe-Minuten.")
+    static var title: LocalizedStringResource = "Restzeit in Minuten"
+    static var description = IntentDescription("Wie viele Freigabe-Minuten noch übrig sind. Nur für eigene Kurzbefehle.")
     static var openAppWhenRun = false
 
     @MainActor
@@ -96,7 +96,7 @@ struct GateRemainingMinutesIntent: AppIntent {
 
 struct EndUnlockSessionIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Freigabe beenden"
-    static var description = IntentDescription("Beendet die Freigabe frühzeitig und erstattet ungenutzte Zeit.")
+    static var description = IntentDescription("Beendet die Freigabe vom Sperrbildschirm aus.")
     static var openAppWhenRun = false
 
     @MainActor
@@ -106,44 +106,19 @@ struct EndUnlockSessionIntent: LiveActivityIntent {
     }
 }
 
+/// Nur eine Siri-Kachel — die Automation-Aktion. Keine verwirrenden Extra-Kacheln.
 struct TimePayShortcuts: AppShortcutsProvider {
     static var appShortcutTileColor = ShortcutTileColor.teal
 
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: OpenUnlockIntent(),
-            phrases: [
-                "Zeit abbuchen in \(.applicationName)",
-                "Apps freischalten mit \(.applicationName)",
-            ],
-            shortTitle: "Zeit abbuchen",
-            systemImageName: "lock.open.fill"
-        )
-        AppShortcut(
-            intent: OpenEarnIntent(),
-            phrases: [
-                "Session starten in \(.applicationName)",
-                "Zeit verdienen mit \(.applicationName)",
-            ],
-            shortTitle: "Session starten",
-            systemImageName: "play.circle.fill"
-        )
-        AppShortcut(
-            intent: EndUnlockEarlyIntent(),
-            phrases: [
-                "Freigabe beenden in \(.applicationName)",
-                "Gate schließen mit \(.applicationName)",
-            ],
-            shortTitle: "Freigabe beenden",
-            systemImageName: "stop.circle.fill"
-        )
-        AppShortcut(
             intent: EnforceTimePayGateIntent(),
             phrases: [
-                "TimePay Gate durchsetzen mit \(.applicationName)",
+                "Apps sperren mit \(.applicationName)",
+                "\(.applicationName) Sperre",
             ],
-            shortTitle: "Gate durchsetzen",
+            shortTitle: "Apps sperren",
             systemImageName: "lock.shield.fill"
         )
     }

@@ -201,27 +201,28 @@ final class ShortcutGateManager: ObservableObject {
     }
 
     static let shortcutBuildGuide = """
-    KURZBEFEHL (ein Tippen in der App)
+    SPERRE EINRICHTEN
     ─────────────────────────────────────────────
-    Setup → „Kurzbefehl hinzufügen“ → In Kurzbefehle „Hinzufügen“
-    Name: NOCO TimePay Gate (vorgefertigt)
+    \(ShortcutInstaller.howItWorksShort)
 
-    AUTOMATION
-    ─────────────────────────────────────────────
-    1. Automation → App → geschützte Apps → Wird geöffnet
-    2. Kurzbefehl ausführen → „NOCO TimePay Gate“
-    3. Sofort ausführen AN · Vor Ausführen AUS
+    METHODE A — ohne Kurzbefehl-Datei (empfohlen)
+    Automation → App → geschützte Apps → Wird geöffnet
+    Aktion: TimePay → „Apps sperren“
+    Sofort ausführen AN · Vor Ausführen AUS
+
+    METHODE B — Kurzbefehl importieren
+    Setup → „\(ShortcutInstaller.gateShortcutName)“ teilen → Hinzufügen
+    Automation → Kurzbefehl „\(ShortcutInstaller.gateShortcutName)“ ausführen
     """
 
     static let howItWorks = """
     So funktioniert’s:
 
-    1. Du öffnest Instagram (oder eine andere geschützte App).
-    2. Die Automation führt „Gate durchsetzen“ aus.
-    3. TimePay prüft: Läuft gerade eine Freigabe?
-       • Ja → nichts passiert, App bleibt offen.
+    1. Du öffnest z. B. App Store oder Instagram.
+    2. Die Automation führt „Apps sperren“ aus.
+    3. TimePay prüft: Hast du Freigabe-Zeit?
+       • Ja (z. B. 1 Min) → nichts passiert, App bleibt offen.
        • Nein → TimePay öffnet sich, du gibst dir Minuten.
-    4. Nach der Zeit schließt TimePay das Gate automatisch.
-       Beim nächsten App-Öffnen landest du wieder in TimePay.
+    4. Nach Ablauf der Zeit schließt sich das Gate — beim nächsten Öffnen landest du wieder in TimePay.
     """
 }

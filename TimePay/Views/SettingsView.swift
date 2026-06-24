@@ -28,9 +28,9 @@ struct SettingsView: View {
 
                 GlassCard(glow: NOCOTheme.teal) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Label("App-Icon Shortcuts", systemImage: "app.badge.checkmark.fill")
+                        Label("App-Icon (lang drücken)", systemImage: "app.badge.checkmark.fill")
                             .font(.subheadline.weight(.bold))
-                        Text("TimePay-Icon lang gedrückt halten: Zeit abbuchen, Session, Freigabe beenden, Setup. Nach Neuinstallation einmal App öffnen.")
+                        Text("Nur eine Kachel: „Apps sperren“. Zeit abbuchen & Co. erreichst du in der App selbst.")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.55))
                     }
@@ -113,7 +113,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("NOCO TimePay")
                             .font(.subheadline.weight(.bold))
-                        Text("Version 2.9 · Glass Tab Bar · Widget-Fix")
+                        Text("Version 2.9 · Apps sperren · Setup-Fix")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.45))
                     }

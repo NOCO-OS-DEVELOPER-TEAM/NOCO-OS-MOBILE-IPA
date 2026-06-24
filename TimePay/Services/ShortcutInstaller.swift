@@ -2,10 +2,55 @@ import SwiftUI
 import UIKit
 
 enum ShortcutInstaller {
-    static let gateShortcutName = "NOCO TimePay Gate"
+    /// Einziger Kurzbefehl für die Automation — prüft Zeit, öffnet TimePay nur ohne Freigabe.
+    static let gateShortcutName = "TimePay — Apps sperren"
+    /// App-Intent-Titel in Kurzbefehle (gleicher Name wie im importierten Kurzbefehl).
+    static let automationActionTitle = "Apps sperren"
     static let gateDeepLink = "timepay://gate"
     static let hostedShortcutURL =
         "https://raw.githubusercontent.com/NOCO-OS-DEVELOPER-TEAM/NOCO-OS-MOBILE-IPA/main/TimePay/Resources/NOCOTimePayGate.shortcut"
+
+    static let howItWorksShort = """
+    Ohne Freigabe-Zeit: TimePay öffnet sich — du gibst dir Minuten oder gehst zurück.
+    Mit Freigabe (z. B. 1 Min): nichts passiert — Instagram, App Store & Co. bleiben offen.
+    """
+
+    static let setupSteps: [(icon: String, title: String, detail: String)] = [
+        ("apps.iphone", "Apps wählen", "Welche Apps sollen geschützt werden?"),
+        ("lock.shield.fill", "Sperre einrichten", "Kurzbefehl importieren oder TimePay-Aktion direkt nutzen."),
+        ("bolt.fill", "Automation", "Wenn App geöffnet → Sperre ausführen · Sofort AN"),
+    ]
+
+    static let automationRecipeSteps: [(icon: String, title: String, detail: String)] = [
+        ("plus.circle.fill", "Neue Automation", "Automation → Persönliche Automation → App."),
+        ("app.badge.checkmark", "Apps wählen", "Z. B. App Store, Instagram — deine geschützten Apps."),
+        ("hand.tap.fill", "Wird geöffnet", "Trigger: „Wird geöffnet“ (nicht geschlossen)."),
+        ("lock.shield.fill", "Sperre ausführen", "Aktion: „Apps sperren“ (TimePay) — oder Kurzbefehl „\(gateShortcutName)“."),
+        ("checkmark.seal.fill", "Wichtig", "„Sofort ausführen“ AN · „Vor Ausführen fragen“ AUS."),
+    ]
+
+    static let directAutomationSteps: [(icon: String, title: String, detail: String)] = [
+        ("1.circle.fill", "Automation öffnen", "Persönliche Automation → App."),
+        ("2.circle.fill", "Apps & Trigger", "App Store (Test) → „Wird geöffnet“."),
+        ("3.circle.fill", "Aktion hinzufügen", "Suche: TimePay → tippe „Apps sperren“."),
+        ("4.circle.fill", "Fertig", "Sofort ausführen AN. Kein Kurzbefehl-Import nötig."),
+    ]
+
+    static func automationClipboardText(apps: [ProtectedApp]) -> String {
+        let names = apps.map(\.name).joined(separator: ", ")
+        return """
+        TimePay — Automation einrichten
+
+        \(howItWorksShort)
+
+        1. Automation → App → \(names) → Wird geöffnet
+        2. Aktion: TimePay → „Apps sperren“
+           (Alternativ: Kurzbefehl „\(gateShortcutName)“ ausführen)
+        3. Sofort ausführen AN · Vor Ausführen AUS
+        """
+    }
+
+    static let quickSetupSteps = setupSteps
 
     @discardableResult
     static func openShortcutsApp() -> Bool {
@@ -20,35 +65,7 @@ enum ShortcutInstaller {
         openURL("shortcuts://automations") ?? openShortcutsApp()
     }
 
-    static let setupSteps: [(icon: String, title: String, detail: String)] = [
-        ("apps.iphone", "Apps wählen", "Empfohlen tippen oder im Apps-Tab auswählen."),
-        ("arrow.down.circle.fill", "Kurzbefehl", "Ein Tippen → „Hinzufügen“ in Kurzbefehle."),
-        ("bolt.fill", "Automation", "App öffnet → Kurzbefehl „NOCO TimePay Gate“ ausführen."),
-    ]
-
-    static let automationRecipeSteps: [(icon: String, title: String, detail: String)] = [
-        ("plus.circle.fill", "Neue Automation", "Automation → Persönliche Automation → App."),
-        ("app.badge.checkmark", "Apps wählen", "Deine geschützten Apps (mehrere möglich)."),
-        ("hand.tap.fill", "Ist geöffnet", "Trigger: „Wird geöffnet“."),
-        ("play.fill", "Kurzbefehl starten", "Aktion: Kurzbefehl ausführen → „NOCO TimePay Gate“."),
-        ("checkmark.seal.fill", "Einstellungen", "„Sofort ausführen“ AN · „Vor Ausführen fragen“ AUS."),
-    ]
-
-    static func automationClipboardText(apps: [ProtectedApp]) -> String {
-        let names = apps.map(\.name).joined(separator: ", ")
-        return """
-        NOCO TimePay — Setup
-
-        1. Kurzbefehl „NOCO TimePay Gate“ in der App hinzufügen
-        2. Automation → App → \(names) → Wird geöffnet
-        3. Kurzbefehl ausführen: NOCO TimePay Gate
-        4. Sofort ausführen AN
-        """
-    }
-
-    static let quickSetupSteps = setupSteps
-
-    /// Bevorzugt: vorgefertigte Datei aus dem Bundle (funktioniert auch bei Sideload).
+    /// Bevorzugt: zur Laufzeit erzeugte Datei mit korrekter Bundle-ID (Sideload).
     static func gateShortcutFileURL() -> URL? {
         writeRuntimeGateShortcut() ?? bundledGateShortcutURL()
     }
@@ -57,26 +74,37 @@ enum ShortcutInstaller {
         Bundle.main.url(forResource: "NOCOTimePayGate", withExtension: "shortcut")
     }
 
-    /// Ein Tippen → Kurzbefehle-Import wie bei iCloud-Links (`shortcuts://import-shortcut?url=…&name=…`).
+    /// Import: zuerst Teilen-Dialog (zuverlässig), dann iCloud-Link.
     @MainActor
     static func importPrebuiltGateShortcut(completion: ((Bool) -> Void)? = nil) {
+        guard writeRuntimeGateShortcut() != nil || bundledGateShortcutURL() != nil else {
+            completion?(false)
+            return
+        }
+
+        if let root = topViewController() {
+            presentShareGateShortcut(from: root)
+            completion?(true)
+            return
+        }
+
         if let importURL = makeImportShortcutURL(remote: hostedShortcutURL) {
             UIApplication.shared.open(importURL) { opened in
-                if opened {
-                    completion?(true)
-                } else {
-                    importViaShareSheet(completion: completion)
-                }
+                completion?(opened)
             }
             return
         }
-        importViaShareSheet(completion: completion)
+        completion?(false)
     }
 
-    /// Teilen-Dialog mit Kurzbefehl-Datei (Fallback wie bei vielen Shortcut-Apps).
+    /// Teilen-Dialog mit Kurzbefehl-Datei.
     @MainActor
     static func importViaShareSheet(completion: ((Bool) -> Void)? = nil) {
         guard let root = topViewController() else {
+            completion?(false)
+            return
+        }
+        guard gateShortcutFileURL() != nil else {
             completion?(false)
             return
         }
@@ -94,20 +122,38 @@ enum ShortcutInstaller {
         presenter.present(activity, animated: true)
     }
 
-    // MARK: - Runtime shortcut (Open URL — kein Bundle-ID-Problem bei Sideload)
+    // MARK: - Runtime shortcut (App Intent — nur ohne Freigabe TimePay öffnen)
+
+    private static var teamIdentifier: String? {
+        guard let prefix = Bundle.main.infoDictionary?["AppIdentifierPrefix"] as? String else { return nil }
+        let trimmed = prefix.trimmingCharacters(in: CharacterSet(charactersIn: "."))
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func appIntentDescriptor() -> [String: Any] {
+        var descriptor: [String: Any] = [
+            "AppIntentIdentifier": "EnforceTimePayGateIntent",
+            "BundleIdentifier": Bundle.main.bundleIdentifier ?? "de.noco.timepay",
+            "Name": automationActionTitle,
+        ]
+        if let team = teamIdentifier {
+            descriptor["TeamIdentifier"] = team
+        }
+        return descriptor
+    }
 
     @discardableResult
     static func writeRuntimeGateShortcut() -> URL? {
-        let plist: [String: Any] = [
-            "WFWorkflowActions": [
-                [
-                    "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
-                    "WFWorkflowActionParameters": [
-                        "WFURL": gateDeepLink,
-                        "Show-WFInput": false,
-                    ],
-                ],
+        let action: [String: Any] = [
+            "WFWorkflowActionIdentifier": "is.workflow.actions.appintentexecution",
+            "WFWorkflowActionParameters": [
+                "AppIntentDescriptor": appIntentDescriptor(),
+                "ShowWhenRun": false,
             ],
+        ]
+
+        let plist: [String: Any] = [
+            "WFWorkflowActions": [action],
             "WFWorkflowClientRelease": "3.0",
             "WFWorkflowClientVersion": "900",
             "WFWorkflowIcon": [
@@ -127,7 +173,7 @@ enum ShortcutInstaller {
         ) else { return nil }
 
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("NOCOTimePayGate.shortcut")
+            .appendingPathComponent("TimePayAppsSperren.shortcut")
         do {
             try data.write(to: url, options: .atomic)
             return url
