@@ -42,14 +42,13 @@ final class TimePayShieldActionHandler: ShieldActionDelegate {
 
     private func openHostApp() {
         guard let url = URL(string: "timepay://unlock") else { return }
-        var responder: UIResponder? = self
-        let selector = sel_registerName("openURL:")
-        while let current = responder {
-            if current.responds(to: selector) {
-                current.perform(selector, with: url)
-                break
-            }
-            responder = current.next
-        }
+        let openSelector = NSSelectorFromString("openURL:")
+        guard
+            let applicationClass = NSClassFromString("UIApplication") as? NSObject.Type,
+            let application = applicationClass
+                .perform(NSSelectorFromString("sharedApplication"))?
+                .takeUnretainedValue() as? NSObject
+        else { return }
+        _ = application.perform(openSelector, with: url)
     }
 }
