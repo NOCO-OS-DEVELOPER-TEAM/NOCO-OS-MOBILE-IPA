@@ -76,13 +76,14 @@ struct NOCOLogoMark: View {
     var size: CGFloat = 44
 
     var body: some View {
-        RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-            .fill(NOCOTheme.holoGradient)
+        Image("AppLogo")
+            .resizable()
+            .scaledToFill()
             .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.32, style: .continuous))
             .overlay {
-                Text("TP")
-                    .font(.system(size: size * 0.32, weight: .black, design: .rounded))
-                    .foregroundStyle(.black.opacity(0.75))
+                RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
+                    .stroke(.white.opacity(0.25), lineWidth: 1)
             }
     }
 }
