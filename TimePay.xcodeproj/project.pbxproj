@@ -18,6 +18,7 @@
 		B10000010000000000000019 /* MoreTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000001B /* MoreTabView.swift */; };
 		B10000010000000000000007 /* UnlockSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000007 /* UnlockSheetView.swift */; };
 		B10000010000000000000008 /* EarnTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000008 /* EarnTimeView.swift */; };
+		F10000010000000000000001 /* MinuteStepperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000020000000000000001 /* MinuteStepperView.swift */; };
 		B10000010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000009 /* Assets.xcassets */; };
 		B1000001000000000000000A /* TimePayKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000E /* TimePayKeys.swift */; };
 		B1000001000000000000000B /* ShieldRelockHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000F /* ShieldRelockHelper.swift */; };
@@ -118,6 +119,7 @@
 		B1000002000000000000001B /* MoreTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTabView.swift; sourceTree = "<group>"; };
 		B10000020000000000000007 /* UnlockSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockSheetView.swift; sourceTree = "<group>"; };
 		B10000020000000000000008 /* EarnTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarnTimeView.swift; sourceTree = "<group>"; };
+		F10000020000000000000001 /* MinuteStepperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinuteStepperView.swift; sourceTree = "<group>"; };
 		B10000020000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B1000002000000000000000D /* TimePay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TimePay.entitlements; sourceTree = "<group>"; };
 		B1000002000000000000000E /* TimePayKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimePayKeys.swift; sourceTree = "<group>"; };
@@ -296,6 +298,7 @@
 				B1000002000000000000001B /* MoreTabView.swift */,
 				B10000020000000000000007 /* UnlockSheetView.swift */,
 				B10000020000000000000008 /* EarnTimeView.swift */,
+				F10000020000000000000001 /* MinuteStepperView.swift */,
 				B10000020000000000000012 /* PermissionView.swift */,
 				B10000020000000000000018 /* ShareTextSheet.swift */,
 			);
@@ -562,6 +565,7 @@
 				B10000010000000000000019 /* MoreTabView.swift in Sources */,
 				B10000010000000000000007 /* UnlockSheetView.swift in Sources */,
 				B10000010000000000000008 /* EarnTimeView.swift in Sources */,
+				F10000010000000000000001 /* MinuteStepperView.swift in Sources */,
 				B1000001000000000000000A /* TimePayKeys.swift in Sources */,
 				B1000001000000000000000B /* ShieldRelockHelper.swift in Sources */,
 				B10000010000000000000012 /* ShieldUnlockNotifier.swift in Sources */,
@@ -713,7 +717,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -750,7 +754,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -777,7 +781,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldconfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -803,7 +807,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldconfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -830,7 +834,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldaction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -856,7 +860,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.shieldaction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -883,7 +887,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.monitor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -909,7 +913,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.monitor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -936,7 +940,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -962,7 +966,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

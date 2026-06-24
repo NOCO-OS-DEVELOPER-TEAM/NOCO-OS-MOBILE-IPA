@@ -17,13 +17,11 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            NavigationStack {
-                OneTapSetupView()
-            }
-            .tabItem {
-                Label("Setup", systemImage: "wand.and.stars")
-            }
-            .tag(2)
+            OneTapSetupView(embeddedInTab: true)
+                .tabItem {
+                    Label("Setup", systemImage: "wand.and.stars")
+                }
+                .tag(2)
 
             SettingsView()
                 .tabItem {

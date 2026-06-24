@@ -11,8 +11,8 @@ struct SettingsView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 22) {
-                SectionHeader("Einstellungen", subtitle: "Verhalten & Setup", icon: "gearshape.fill")
+            VStack(spacing: 20) {
+                SectionHeader("Einstellungen", subtitle: "Verhalten, Live Activity & Setup", icon: "gearshape.fill")
 
                 GlassCard {
                     VStack(spacing: 0) {
@@ -27,6 +27,21 @@ struct SettingsView: View {
                     }
                 }
 
+                GlassCard(glow: NOCOTheme.lavender) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Live Activity (Sperrbildschirm)", systemImage: "lock.display")
+                            .font(.subheadline.weight(.bold))
+                        Text("Während einer Session zeigt iOS einen Live-Timer auf dem Sperrbildschirm — Sekunde für Sekunde, ohne alte Benachrichtigung.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.55))
+                        if LiveActivityManager.isSupported {
+                            StatusBadge(text: "Aktiv", color: NOCOTheme.mint, icon: "checkmark.circle.fill")
+                        } else {
+                            StatusBadge(text: "In iOS-Einstellungen aktivieren", color: .orange, icon: "exclamationmark.triangle.fill")
+                        }
+                    }
+                }
+
                 GlassCard(glow: gate.setupCompleted ? NOCOTheme.mint : .orange) {
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {
@@ -34,16 +49,17 @@ struct SettingsView: View {
                                 .font(.subheadline.weight(.bold))
                             Spacer()
                             GlassPill(
-                                text: gate.setupCompleted ? "Aktiv" : "Offen",
+                                text: gate.setupCompleted ? "Fertig" : "Offen",
                                 color: gate.setupCompleted ? NOCOTheme.mint : .orange
                             )
                         }
-                        SetupProgressRing(progress: settings.setupProgress)
-                            .frame(maxWidth: .infinity)
+
+                        setupChecklist
+
                         Button {
                             showSetup = true
                         } label: {
-                            Label(gate.setupCompleted ? "Setup erneut öffnen" : "Ein-Tap Setup starten", systemImage: "bolt.fill")
+                            Label(gate.setupCompleted ? "Setup ansehen" : "Setup starten", systemImage: "wand.and.stars")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(NOCOPrimaryButtonStyle())
@@ -54,7 +70,10 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Widgets")
                             .font(.subheadline.weight(.bold))
-                        HStack(spacing: 12) {
+                        Text("Zeitkonto · Schnellaktionen · Session")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.45))
+                        HStack(spacing: 10) {
                             widgetPreviewSmall
                             widgetPreviewMedium
                         }
@@ -84,18 +103,15 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("NOCO TimePay")
                             .font(.subheadline.weight(.bold))
-                        Text("Version 2.1 · Liquid Glass · Kurzbefehl-Gate")
+                        Text("Version 2.4 · Live-Sperrbildschirm · UI-Polish")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.45))
-                        Text("Kein Fokus-Modus · Keine Bildschirmzeit-Berechtigung nötig")
-                            .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.35))
                     }
                 }
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
-            .padding(.bottom, 28)
+            .padding(.bottom, 100)
         }
         .sheet(isPresented: $showSetup) {
             OneTapSetupView()
@@ -112,7 +128,25 @@ struct SettingsView: View {
                 settings.hasSeenOnboarding = false
             }
         } message: {
-            Text("Du musst Kurzbefehl und Automation danach erneut bestätigen.")
+            Text("Kurzbefehl und Automation musst du danach erneut bestätigen.")
+        }
+    }
+
+    private var setupChecklist: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            checklistRow("Apps gewählt", done: !gate.enabledApps.isEmpty)
+            checklistRow("Kurzbefehl gebaut", done: settings.shortcutImported)
+            checklistRow("Automation aktiv", done: settings.automationConfirmed)
+        }
+    }
+
+    private func checklistRow(_ title: String, done: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(done ? NOCOTheme.mint : .white.opacity(0.25))
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(done ? .white : .white.opacity(0.45))
         }
     }
 
@@ -146,53 +180,56 @@ struct SettingsView: View {
 
     private var widgetPreviewSmall: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("TimePay")
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.5))
-            Text("\(store.balanceMinutes) Min")
-                .font(.headline.weight(.bold))
+            Label("Zeitkonto", systemImage: "hourglass.circle.fill")
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(NOCOTheme.teal)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(NOCOTheme.deepNavy, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(NOCOTheme.teal.opacity(0.25), lineWidth: 1)
-        }
-    }
-
-    private var widgetPreviewMedium: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Zeitkonto")
-                    .font(.caption.weight(.semibold))
-                Spacer()
-                if store.streakDays >= 2 {
-                    Text("\(store.streakDays)🔥")
-                        .font(.caption2)
-                }
-            }
-            Text("\(store.balanceMinutes) Min")
+            Text(store.balanceDisplayNumber)
                 .font(.title2.weight(.bold))
                 .foregroundStyle(NOCOTheme.teal)
-            Text(sessionLine)
+            Text("Min")
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.45))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(NOCOTheme.deepNavy, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(
+            LinearGradient(colors: [Color(red: 0.1, green: 0.14, blue: 0.28), NOCOTheme.deepNavy], startPoint: .topLeading, endPoint: .bottomTrailing),
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(NOCOTheme.lavender.opacity(0.2), lineWidth: 1)
+                .stroke(NOCOTheme.teal.opacity(0.45), lineWidth: 1.5)
         }
     }
 
-    private var sessionLine: String {
-        if store.unlockSessionRemaining > 0 { return "Freigabe aktiv" }
-        if store.isEarningSessionActive { return "Session läuft" }
-        return "Bereit"
+    private var widgetPreviewMedium: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Schnellaktionen")
+                .font(.caption.weight(.semibold))
+            HStack(spacing: 6) {
+                previewChip("Session", NOCOTheme.lavender)
+                previewChip("Abbuchen", NOCOTheme.teal)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            LinearGradient(colors: [Color(red: 0.1, green: 0.14, blue: 0.28), NOCOTheme.deepNavy], startPoint: .topLeading, endPoint: .bottomTrailing),
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(NOCOTheme.lavender.opacity(0.35), lineWidth: 1.5)
+        }
+    }
+
+    private func previewChip(_ title: String, _ color: Color) -> some View {
+        Text(title)
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(color.opacity(0.25), in: Capsule())
+            .foregroundStyle(color)
     }
 
     private func toggleRow(title: String, subtitle: String, icon: String, isOn: Binding<Bool>) -> some View {

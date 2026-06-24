@@ -13,6 +13,7 @@ struct RootView: View {
         }
         .task {
             store.resumeUnlockTimerIfNeeded()
+            store.consumePendingDeepLink()
             store.spendMinutes = Double(settings.defaultUnlockMinutes)
             if !settings.hasSeenOnboarding {
                 showOnboarding = true
@@ -41,6 +42,7 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 store.resumeUnlockTimerIfNeeded()
+                store.consumePendingDeepLink()
             }
         }
     }

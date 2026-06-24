@@ -37,8 +37,10 @@ enum TimePayKeys {
     static let widgetSessionKind = "timepay.widget.sessionKind"
     static let widgetSessionRemaining = "timepay.widget.sessionRemaining"
     static let widgetSessionTitle = "timepay.widget.sessionTitle"
+    static let widgetSessionEndTimestamp = "timepay.widget.sessionEnd"
     static let widgetStreakDays = "timepay.widget.streak"
     static let widgetBlockedCount = "timepay.widget.blockedCount"
+    static let widgetBalanceHalfMinutes = "timepay.widget.balanceHalfMinutes"
     static let protectedAppsKey = "timepay.protectedApps"
     static let shortcutSetupCompletedKey = "timepay.shortcutSetupDone"
     static let pendingShortcutAppKey = "timepay.pendingShortcutApp"
@@ -47,6 +49,11 @@ enum TimePayKeys {
     static let hasSeenOnboardingKey = "timepay.onboarding.seen"
     static let shortcutImportedKey = "timepay.setup.shortcutImported"
     static let automationConfirmedKey = "timepay.setup.automationConfirmed"
+    static let balanceHalfMinutesKey = "timepay.balance.halfMinutes"
+    static let pendingEndUnlockKey = "timepay.pendingEndUnlock"
+    static let unlockBookedHalfKey = "timepay.unlock.bookedHalf"
+    static let unlockSessionTotalKey = "timepay.unlock.sessionTotal"
+    static let pendingDeepLinkKey = "timepay.pendingDeepLink"
 }
 
 enum TimePaySharedStorage {
@@ -90,18 +97,40 @@ enum TimePaySharedStorage {
 
     static func syncWidgetSnapshot(
         balance: Int,
+        balanceHalfMinutes: Int,
         streak: Int,
         blockedCount: Int,
         sessionKind: String,
         sessionRemaining: Int,
-        sessionTitle: String
+        sessionTitle: String,
+        sessionEndTimestamp: TimeInterval
     ) {
         let d = defaults
         d?.set(balance, forKey: TimePayKeys.balanceKey)
+        d?.set(balanceHalfMinutes, forKey: TimePayKeys.widgetBalanceHalfMinutes)
         d?.set(streak, forKey: TimePayKeys.widgetStreakDays)
         d?.set(blockedCount, forKey: TimePayKeys.widgetBlockedCount)
         d?.set(sessionKind, forKey: TimePayKeys.widgetSessionKind)
         d?.set(sessionRemaining, forKey: TimePayKeys.widgetSessionRemaining)
         d?.set(sessionTitle, forKey: TimePayKeys.widgetSessionTitle)
+        d?.set(sessionEndTimestamp, forKey: TimePayKeys.widgetSessionEndTimestamp)
+    }
+}
+
+enum TimePayFormat {
+    static func halfMinutes(_ half: Int) -> String {
+        let whole = half / 2
+        if half % 2 == 0 {
+            return "\(whole) Min"
+        }
+        return "\(whole),5 Min"
+    }
+
+    static func halfMinutesNumber(_ half: Int) -> String {
+        let whole = half / 2
+        if half % 2 == 0 {
+            return "\(whole)"
+        }
+        return "\(whole),5"
     }
 }

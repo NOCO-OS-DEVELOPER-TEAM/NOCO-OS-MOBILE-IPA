@@ -42,7 +42,11 @@ final class ShortcutGateManager: ObservableObject {
     }
 
     func openGate(minutes: Int) {
-        Self.openGate(minutes: minutes)
+        Self.openGate(seconds: minutes * 60)
+    }
+
+    func openGate(seconds: Int) {
+        Self.openGate(seconds: seconds)
     }
 
     func closeGate() {
@@ -50,8 +54,12 @@ final class ShortcutGateManager: ObservableObject {
     }
 
     static func openGate(minutes: Int) {
-        guard minutes > 0 else { return }
-        let end = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        openGate(seconds: minutes * 60)
+    }
+
+    static func openGate(seconds: Int) {
+        guard seconds > 0 else { return }
+        let end = Date().addingTimeInterval(TimeInterval(seconds))
         TimePaySharedStorage.isUnlocked = true
         TimePaySharedStorage.unlockUntilDate = end
     }
@@ -104,6 +112,35 @@ final class ShortcutGateManager: ObservableObject {
         syncBlockedCountWidget()
     }
 
+    func applySelectionPreset(_ preset: AppSelectionPreset) {
+        let ids = preset.appIDs
+        for index in protectedApps.indices {
+            if preset == .none {
+                protectedApps[index].isEnabled = false
+            } else if ids.contains(protectedApps[index].id) {
+                protectedApps[index].isEnabled = true
+            }
+        }
+        persistProtectedApps()
+        syncBlockedCountWidget()
+    }
+
+    func enableCategory(_ category: AppCategory) {
+        for index in protectedApps.indices where protectedApps[index].category == category {
+            protectedApps[index].isEnabled = true
+        }
+        persistProtectedApps()
+        syncBlockedCountWidget()
+    }
+
+    func disableAllApps() {
+        for index in protectedApps.indices {
+            protectedApps[index].isEnabled = false
+        }
+        persistProtectedApps()
+        syncBlockedCountWidget()
+    }
+
     func handleIncomingURL(_ url: URL, store: TimePayStore) {
         guard url.scheme == "timepay" else { return }
         switch url.host {
@@ -115,6 +152,10 @@ final class ShortcutGateManager: ObservableObject {
                 .removingPercentEncoding
             lastInterceptedApp = app
             store.openUnlockFromShortcut(appName: app)
+        case "earn":
+            store.tryOpenEarnSheet()
+        case "end":
+            store.endUnlockSessionEarly()
         default:
             break
         }

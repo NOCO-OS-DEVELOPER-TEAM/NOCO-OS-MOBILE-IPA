@@ -5,31 +5,20 @@ struct UnlockSheetView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ZStack {
-            NOCOTheme.midnight.ignoresSafeArea()
-            LiquidGlassBackground()
+        NavigationStack {
+            ZStack {
+                NOCOTheme.midnight.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 22) {
-                    Capsule()
-                        .fill(.white.opacity(0.25))
-                        .frame(width: 40, height: 4)
-                        .padding(.top, 8)
-
-                    NOCOLogoMark(size: 52)
-
-                    VStack(spacing: 4) {
-                        Text("Zeit abbuchen")
-                            .font(.title2.bold())
-                        if let app = store.shortcutRequestedApp, !app.isEmpty {
-                            Text("Du wolltest „\(app)“ öffnen")
-                                .font(.subheadline)
-                                .foregroundStyle(.orange)
-                        }
-                        Text("Konto: \(store.formattedBalance)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(NOCOTheme.teal)
+                VStack(spacing: 16) {
+                    if let app = store.shortcutRequestedApp, !app.isEmpty {
+                        Text("Für „\(app)“ freischalten")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.orange)
                     }
+
+                    Text("Konto: \(store.formattedBalance)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(NOCOTheme.teal)
 
                     if !store.canBookTime {
                         GlassCard(glow: .orange) {
@@ -37,57 +26,60 @@ struct UnlockSheetView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.orange)
                         }
+                        .padding(.horizontal, 20)
                     } else {
-                        GlassCard(glow: NOCOTheme.teal) {
-                            VStack(alignment: .leading, spacing: 18) {
-                                HStack {
-                                    Text("Minuten")
-                                    Spacer()
-                                    Text("\(Int(store.spendMinutes))")
-                                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                                        .foregroundStyle(NOCOTheme.teal)
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 14) {
+                                GlassCard(glow: NOCOTheme.teal) {
+                                    MinuteStepperView(
+                                        minutes: $store.spendMinutes,
+                                        maxMinutes: store.maxSpendMinutes,
+                                        accent: NOCOTheme.teal,
+                                        label: "Minuten abbuchen"
+                                    )
                                 }
-                                Slider(value: $store.spendMinutes, in: 1...Double(max(store.balanceMinutes, 1)), step: 1)
-                                    .tint(NOCOTheme.teal)
                                 HStack(spacing: 8) {
-                                    ForEach([5, 10, 15, 30], id: \.self) { m in
-                                        Button("\(m) Min") {
-                                            store.spendMinutes = Double(min(m, store.balanceMinutes))
+                                    ForEach([5.0, 10.0, 15.0, 30.0], id: \.self) { m in
+                                        Button("\(Int(m))") {
+                                            store.applySpendPreset(m)
                                         }
                                         .font(.caption.weight(.bold))
-                                        .padding(.horizontal, 12)
+                                        .padding(.horizontal, 14)
                                         .padding(.vertical, 8)
                                         .background(
-                                            m <= store.balanceMinutes ? NOCOTheme.teal.opacity(0.15) : .white.opacity(0.06),
+                                            m <= store.maxSpendMinutes ? NOCOTheme.teal.opacity(0.15) : .white.opacity(0.06),
                                             in: Capsule()
                                         )
-                                        .foregroundStyle(m <= store.balanceMinutes ? NOCOTheme.teal : .white.opacity(0.3))
+                                        .foregroundStyle(m <= store.maxSpendMinutes ? NOCOTheme.teal : .white.opacity(0.3))
                                     }
                                 }
                             }
+                            .padding(.horizontal, 20)
                         }
-
-                        Text("Der Kurzbefehl lässt Apps für diese Zeit durch — ohne Fokus-Modus.")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.45))
-                            .multilineTextAlignment(.center)
 
                         Button {
                             store.confirmUnlock()
                             dismiss()
                         } label: {
-                            Label("Gate öffnen & Apps freigeben", systemImage: "lock.open.fill")
+                            Label("Gate öffnen", systemImage: "lock.open.fill")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(NOCOPrimaryButtonStyle())
-                        .disabled(store.balanceMinutes < 1)
+                        .disabled(store.balanceHalfMinutes < 2)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
                     }
-
-                    Button("Abbrechen") { dismiss() }
-                        .foregroundStyle(.white.opacity(0.55))
-                        .padding(.bottom, 8)
                 }
-                .padding(24)
+                .padding(.top, 8)
+            }
+            .navigationTitle("Zeit abbuchen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Schließen") { dismiss() }
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(NOCOTheme.teal)
+                }
             }
         }
         .presentationDetents([.medium, .large])

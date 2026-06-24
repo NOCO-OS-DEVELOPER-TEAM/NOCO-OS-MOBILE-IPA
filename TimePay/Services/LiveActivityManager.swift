@@ -23,7 +23,7 @@ enum LiveActivityManager {
         let state = TimePaySessionAttributes.ContentState(
             endDate: end,
             remainingSeconds: totalSeconds,
-            sessionTitle: "Apps freigeschaltet",
+            sessionTitle: "Freigabe aktiv",
             sessionKind: "unlock"
         )
         _ = try? Activity.request(

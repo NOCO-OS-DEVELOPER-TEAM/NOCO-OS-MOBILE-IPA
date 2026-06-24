@@ -36,39 +36,51 @@ enum NOCOTheme {
 
 struct LiquidGlassBackground: View {
     @State private var animate = false
+    @State private var drift = false
 
     var body: some View {
         ZStack {
             NOCOTheme.midnight.ignoresSafeArea()
 
             Circle()
-                .fill(NOCOTheme.teal.opacity(0.2))
-                .frame(width: 320, height: 320)
-                .blur(radius: 80)
-                .offset(x: animate ? -90 : -120, y: animate ? -220 : -180)
-
-            Circle()
-                .fill(NOCOTheme.lavender.opacity(0.16))
-                .frame(width: 360, height: 360)
+                .fill(NOCOTheme.teal.opacity(0.22))
+                .frame(width: 340, height: 340)
                 .blur(radius: 90)
-                .offset(x: animate ? 130 : 100, y: animate ? 280 : 240)
+                .offset(x: animate ? -100 : -140, y: animate ? -200 : -160)
+                .scaleEffect(drift ? 1.08 : 0.92)
 
             Circle()
-                .fill(NOCOTheme.mint.opacity(0.1))
-                .frame(width: 240, height: 240)
-                .blur(radius: 65)
-                .offset(x: animate ? 60 : 80, y: animate ? -20 : 10)
+                .fill(NOCOTheme.lavender.opacity(0.18))
+                .frame(width: 400, height: 400)
+                .blur(radius: 100)
+                .offset(x: animate ? 140 : 90, y: animate ? 260 : 220)
+                .scaleEffect(drift ? 0.94 : 1.06)
+
+            Circle()
+                .fill(NOCOTheme.mint.opacity(0.12))
+                .frame(width: 280, height: 280)
+                .blur(radius: 70)
+                .offset(x: drift ? 40 : 90, y: drift ? 40 : -10)
+
+            Circle()
+                .fill(NOCOTheme.coral.opacity(0.08))
+                .frame(width: 200, height: 200)
+                .blur(radius: 55)
+                .offset(x: drift ? -60 : -20, y: drift ? 320 : 280)
 
             LinearGradient(
-                colors: [.white.opacity(0.04), .clear, NOCOTheme.teal.opacity(0.03)],
+                colors: [.white.opacity(0.05), .clear, NOCOTheme.teal.opacity(0.04)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 9).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 10).repeatForever(autoreverses: true)) {
                 animate = true
+            }
+            withAnimation(.easeInOut(duration: 14).repeatForever(autoreverses: true)) {
+                drift = true
             }
         }
     }
@@ -252,6 +264,32 @@ struct GlassPill: View {
     }
 }
 
+struct LiveCountdownText: View {
+    let endDate: Date
+    var font: Font = .system(.title2, design: .monospaced).weight(.bold)
+    var color: Color = NOCOTheme.teal
+
+    var body: some View {
+        Text(timerInterval: Date()...endDate, countsDown: true)
+            .font(font)
+            .foregroundStyle(color)
+            .monospacedDigit()
+            .contentTransition(.numericText())
+    }
+}
+
+struct LiveSessionProgressBar: View {
+    let start: Date
+    let end: Date
+    var tint: Color = NOCOTheme.teal
+
+    var body: some View {
+        ProgressView(timerInterval: start...end, countsDown: true)
+            .tint(tint)
+            .scaleEffect(y: 1.4)
+    }
+}
+
 struct LiquidProgressRing: View {
     let progress: Double
     let color: Color
@@ -340,20 +378,32 @@ struct GateOrbView: View {
     let isOpen: Bool
     let progress: Double
     var size: CGFloat = 180
+    var flashExpired: Bool = false
+    var isUrgent: Bool = false
 
     @State private var breathe = false
+    @State private var expirePulse = false
 
     var body: some View {
         ZStack {
             Circle()
-                .fill((isOpen ? NOCOTheme.teal : Color.orange).opacity(0.12))
+                .fill((isOpen ? NOCOTheme.teal : Color.orange).opacity(isUrgent ? 0.28 : 0.12))
                 .frame(width: size * 1.15, height: size * 1.15)
                 .blur(radius: 28)
-                .scaleEffect(breathe ? 1.05 : 0.92)
+                .scaleEffect(flashExpired ? 1.2 : (breathe ? 1.05 : 0.92))
+                .animation(.spring(response: 0.45, dampingFraction: 0.55), value: flashExpired)
+
+            if flashExpired {
+                Circle()
+                    .stroke(NOCOTheme.coral.opacity(0.8), lineWidth: 4)
+                    .frame(width: size * 1.1, height: size * 1.1)
+                    .scaleEffect(expirePulse ? 1.15 : 0.9)
+                    .opacity(expirePulse ? 0 : 0.9)
+            }
 
             LiquidProgressRing(
                 progress: isOpen ? progress : 0,
-                color: isOpen ? NOCOTheme.teal : .orange,
+                color: flashExpired ? NOCOTheme.coral : (isOpen ? NOCOTheme.teal : .orange),
                 lineWidth: 8
             )
             .frame(width: size, height: size)
@@ -366,14 +416,22 @@ struct GateOrbView: View {
                         .stroke(NOCOTheme.glassBorder, lineWidth: 1)
                 }
 
-            Image(systemName: isOpen ? "lock.open.fill" : "lock.fill")
+            Image(systemName: flashExpired ? "lock.fill" : (isOpen ? "lock.open.fill" : "lock.fill"))
                 .font(.system(size: size * 0.22, weight: .semibold))
-                .foregroundStyle(isOpen ? NOCOTheme.teal : .orange)
-                .symbolEffect(.pulse, options: isOpen ? .repeating : .nonRepeating)
+                .foregroundStyle(flashExpired ? NOCOTheme.coral : (isOpen ? NOCOTheme.teal : .orange))
+                .symbolEffect(.bounce, value: flashExpired)
+                .symbolEffect(.pulse, options: isOpen && !flashExpired ? .repeating : .nonRepeating)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true)) {
                 breathe = true
+            }
+        }
+        .onChange(of: flashExpired) { _, flash in
+            guard flash else { return }
+            expirePulse = false
+            withAnimation(.easeOut(duration: 1.2)) {
+                expirePulse = true
             }
         }
     }

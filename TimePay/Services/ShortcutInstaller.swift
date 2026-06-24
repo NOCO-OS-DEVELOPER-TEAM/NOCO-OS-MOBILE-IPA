@@ -2,44 +2,55 @@ import SwiftUI
 import UIKit
 
 enum ShortcutInstaller {
-    /// Raw shortcut on GitHub — updates when pushed to main.
-    static let hostedShortcutURL = URL(
-        string: "https://raw.githubusercontent.com/noco-os-developer-team/NOCO-OS-MOBILE-IPA/main/TimePay/Resources/NOCOTimePayGate.shortcut"
-    )
-
-    static func importGateShortcut() {
-        if let hosted = hostedShortcutURL,
-           let encoded = hosted.absoluteString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-           let url = URL(string: "shortcuts://import-shortcut?url=\(encoded)") {
-            UIApplication.shared.open(url)
-            return
-        }
-        openShortcutsApp()
-    }
-
     static func openShortcutsApp() {
-        if let url = URL(string: "shortcuts://") {
+        UIApplication.shared.open(URL(string: "shortcuts://")!)
+    }
+
+    static func openTimePayInShortcuts() {
+        let url = URL(string: "shortcuts://menu/app-shortcuts")!
+        UIApplication.shared.open(url)
+    }
+
+    static func openAutomations() {
+        if let url = URL(string: "shortcuts://automations") {
             UIApplication.shared.open(url)
+        } else {
+            openShortcutsApp()
         }
     }
 
-    static func bundledShortcutURL() -> URL? {
-        Bundle.main.url(forResource: "NOCOTimePayGate", withExtension: "shortcut")
-    }
+    /// 3 Schritte — Kurzbefehl + Automation zusammengefasst.
+    static let setupSteps: [(icon: String, title: String, detail: String)] = [
+        ("apps.iphone", "Apps wählen", "Im Tab „Apps“ Schnellauswahl tippen (z. B. Empfohlen)."),
+        ("plus.circle.fill", "Gate-Aktion", "Kurzbefehle → TimePay → „TimePay Gate prüfen“ hinzufügen."),
+        ("bolt.fill", "Automation", "Automation → App → deine Apps → Gate-Kurzbefehl ausführen."),
+    ]
+
+    static let shortcutRecipeSteps: [(icon: String, title: String, detail: String)] = [
+        ("1.circle.fill", "Neuer Kurzbefehl", "Name: NOCO TimePay Gate"),
+        ("2.circle.fill", "Gate prüfen", "Aktion: TimePay Gate prüfen (unter Apps → TimePay)."),
+        ("3.circle.fill", "Wenn → falsch", "Wenn Ergebnis falsch → URL timepay://gate → Zum Home-Bildschirm."),
+        ("4.circle.fill", "Sonst leer", "Sonst-Zweig leer — Gate offen = App bleibt."),
+    ]
+
+    static let automationRecipeSteps: [(icon: String, title: String, detail: String)] = [
+        ("plus.circle", "Automation → App", "Deine geschützten Apps auswählen."),
+        ("app.badge.checkmark", "Ist geöffnet", "Trigger: App wird geöffnet."),
+        ("play.fill", "Kurzbefehl", "„NOCO TimePay Gate“ ausführen."),
+        ("checkmark.seal", "Einstellungen", "Sofort ausführen AN · Vor Ausführen AUS."),
+    ]
 
     static func automationClipboardText(apps: [ProtectedApp]) -> String {
         let names = apps.map(\.name).joined(separator: ", ")
         return """
-        TimePay Automation — Apps für Kurzbefehle:
-        \(names)
+        NOCO TimePay — 3 Schritte
+        Apps: \(names)
 
-        Kurzbefehle → Automation → + → App → diese Apps wählen → „NOCO TimePay Gate“ ausführen → Sofort ausführen AN
+        1. Kurzbefehl „NOCO TimePay Gate“ (siehe App-Setup)
+        2. Automation → App → \(names)
+        3. Kurzbefehl ausführen · Sofort AN
         """
     }
 
-    static let quickSetupSteps: [(icon: String, title: String, detail: String)] = [
-        ("1.circle.fill", "Kurzbefehl hinzufügen", "Ein Tippen → in Kurzbefehle „Hinzufügen“ bestätigen."),
-        ("2.circle.fill", "Automation verknüpfen", "Apps aus deiner Liste wählen → Gate-Kurzbefehl starten."),
-        ("3.circle.fill", "Fertig", "TimePay steuert Freigabe-Zeit — kein Fokus-Modus."),
-    ]
+    static let quickSetupSteps = setupSteps
 }

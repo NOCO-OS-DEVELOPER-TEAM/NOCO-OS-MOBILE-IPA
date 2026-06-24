@@ -82,3 +82,48 @@ struct ProtectedApp: Identifiable, Codable, Hashable {
         .init(id: "be_real", name: "BeReal", symbol: "camera.aperture", category: .social, keywords: [], isEnabled: false, isCustom: false),
     ]
 }
+
+enum AppSelectionPreset: String, CaseIterable, Identifiable {
+    case recommended
+    case social
+    case chat
+    case games
+    case none
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .recommended: return "Empfohlen"
+        case .social: return "Social"
+        case .chat: return "Chat"
+        case .games: return "Spiele"
+        case .none: return "Alle aus"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .recommended: return "star.fill"
+        case .social: return "person.2.fill"
+        case .chat: return "bubble.left.fill"
+        case .games: return "gamecontroller.fill"
+        case .none: return "xmark.circle"
+        }
+    }
+
+    var appIDs: Set<String> {
+        switch self {
+        case .recommended:
+            return ["instagram", "tiktok", "youtube", "snapchat", "whatsapp"]
+        case .social:
+            return Set(ProtectedApp.catalog.filter { $0.category == .social }.map(\.id))
+        case .chat:
+            return Set(ProtectedApp.catalog.filter { $0.category == .chat }.map(\.id))
+        case .games:
+            return Set(ProtectedApp.catalog.filter { $0.category == .games }.map(\.id))
+        case .none:
+            return []
+        }
+    }
+}
