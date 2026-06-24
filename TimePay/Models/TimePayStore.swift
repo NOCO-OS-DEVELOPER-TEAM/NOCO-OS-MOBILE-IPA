@@ -174,11 +174,16 @@ final class TimePayStore: ObservableObject {
     func checkPendingUnlockFromShield() {
         if TimePaySharedStorage.defaults?.bool(forKey: TimePayKeys.pendingUnlock) == true {
             TimePaySharedStorage.defaults?.set(false, forKey: TimePayKeys.pendingUnlock)
-            if canBookTime {
-                pendingUnlockFromShield = true
-            } else {
-                toast("Session läuft — erst warten, dann freischalten.")
-            }
+            openUnlockFromShield()
+        }
+    }
+
+    func openUnlockFromShield() {
+        TimePaySharedStorage.defaults?.set(false, forKey: TimePayKeys.pendingUnlock)
+        if canBookTime {
+            pendingUnlockFromShield = true
+        } else {
+            toast("Session läuft — erst warten, dann freischalten.")
         }
     }
 

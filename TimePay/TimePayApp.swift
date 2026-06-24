@@ -6,15 +6,24 @@ struct TimePayApp: App {
     @StateObject private var store = TimePayStore()
     @StateObject private var screenTime = ScreenTimeManager()
 
+    init() {
+        NotificationManager.shared.installDelegate()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)
                 .environmentObject(screenTime)
                 .preferredColorScheme(.dark)
+                .onAppear {
+                    NotificationManager.shared.onShieldUnlockRequested = {
+                        store.openUnlockFromShield()
+                    }
+                }
                 .onOpenURL { url in
                     if url.host == "unlock" {
-                        store.pendingUnlockFromShield = true
+                        store.openUnlockFromShield()
                     }
                 }
                 .onChange(of: scenePhase) { _, phase in

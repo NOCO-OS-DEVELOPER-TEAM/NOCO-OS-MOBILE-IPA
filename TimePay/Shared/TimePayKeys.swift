@@ -25,6 +25,9 @@ enum TimePayKeys {
     static let lowBalanceID = "timepay.balance.low"
     static let streakID = "timepay.streak"
     static let sessionBlockedID = "timepay.session.blocked"
+    static let shieldUnlockTapID = "timepay.shield.unlock.tap"
+    static let notificationActionKey = "timepay.action"
+    static let shieldUnlockAction = "shield-unlock"
     static let earnedTodayKey = "timepay.stats.earnedToday"
     static let spentTodayKey = "timepay.stats.spentToday"
     static let streakDaysKey = "timepay.stats.streak"
@@ -68,6 +71,6 @@ enum TimePaySharedStorage {
             let s = remaining % 60
             return "Freigabe endet in \(m):\(String(format: "%02d", s)) — Zeitkonto nutzen zum Freischalten"
         }
-        return "Nutze dein Zeitkonto in TimePay, um diese App freizuschalten."
+        return "Tippe „Zeit freischalten“ — du erhältst eine Benachrichtigung, um TimePay zu öffnen."
     }
 }

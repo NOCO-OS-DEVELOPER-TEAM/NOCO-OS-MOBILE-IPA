@@ -21,6 +21,7 @@
 		B1000001000000000000000C /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000010 /* NotificationManager.swift */; };
 		B1000001000000000000000D /* DeviceActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000011 /* DeviceActivityScheduler.swift */; };
 		B1000001000000000000000E /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000012 /* PermissionView.swift */; };
+		B10000010000000000000012 /* ShieldUnlockNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000013 /* ShieldUnlockNotifier.swift */; };
 		B1000001000000000000000F /* TimePayShieldConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000030000000000000002 /* TimePayShieldConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B10000010000000000000010 /* TimePayShieldAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000030000000000000003 /* TimePayShieldAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B10000010000000000000011 /* TimePayMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000030000000000000004 /* TimePayMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -31,6 +32,7 @@
 		B20000010000000000000005 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000003 /* DeviceActivityMonitorExtension.swift */; };
 		B20000010000000000000006 /* TimePayKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000E /* TimePayKeys.swift */; };
 		B20000010000000000000007 /* ShieldRelockHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000000F /* ShieldRelockHelper.swift */; };
+		B20000010000000000000008 /* ShieldUnlockNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000020000000000000013 /* ShieldUnlockNotifier.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +91,7 @@
 		B10000020000000000000010 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		B10000020000000000000011 /* DeviceActivityScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActivityScheduler.swift; sourceTree = "<group>"; };
 		B10000020000000000000012 /* PermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
+		B10000020000000000000013 /* ShieldUnlockNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldUnlockNotifier.swift; sourceTree = "<group>"; };
 		B10000020000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000030000000000000001 /* TimePay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TimePay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000030000000000000002 /* TimePayShieldConfiguration.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimePayShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -216,6 +219,7 @@
 			children = (
 				B1000002000000000000000E /* TimePayKeys.swift */,
 				B1000002000000000000000F /* ShieldRelockHelper.swift */,
+				B10000020000000000000013 /* ShieldUnlockNotifier.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -427,6 +431,7 @@
 				B10000010000000000000008 /* EarnTimeView.swift in Sources */,
 				B1000001000000000000000A /* TimePayKeys.swift in Sources */,
 				B1000001000000000000000B /* ShieldRelockHelper.swift in Sources */,
+				B10000010000000000000012 /* ShieldUnlockNotifier.swift in Sources */,
 				B1000001000000000000000C /* NotificationManager.swift in Sources */,
 				B1000001000000000000000D /* DeviceActivityScheduler.swift in Sources */,
 				B1000001000000000000000E /* PermissionView.swift in Sources */,
@@ -448,6 +453,7 @@
 			files = (
 				B20000010000000000000003 /* ShieldActionExtension.swift in Sources */,
 				B20000010000000000000004 /* TimePayKeys.swift in Sources */,
+				B20000010000000000000008 /* ShieldUnlockNotifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

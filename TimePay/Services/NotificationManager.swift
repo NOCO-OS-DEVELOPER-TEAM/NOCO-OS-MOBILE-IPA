@@ -2,13 +2,26 @@ import Foundation
 import UserNotifications
 
 @MainActor
-final class NotificationManager {
+final class NotificationManager: NSObject {
     static let shared = NotificationManager()
 
     private let center = UNUserNotificationCenter.current()
+    var onShieldUnlockRequested: (() -> Void)?
+
+    private override init() {
+        super.init()
+    }
+
+    func installDelegate() {
+        center.delegate = self
+    }
 
     func requestPermission() async {
         _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+    }
+
+    func handleShieldUnlockNotification() {
+        onShieldUnlockRequested?()
     }
 
     // MARK: - Unlock session
@@ -144,5 +157,35 @@ final class NotificationManager {
         content.body = body
         content.sound = .default
         center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+    }
+}
+
+extension NotificationManager: UNUserNotificationCenterDelegate {
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        guard isShieldUnlockNotification(notification) else {
+            return [.banner, .sound]
+        }
+        await MainActor.run {
+            handleShieldUnlockNotification()
+        }
+        return [.banner, .sound]
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        guard isShieldUnlockNotification(response.notification) else { return }
+        await MainActor.run {
+            handleShieldUnlockNotification()
+        }
+    }
+
+    nonisolated private func isShieldUnlockNotification(_ notification: UNNotification) -> Bool {
+        notification.request.content.userInfo[TimePayKeys.notificationActionKey] as? String
+            == TimePayKeys.shieldUnlockAction
     }
 }

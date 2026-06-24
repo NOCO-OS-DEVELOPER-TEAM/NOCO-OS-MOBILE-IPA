@@ -37,7 +37,7 @@ final class TimePayShieldConfigurationProvider: ShieldConfigurationDataSource {
             ),
             primaryButtonBackgroundColor: teal,
             secondaryButtonLabel: ShieldConfiguration.Label(
-                text: "Zurück",
+                text: "Schließen",
                 color: UIColor(white: 1, alpha: 0.7)
             )
         )

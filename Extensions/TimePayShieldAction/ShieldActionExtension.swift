@@ -1,6 +1,5 @@
 import ManagedSettings
 import ManagedSettingsUI
-import UIKit
 
 final class TimePayShieldActionHandler: ShieldActionDelegate {
     override func handle(
@@ -30,26 +29,14 @@ final class TimePayShieldActionHandler: ShieldActionDelegate {
     private func handle(action: ShieldAction, completionHandler: @escaping (ShieldActionResponse) -> Void) {
         switch action {
         case .primaryButtonPressed:
-            TimePaySharedStorage.defaults?.set(true, forKey: TimePayKeys.pendingUnlock)
-            openHostApp()
-            completionHandler(.defer)
+            // iOS 18+ cannot open the host app from ShieldAction (.defer shows a yellow error).
+            // Apple’s supported path: immediate local notification → user taps → app opens.
+            ShieldUnlockNotifier.requestUnlockFromShield()
+            completionHandler(.close)
         case .secondaryButtonPressed:
             completionHandler(.close)
         @unknown default:
             completionHandler(.close)
         }
     }
-
-    private func openHostApp() {
-        guard let url = URL(string: "timepay://unlock") else { return }
-        let openSelector = NSSelectorFromString("openURL:")
-        guard
-            let applicationClass = NSClassFromString("UIApplication") as? NSObject.Type,
-            let application = applicationClass
-                .perform(NSSelectorFromString("sharedApplication"))?
-                .takeUnretainedValue() as? NSObject
-        else { return }
-        _ = application.perform(openSelector, with: url)
-    }
 }
-
