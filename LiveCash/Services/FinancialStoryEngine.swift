@@ -136,6 +136,7 @@ enum FinancialStoryEngine {
         return Array(slides.prefix(period == .month ? 4 : 3))
     }
 
+    @MainActor
     private static func unusualCategory(expenses: [Transaction], store: FinanceStore) -> (name: String, amount: Double, detail: String)? {
         guard expenses.count >= 5 else { return nil }
         let cal = Calendar.current

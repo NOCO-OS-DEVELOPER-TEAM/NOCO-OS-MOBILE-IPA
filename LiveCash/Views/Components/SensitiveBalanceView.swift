@@ -36,7 +36,7 @@ struct SensitiveBalanceView<Content: View>: View {
         .contentShape(Rectangle())
         .onTapGesture {
             Task {
-                await security.revealBalance(settings: store.appSettings.security)
+                _ = await security.revealBalance(settings: store.appSettings.security)
                 HapticService.light(store: store)
             }
         }

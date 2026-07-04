@@ -27,12 +27,12 @@ struct RootView: View {
                 security.lockBalanceIfNeeded(settings: store.appSettings.security)
                 if store.appSettings.security.faceIDEnabled,
                    store.appSettings.security.faceIDLockMode == .onLaunch {
-                    security.isUnlocked = false
+                    security.lock()
                 }
             case .active:
                 security.recordActivity()
                 if security.shouldLockForInactivity(settings: store.appSettings.security) {
-                    security.isUnlocked = false
+                    security.lock()
                 }
             @unknown default:
                 break

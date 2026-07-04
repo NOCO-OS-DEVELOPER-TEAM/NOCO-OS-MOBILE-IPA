@@ -5,99 +5,99 @@ import SwiftUI
 private extension FinanceStore {
     func assistantBinding<T>(_ keyPath: WritableKeyPath<AssistantSettings, T>) -> Binding<T> {
         Binding(
-            get: { appSettings.assistant[keyPath: keyPath] },
-            set: {
-                var settings = appSettings
-                settings.assistant[keyPath: keyPath] = $0
-                setAppSettings(settings)
+            get: { self.appSettings.assistant[keyPath: keyPath] },
+            set: { newValue in
+                var settings = self.appSettings
+                settings.assistant[keyPath: keyPath] = newValue
+                self.setAppSettings(settings)
             }
         )
     }
 
     func securityBinding<T>(_ keyPath: WritableKeyPath<SecuritySettings, T>) -> Binding<T> {
         Binding(
-            get: { appSettings.security[keyPath: keyPath] },
-            set: {
-                var settings = appSettings
-                settings.security[keyPath: keyPath] = $0
-                setAppSettings(settings)
+            get: { self.appSettings.security[keyPath: keyPath] },
+            set: { newValue in
+                var settings = self.appSettings
+                settings.security[keyPath: keyPath] = newValue
+                self.setAppSettings(settings)
             }
         )
     }
 
     func mapBinding<T>(_ keyPath: WritableKeyPath<MapSettings, T>) -> Binding<T> {
         Binding(
-            get: { appSettings.map[keyPath: keyPath] },
-            set: {
-                var settings = appSettings
-                settings.map[keyPath: keyPath] = $0
-                setAppSettings(settings)
+            get: { self.appSettings.map[keyPath: keyPath] },
+            set: { newValue in
+                var settings = self.appSettings
+                settings.map[keyPath: keyPath] = newValue
+                self.setAppSettings(settings)
             }
         )
     }
 
     func savingsBinding<T>(_ keyPath: WritableKeyPath<SavingsSettings, T>) -> Binding<T> {
         Binding(
-            get: { appSettings.savings[keyPath: keyPath] },
-            set: {
-                var settings = appSettings
-                settings.savings[keyPath: keyPath] = $0
-                setAppSettings(settings)
+            get: { self.appSettings.savings[keyPath: keyPath] },
+            set: { newValue in
+                var settings = self.appSettings
+                settings.savings[keyPath: keyPath] = newValue
+                self.setAppSettings(settings)
             }
         )
     }
 
     func moneyCardBinding<T>(_ keyPath: WritableKeyPath<MoneyCardSettings, T>) -> Binding<T> {
         Binding(
-            get: { appSettings.moneyCard[keyPath: keyPath] },
-            set: {
-                var settings = appSettings
-                settings.moneyCard[keyPath: keyPath] = $0
-                setAppSettings(settings)
+            get: { self.appSettings.moneyCard[keyPath: keyPath] },
+            set: { newValue in
+                var settings = self.appSettings
+                settings.moneyCard[keyPath: keyPath] = newValue
+                self.setAppSettings(settings)
             }
         )
     }
 
     func uiBinding<T>(_ keyPath: WritableKeyPath<UISettings, T>) -> Binding<T> {
         Binding(
-            get: { appSettings.ui[keyPath: keyPath] },
-            set: {
-                var settings = appSettings
-                settings.ui[keyPath: keyPath] = $0
-                setAppSettings(settings)
+            get: { self.appSettings.ui[keyPath: keyPath] },
+            set: { newValue in
+                var settings = self.appSettings
+                settings.ui[keyPath: keyPath] = newValue
+                self.setAppSettings(settings)
             }
         )
     }
 
     func shortcutSettingsBinding<T>(_ keyPath: WritableKeyPath<ShortcutSettings, T>) -> Binding<T> {
         Binding(
-            get: { appSettings.shortcuts[keyPath: keyPath] },
-            set: {
-                var settings = appSettings
-                settings.shortcuts[keyPath: keyPath] = $0
-                setAppSettings(settings)
+            get: { self.appSettings.shortcuts[keyPath: keyPath] },
+            set: { newValue in
+                var settings = self.appSettings
+                settings.shortcuts[keyPath: keyPath] = newValue
+                self.setAppSettings(settings)
             }
         )
     }
 
     func notificationBinding<T>(_ keyPath: WritableKeyPath<NotificationPreferences, T>) -> Binding<T> {
         Binding(
-            get: { notificationPreferences[keyPath: keyPath] },
-            set: {
-                var prefs = notificationPreferences
-                prefs[keyPath: keyPath] = $0
-                setNotificationPreferences(prefs)
+            get: { self.notificationPreferences[keyPath: keyPath] },
+            set: { newValue in
+                var prefs = self.notificationPreferences
+                prefs[keyPath: keyPath] = newValue
+                self.setNotificationPreferences(prefs)
             }
         )
     }
 
     func widgetBinding<T>(_ keyPath: WritableKeyPath<WidgetPreferences, T>) -> Binding<T> {
         Binding(
-            get: { widgetPreferences[keyPath: keyPath] },
-            set: {
-                var prefs = widgetPreferences
-                prefs[keyPath: keyPath] = $0
-                setWidgetPreferences(prefs)
+            get: { self.widgetPreferences[keyPath: keyPath] },
+            set: { newValue in
+                var prefs = self.widgetPreferences
+                prefs[keyPath: keyPath] = newValue
+                self.setWidgetPreferences(prefs)
             }
         )
     }

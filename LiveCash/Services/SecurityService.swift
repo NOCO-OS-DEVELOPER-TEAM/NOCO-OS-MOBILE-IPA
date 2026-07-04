@@ -9,6 +9,10 @@ final class SecurityService: ObservableObject {
     @Published var balanceRevealed = false
     private var lastActiveAt = Date()
 
+    func lock() {
+        isUnlocked = false
+    }
+
     func resetLockState(for settings: SecuritySettings) {
         guard settings.faceIDEnabled, settings.faceIDLockMode != .off else {
             isUnlocked = true
