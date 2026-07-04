@@ -20,6 +20,7 @@ struct DashboardView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 120)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(LiveCashTheme.screenBackground)
             .navigationTitle("Live Cash")
             .navigationBarTitleDisplayMode(.large)
@@ -39,7 +40,7 @@ struct DashboardView: View {
                 .foregroundStyle(.secondary)
             Text(LiveCashTheme.money(store.currentMonthExpenses))
                 .font(.system(size: 42, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
+                .foregroundStyle(LiveCashTheme.expense)
             Text("Ausgaben diesen Monat")
                 .font(LiveCashTheme.captionFont)
                 .foregroundStyle(.secondary)
@@ -136,7 +137,12 @@ struct DashboardView: View {
                 }
             } else {
                 ForEach(store.transactions.prefix(5)) { tx in
-                    TransactionRow(transaction: tx)
+                    NavigationLink {
+                        TransactionDetailView(transactionID: tx.id)
+                    } label: {
+                        TransactionRow(transaction: tx)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }

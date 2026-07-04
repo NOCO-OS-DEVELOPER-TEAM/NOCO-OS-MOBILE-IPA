@@ -1,5 +1,11 @@
 import Foundation
 
+enum OCRDocumentKind {
+    case receipt
+    case balance
+    case general
+}
+
 enum SmartInputResult {
     case transaction(Transaction, message: String)
     case bulkImport([Transaction], message: String)
@@ -7,7 +13,7 @@ enum SmartInputResult {
     case unrecognized
 }
 
-struct ParsedTransactionDraft {
+struct ParsedTransactionDraft: Equatable {
     var amount: Double
     var type: TransactionType
     var merchant: String
@@ -63,15 +69,41 @@ final class SmartInputParser {
         if lower.contains("?") { return true }
         let starters = ["wie ", "was ", "wo ", "wann ", "warum ", "welche", "zeig ", "liste ", "hilf"]
         if starters.contains(where: { lower.hasPrefix($0) }) { return true }
-        if FinanceAssistant.shared.matchIntent(text) != nil, !looksLikeTransaction(text) { return true }
+        if FinanceAssistant.shared.matchIntent(text) != nil, !looksLikeTransactionPrivate(text) { return true }
         return false
     }
 
-    private func looksLikeTransaction(_ text: String) -> Bool {
+    func looksLikeTransaction(_ text: String) -> Bool {
+        containsAmount(text) && !text.lowercased().hasPrefix("wie ") && !text.lowercased().hasPrefix("wo ")
+    }
+
+    func detectDocumentKind(_ text: String) -> OCRDocumentKind {
+        let lower = text.lowercased()
+        if lower.contains("kontostand") || lower.contains("saldo") || lower.contains("kontoguthaben") || lower.contains("verfügbar") {
+            return .balance
+        }
+        if lower.contains("beleg") || lower.contains("summe") || lower.contains("total") || lower.contains("rechnung") {
+            return .receipt
+        }
+        return .general
+    }
+
+    func parseBalanceText(_ text: String) -> ParsedTransactionDraft? {
+        guard let amount = extractAmount(from: text) else { return nil }
+        return ParsedTransactionDraft(
+            amount: amount,
+            type: .expense,
+            merchant: "Kontostand",
+            category: .other,
+            date: extractDate(from: text) ?? Date()
+        )
+    }
+
+    private func looksLikeTransactionPrivate(_ text: String) -> Bool {
         containsAmount(text) && !text.lowercased().hasPrefix("wie ")
     }
 
-    private func containsAmount(_ text: String) -> Bool {
+    func containsAmount(_ text: String) -> Bool {
         extractAmount(from: text) != nil
     }
 

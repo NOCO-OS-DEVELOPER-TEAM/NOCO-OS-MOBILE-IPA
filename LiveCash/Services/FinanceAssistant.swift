@@ -151,6 +151,22 @@ final class FinanceAssistant {
         let normalized = normalize(input)
         let context = parseContext(from: normalized)
 
+        // Direktantworten für klare Analysefragen
+        let directPhrases: [(String, InsightAction)] = [
+            ("wo gebe ich", .byCategory),
+            ("am meisten aus", .byCategory),
+            ("meiste geld", .byCategory),
+            ("monat zusammen", .monthlySummary),
+            ("übersicht", .incomeVsExpense),
+            ("sparen", .savingsTips),
+            ("abos", .monthlySubCost),
+            ("abonnement", .monthlySubCost)
+        ]
+        for (phrase, action) in directPhrases where normalized.contains(phrase) {
+            let insight = generateInsight(action: action, store: store, context: context)
+            return .init(mode: .directInsight(insight))
+        }
+
         if let merchant = context.merchant ?? detectMerchant(in: normalized) {
             let insight = merchantInsight(merchant: merchant, context: context, store: store)
             return .init(mode: .directInsight(insight))

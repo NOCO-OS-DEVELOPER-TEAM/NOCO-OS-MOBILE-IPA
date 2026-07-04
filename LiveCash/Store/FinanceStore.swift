@@ -13,6 +13,9 @@ final class FinanceStore: ObservableObject {
     @Published var activeInsight: FinanceInsight?
     @Published var assistantHeadline: String = ""
     @Published var assistantActions: [InsightAction] = []
+    @Published var liveSuggestions: [LiveSuggestion] = []
+    @Published var inputInterpretation: InputInterpretation = .empty
+    @Published var pendingConfirmation: PendingConfirmation?
 
     private let persistence = PersistenceService.shared
     private let locationManager = CLLocationManager()
@@ -63,6 +66,78 @@ final class FinanceStore: ObservableObject {
         refreshSubscriptions()
     }
 
+    func updateTransaction(_ transaction: Transaction) {
+        guard let idx = transactions.firstIndex(where: { $0.id == transaction.id }) else { return }
+        transactions[idx] = transaction
+        transactions.sort { $0.date > $1.date }
+        persist()
+        refreshSubscriptions()
+    }
+
+    func updateLiveIntelligence(for partial: String) {
+        liveSuggestions = LiveIntelligenceEngine.shared.liveSuggestions(for: partial, store: self)
+        inputInterpretation = LiveIntelligenceEngine.shared.interpret(partial)
+    }
+
+    func clearLiveIntelligence() {
+        liveSuggestions = []
+        inputInterpretation = .empty
+    }
+
+    func applyLiveSuggestion(_ suggestion: LiveSuggestion) {
+        switch suggestion.action {
+        case .submitText(let text):
+            processInput(text)
+        case .insight(let action):
+            pendingConfirmation = nil
+            showInsight(for: action)
+        case .saveDraft(let draft):
+            saveDraft(draft, rawInput: nil)
+        case .addSubscription(let name):
+            if subscriptions.contains(where: { $0.name.lowercased() == name.lowercased() }) {
+                showInsight(for: .monthlySubCost)
+            } else {
+                addSubscription(name: name, amount: 9.99, frequency: .monthly)
+                lastFeedback = "Abo \(name) hinzugefügt"
+            }
+        }
+    }
+
+    func confirmAsExpense() {
+        guard var c = pendingConfirmation else { return }
+        c.draft.type = .expense
+        if c.draft.category == .income { c.draft.category = .other }
+        saveDraft(c.draft, rawInput: c.rawInput)
+    }
+
+    func confirmAsIncome() {
+        guard var c = pendingConfirmation else { return }
+        c.draft.type = .income
+        c.draft.category = .income
+        saveDraft(c.draft, rawInput: c.rawInput)
+    }
+
+    func cancelConfirmation() {
+        pendingConfirmation = nil
+    }
+
+    func saveDraft(_ draft: ParsedTransactionDraft, rawInput: String?) {
+        let tx = Transaction(
+            amount: draft.amount,
+            type: draft.type,
+            category: draft.category,
+            merchant: draft.merchant,
+            date: draft.date,
+            rawInput: rawInput
+        )
+        addTransaction(tx)
+        let sign = draft.type == .income ? "+" : "-"
+        lastFeedback = String(format: "Hinzugefügt: %@ %@%.2f€ (%@)", draft.merchant, sign, draft.amount, draft.category.rawValue)
+        pendingConfirmation = nil
+        activeInsight = nil
+        pendingIntent = nil
+    }
+
     func processInput(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -78,25 +153,25 @@ final class FinanceStore: ObservableObject {
             }
         }
 
-        if SmartInputParser.shared.isLikelyQuery(trimmed) {
-            applyAssistant(FinanceAssistant.shared.respond(to: trimmed, store: self))
+        // Buchung — bei Unsicherheit erst bestätigen
+        if let draft = SmartInputParser.shared.parseSingle(trimmed),
+           SmartInputParser.shared.looksLikeTransaction(trimmed) || SmartInputParser.shared.containsAmount(trimmed) {
+            if LiveIntelligenceEngine.shared.isUncertainInput(trimmed, draft: draft) {
+                pendingConfirmation = PendingConfirmation(
+                    draft: draft,
+                    rawInput: trimmed,
+                    message: "Ist das eine Ausgabe oder Einnahme?"
+                )
+                pendingIntent = nil
+                activeInsight = nil
+                return
+            }
+            saveDraft(draft, rawInput: trimmed)
             return
         }
 
-        if let draft = SmartInputParser.shared.parseSingle(trimmed) {
-            let tx = Transaction(
-                amount: draft.amount,
-                type: draft.type,
-                category: draft.category,
-                merchant: draft.merchant,
-                date: draft.date,
-                rawInput: trimmed
-            )
-            addTransaction(tx)
-            let sign = draft.type == .income ? "+" : "-"
-            lastFeedback = String(format: "Hinzugefügt: %@ %@%.2f€ (%@)", draft.merchant, sign, draft.amount, draft.category.rawValue)
-            pendingIntent = nil
-            activeInsight = nil
+        if SmartInputParser.shared.isLikelyQuery(trimmed) {
+            applyAssistant(FinanceAssistant.shared.respond(to: trimmed, store: self))
             return
         }
 

@@ -22,6 +22,9 @@ struct SettingsView: View {
             }
 
             Section("Hinweise") {
+                Text("Tippe auf eine Buchung für Details und Bearbeitung. Standort, Betrag und Kategorie lassen sich jederzeit ändern.")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
                 Text("Alle Daten bleiben auf deinem Gerät. Live Cash verbindet sich nicht mit Banken oder externen APIs.")
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)

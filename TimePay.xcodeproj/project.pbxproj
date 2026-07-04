@@ -34,6 +34,13 @@
 		LC0000010000000000000019 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000019 /* MoreView.swift */; };
 		LC000001000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001A /* SettingsView.swift */; };
 		LC000001000000000000001B /* ReceiptScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001B /* ReceiptScanView.swift */; };
+		LC000001000000000000001D /* MapPinLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001F /* MapPinLayout.swift */; };
+		LC000001000000000000001E /* TransactionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000020 /* TransactionDetailView.swift */; };
+		LC000001000000000000001F /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000021 /* CameraCaptureView.swift */; };
+		LC0000010000000000000020 /* LiveSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000022 /* LiveSuggestion.swift */; };
+		LC0000010000000000000021 /* LiveIntelligenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000023 /* LiveIntelligenceEngine.swift */; };
+		LC0000010000000000000022 /* LiveSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000024 /* LiveSuggestionsView.swift */; };
+		LC0000010000000000000023 /* AddTransactionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000025 /* AddTransactionView.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -69,6 +76,13 @@
 		LC000002000000000000001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		LC000002000000000000001D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		LC000002000000000000001E /* LiveCash.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LiveCash.entitlements; sourceTree = "<group>"; };
+		LC000002000000000000001F /* MapPinLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPinLayout.swift; sourceTree = "<group>"; };
+		LC0000020000000000000020 /* TransactionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000021 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000022 /* LiveSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSuggestion.swift; sourceTree = "<group>"; };
+		LC0000020000000000000023 /* LiveIntelligenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveIntelligenceEngine.swift; sourceTree = "<group>"; };
+		LC0000020000000000000024 /* LiveSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSuggestionsView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000025 /* AddTransactionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +135,7 @@
 				LC0000020000000000000003 /* Transaction.swift */,
 				LC0000020000000000000004 /* Goal.swift */,
 				LC0000020000000000000005 /* Subscription.swift */,
+				LC0000020000000000000022 /* LiveSuggestion.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -133,6 +148,8 @@
 				LC0000020000000000000008 /* FinanceAssistant.swift */,
 				LC0000020000000000000009 /* SubscriptionDetector.swift */,
 				LC000002000000000000000A /* OCRService.swift */,
+				LC000002000000000000001F /* MapPinLayout.swift */,
+				LC0000020000000000000023 /* LiveIntelligenceEngine.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -169,6 +186,8 @@
 				LC0000020000000000000019 /* MoreView.swift */,
 				LC000002000000000000001A /* SettingsView.swift */,
 				LC000002000000000000001B /* ReceiptScanView.swift */,
+				LC0000020000000000000020 /* TransactionDetailView.swift */,
+				LC0000020000000000000025 /* AddTransactionView.swift */,
 				LC0000050000000000000009 /* Components */,
 			);
 			path = Views;
@@ -179,6 +198,8 @@
 			children = (
 				LC0000020000000000000013 /* TransactionRow.swift */,
 				LC0000020000000000000014 /* GoalCard.swift */,
+				LC0000020000000000000021 /* CameraCaptureView.swift */,
+				LC0000020000000000000024 /* LiveSuggestionsView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -279,6 +300,13 @@
 				LC0000010000000000000019 /* MoreView.swift in Sources */,
 				LC000001000000000000001A /* SettingsView.swift in Sources */,
 				LC000001000000000000001B /* ReceiptScanView.swift in Sources */,
+				LC000001000000000000001D /* MapPinLayout.swift in Sources */,
+				LC000001000000000000001E /* TransactionDetailView.swift in Sources */,
+				LC000001000000000000001F /* CameraCaptureView.swift in Sources */,
+				LC0000010000000000000020 /* LiveSuggestion.swift in Sources */,
+				LC0000010000000000000021 /* LiveIntelligenceEngine.swift in Sources */,
+				LC0000010000000000000022 /* LiveSuggestionsView.swift in Sources */,
+				LC0000010000000000000023 /* AddTransactionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -329,7 +357,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -365,7 +393,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
