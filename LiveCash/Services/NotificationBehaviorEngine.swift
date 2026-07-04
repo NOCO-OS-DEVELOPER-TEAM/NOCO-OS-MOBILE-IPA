@@ -34,8 +34,8 @@ enum NotificationBehaviorEngine {
         if prefs.monthStartReminder, let p = monthStartSalaryReminder() {
             candidates.append(p)
         }
-        if prefs.weeklyReminder, let p = weeklyLoggingReminder(learning: store.notificationLearning) {
-            candidates.append(p)
+        if prefs.weeklyReminder {
+            candidates.append(weeklyLoggingReminder(learning: store.notificationLearning))
         }
         if prefs.weekdayPatterns, let p = todayWeekdayWarning(for: store) {
             candidates.append(p)
@@ -61,7 +61,7 @@ enum NotificationBehaviorEngine {
             kind: .monthStart,
             delay: 0,
             priority: 100,
-            calendar: DateComponents(hour: 9, minute: 0, day: 1),
+            calendar: DateComponents(day: 1, hour: 9, minute: 0),
             repeats: true
         )
     }
@@ -75,7 +75,7 @@ enum NotificationBehaviorEngine {
             kind: .weeklyReminder,
             delay: 0,
             priority: 80,
-            calendar: DateComponents(hour: hour, minute: 0, weekday: 2),
+            calendar: DateComponents(weekday: 2, hour: hour, minute: 0),
             repeats: true
         )
     }

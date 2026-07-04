@@ -14,15 +14,14 @@ enum DocumentImportService {
         return nil
     }
 
+    @MainActor
     static func parseTransactions(from text: String) -> [ParsedTransactionDraft] {
         let lines = text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         if lines.count > 1 {
             let bulk = SmartInputParser.shared.parseBulk(text)
-            if !bulk.isEmpty { return bulk.map { draft in
-                var d = draft
-                SmartInputParser.shared.applyPreferredType(.expense, to: &d, text: "")
-                return d
-            }}
+            if !bulk.isEmpty {
+                return bulk.map { draft(from: $0) }
+            }
         }
         if let single = SmartInputParser.shared.parseSingle(text) {
             var d = single
@@ -30,6 +29,19 @@ enum DocumentImportService {
             return [d]
         }
         return []
+    }
+
+    @MainActor
+    private static func draft(from transaction: Transaction) -> ParsedTransactionDraft {
+        var d = ParsedTransactionDraft(
+            amount: transaction.amount,
+            type: transaction.type,
+            merchant: transaction.merchant,
+            category: transaction.category,
+            date: transaction.date
+        )
+        SmartInputParser.shared.applyPreferredType(.expense, to: &d, text: "")
+        return d
     }
 
     private static func extractPDFText(url: URL) -> String? {
