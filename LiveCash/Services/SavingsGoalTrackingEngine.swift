@@ -54,11 +54,11 @@ enum GoalTrackingAlert: Equatable {
 
     var title: String {
         switch self {
-        case .contributed(let amount, let name, let percent):
+        case .contributed(let amount, let name, _):
             return "+\(Int(amount))€ → \(name)"
         case .milestone(_, let name):
             return "50% bei \(name) 🎯"
-        case .completed(let name):
+        case .completed:
             return "Sparziel erreicht! 🎉"
         case .slowProgress(let name, _):
             return "Tempo bei \(name)"

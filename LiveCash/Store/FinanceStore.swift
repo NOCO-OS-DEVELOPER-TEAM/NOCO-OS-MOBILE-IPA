@@ -327,7 +327,7 @@ final class FinanceStore: ObservableObject {
             break
         }
 
-        if var draft = SmartInputParser.shared.parseSingle(trimmed),
+        if let draft = SmartInputParser.shared.parseSingle(trimmed),
            SmartInputParser.shared.looksLikeTransaction(trimmed) || SmartInputParser.shared.containsAmount(trimmed) {
             routeTransactionDraft(draft, rawInput: trimmed, applyPreferredType: true)
             return
@@ -951,12 +951,12 @@ final class FinanceStore: ObservableObject {
         }
         transactions.sort { $0.date > $1.date }
 
-        var goalIds = Set(goals.map(\.id))
+        let goalIds = Set(goals.map(\.id))
         for goal in data.goals where !goalIds.contains(goal.id) {
             goals.append(goal)
         }
 
-        var subNames = Set(subscriptions.map { $0.name.lowercased() })
+        let subNames = Set(subscriptions.map { $0.name.lowercased() })
         for sub in data.subscriptions where !subNames.contains(sub.name.lowercased()) {
             subscriptions.append(sub)
         }

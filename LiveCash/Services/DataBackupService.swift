@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 enum DataBackupService {
     static let exportFileName = "LiveCash-Backup.json"
 
+    @MainActor
     static func exportData(from store: FinanceStore) throws -> URL {
         let data = try PersistenceService.shared.exportAppData(buildFrom: store)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(exportFileName)
@@ -21,6 +22,7 @@ enum DataBackupService {
 }
 
 extension PersistenceService {
+    @MainActor
     func exportAppData(buildFrom store: FinanceStore) throws -> Data {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
