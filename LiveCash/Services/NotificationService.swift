@@ -75,16 +75,78 @@ final class NotificationService {
     }
 
     private func scheduleSoftLimitWarnings(store: FinanceStore, center: UNUserNotificationCenter) {
-        guard store.spendingLimits.enabled, let daily = store.spendingLimits.dailyLimit else { return }
-        let used = store.todayExpenses / daily
-        guard used >= 0.9 && used < 1.0 else { return }
-        schedule(SmartNotificationPayload(
-            id: "soft-daily",
-            title: "Tageslimit",
-            body: String(format: "Du hast %.0f%% deines Tageslimits erreicht.", used * 100),
-            kind: .highSpendingToday,
-            delay: 3600,
-            priority: 75
-        ), center: center)
+        guard store.spendingLimits.enabled else { return }
+
+        if let daily = store.spendingLimits.dailyLimit, daily > 0 {
+            let ratio = store.todayExpenses / daily
+            if ratio >= 0.5 && ratio < 0.8 {
+                schedule(SmartNotificationPayload(
+                    id: "limit-daily-50",
+                    title: "Tageslimit",
+                    body: String(format: "Du hast %.0f%% deines Tageslimits erreicht.", ratio * 100),
+                    kind: .highSpendingToday,
+                    delay: 300,
+                    priority: 70
+                ), center: center)
+            } else if ratio >= 0.8 && ratio < 1.0 {
+                schedule(SmartNotificationPayload(
+                    id: "limit-daily-80",
+                    title: "Tageslimit — Achtung",
+                    body: String(format: "Du hast %.0f%% deines Tageslimits erreicht. Vorsicht!", ratio * 100),
+                    kind: .highSpendingToday,
+                    delay: 300,
+                    priority: 85
+                ), center: center)
+            }
+        }
+
+        if let weekly = store.spendingLimits.weeklyLimit, weekly > 0 {
+            let ratio = store.weeklyExpenses / weekly
+            if ratio >= 0.5 && ratio < 0.8 {
+                schedule(SmartNotificationPayload(
+                    id: "limit-weekly-50",
+                    title: "Wochenlimit",
+                    body: String(format: "%.0f%% deines Wochenlimits erreicht.", ratio * 100),
+                    kind: .highSpendingToday,
+                    delay: 600,
+                    priority: 65
+                ), center: center)
+            } else if ratio >= 0.8 && ratio < 1.0 {
+                schedule(SmartNotificationPayload(
+                    id: "limit-weekly-80",
+                    title: "Wochenlimit — Achtung",
+                    body: String(format: "%.0f%% deines Wochenlimits — fast aufgebraucht!", ratio * 100),
+                    kind: .highSpendingToday,
+                    delay: 600,
+                    priority: 80
+                ), center: center)
+            }
+        }
+
+        if let monthly = store.spendingLimits.monthlyLimit, monthly > 0 {
+            let monthSpent = store.transactions(inMonth: Date())
+                .filter { $0.type == .expense && !FinanceStore.isGoalContribution($0) }
+                .reduce(0) { $0 + $1.amount }
+            let ratio = monthSpent / monthly
+            if ratio >= 0.5 && ratio < 0.8 {
+                schedule(SmartNotificationPayload(
+                    id: "limit-monthly-50",
+                    title: "Monatslimit",
+                    body: String(format: "%.0f%% deines Monatslimits erreicht.", ratio * 100),
+                    kind: .highSpendingToday,
+                    delay: 900,
+                    priority: 60
+                ), center: center)
+            } else if ratio >= 0.8 && ratio < 1.0 {
+                schedule(SmartNotificationPayload(
+                    id: "limit-monthly-80",
+                    title: "Monatslimit — Achtung",
+                    body: String(format: "%.0f%% deines Monatslimits — stark im Limit!", ratio * 100),
+                    kind: .highSpendingToday,
+                    delay: 900,
+                    priority: 78
+                ), center: center)
+            }
+        }
     }
 }

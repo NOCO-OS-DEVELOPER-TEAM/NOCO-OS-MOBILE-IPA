@@ -13,6 +13,8 @@ struct GoalFormView: View {
     @State private var notifySlow = true
     @State private var notifyFast = false
     @State private var notifyAt50 = true
+    @State private var notifyAt75 = true
+    @State private var goalTimeTracking = true
 
     var body: some View {
         NavigationStack {
@@ -28,10 +30,12 @@ struct GoalFormView: View {
                     if hasDeadline {
                         DatePicker("Erreicht bis", selection: $targetDate, in: Date()..., displayedComponents: .date)
                     }
+                    Toggle("Zielzeit-Tracking aktiv", isOn: $goalTimeTracking)
                 }
 
                 Section("Smart Tracking") {
                     Toggle("Bei 50% benachrichtigen", isOn: $notifyAt50)
+                    Toggle("Bei 75% benachrichtigen", isOn: $notifyAt75)
                     Toggle("Warnung bei langsamem Tempo", isOn: $notifySlow)
                     Toggle("Info bei schnellem Tempo", isOn: $notifyFast)
                 }
@@ -40,11 +44,15 @@ struct GoalFormView: View {
                     let preview = SavingsGoal(
                         name: name.isEmpty ? "Ziel" : name,
                         targetAmount: target,
-                        targetDate: targetDate
+                        targetDate: targetDate,
+                        goalTimeTrackingEnabled: goalTimeTracking
                     )
                     Section("Prognose") {
-                        if let pace = preview.requiredDailyPace {
+                        if let pace = preview.requiredDailyPace, goalTimeTracking {
                             LabeledContent("Nötiges Tages-Tempo", value: String(format: "%.2f€", pace))
+                        }
+                        if let days = preview.daysRemaining, goalTimeTracking {
+                            LabeledContent("Verbleibende Zeit", value: "\(days) Tage")
                         }
                         LabeledContent("Status", value: preview.paceStatus(referenceMonthlySavings: store.monthlySavingsRate).rawValue)
                     }
@@ -80,6 +88,8 @@ struct GoalFormView: View {
         notifySlow = goal.notifySlowProgress
         notifyFast = goal.notifyFastProgress
         notifyAt50 = goal.notifyAt50Percent
+        notifyAt75 = goal.notifyAt75Percent
+        goalTimeTracking = goal.goalTimeTrackingEnabled
     }
 
     private func save() {
@@ -92,6 +102,8 @@ struct GoalFormView: View {
             existing.notifySlowProgress = notifySlow
             existing.notifyFastProgress = notifyFast
             existing.notifyAt50Percent = notifyAt50
+            existing.notifyAt75Percent = notifyAt75
+            existing.goalTimeTrackingEnabled = goalTimeTracking
             store.updateGoal(existing)
         } else {
             store.addGoal(
@@ -100,9 +112,12 @@ struct GoalFormView: View {
                 targetDate: hasDeadline ? targetDate : nil,
                 notifySlowProgress: notifySlow,
                 notifyFastProgress: notifyFast,
-                notifyAt50Percent: notifyAt50
+                notifyAt50Percent: notifyAt50,
+                notifyAt75Percent: notifyAt75,
+                goalTimeTrackingEnabled: goalTimeTracking
             )
         }
+        HapticService.success(store: store)
         dismiss()
     }
 }

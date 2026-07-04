@@ -199,6 +199,8 @@ final class LiveIntelligenceEngine {
 
     private func suggestionModeChips(for partial: String, store: FinanceStore) -> [LiveSuggestion] {
         let lower = partial.lowercased()
+        let hour = Calendar.current.component(.hour, from: Date())
+
         if lower.contains("abo") {
             return [
                 LiveSuggestion(title: "Alle Abos anzeigen", action: .insight(.allSubscriptions)),
@@ -206,9 +208,39 @@ final class LiveIntelligenceEngine {
                 LiveSuggestion(title: "Einspar-Potenzial", action: .insight(.potentialSavings))
             ]
         }
+
+        if lower.contains("spar") || !store.goals.isEmpty {
+            let topGoal = store.activeGoals.first
+            if let goal = topGoal {
+                return [
+                    LiveSuggestion(title: "+\(max(Int(goal.remaining / 10), 10))€ zu \(goal.name)", action: .submitText("\(goal.name) \(max(Int(goal.remaining / 10), 10))")),
+                    LiveSuggestion(title: "Spar-Tipps", action: .insight(.savingsTips)),
+                    LiveSuggestion(title: "Ausgaben-Tempo", action: .insight(.spendingPace))
+                ]
+            }
+        }
+
+        if store.todayExpenses > store.dailyAverageExpenses * 1.3 && store.dailyAverageExpenses > 0 {
+            return [
+                LiveSuggestion(title: "Heute: \(String(format: "%.0f€", store.todayExpenses)) ausgegeben", action: .insight(.spendingPace)),
+                LiveSuggestion(title: "Top-Ausgaben", action: .insight(.top5Expenses)),
+                LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary))
+            ]
+        }
+
+        if let recent = store.accountFilteredTransactions.first(where: { $0.type == .expense && !FinanceStore.isGoalContribution($0) }) {
+            return [
+                LiveSuggestion(title: "Wieder: \(recent.merchant) \(String(format: "%.0f€", recent.amount))", action: .submitText("\(recent.merchant) \(String(format: "%.0f", recent.amount))")),
+                LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary)),
+                LiveSuggestion(title: hour < 12 ? "Heute planen" : "Wochenbilanz", action: .insight(hour < 12 ? .savingsTips : .incomeVsExpense))
+            ]
+        }
+
         if store.transactions.isEmpty {
             return [
-                LiveSuggestion(title: "Beispiel: Kaffee 4,50", action: .submitText("Kaffee 4,50"))
+                LiveSuggestion(title: "Beispiel: Kaffee 4,50", action: .submitText("Kaffee 4,50")),
+                LiveSuggestion(title: "Sparziel anlegen", action: .insight(.savingsTips)),
+                LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary))
             ]
         }
         return [

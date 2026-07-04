@@ -17,7 +17,11 @@ struct SavingsGoal: Identifiable, Codable, Equatable {
     var notifySlowProgress: Bool
     var notifyFastProgress: Bool
     var notifyAt50Percent: Bool
+    var notifyAt75Percent: Bool
+    var goalTimeTrackingEnabled: Bool
     var notifiedMilestones: [Int]
+
+    var isCompleted: Bool { progressPercent >= 100 }
 
     init(
         id: UUID = UUID(),
@@ -29,6 +33,8 @@ struct SavingsGoal: Identifiable, Codable, Equatable {
         notifySlowProgress: Bool = true,
         notifyFastProgress: Bool = false,
         notifyAt50Percent: Bool = true,
+        notifyAt75Percent: Bool = true,
+        goalTimeTrackingEnabled: Bool = true,
         notifiedMilestones: [Int] = []
     ) {
         self.id = id
@@ -40,6 +46,8 @@ struct SavingsGoal: Identifiable, Codable, Equatable {
         self.notifySlowProgress = notifySlowProgress
         self.notifyFastProgress = notifyFastProgress
         self.notifyAt50Percent = notifyAt50Percent
+        self.notifyAt75Percent = notifyAt75Percent
+        self.goalTimeTrackingEnabled = goalTimeTrackingEnabled
         self.notifiedMilestones = notifiedMilestones
     }
 
@@ -54,12 +62,14 @@ struct SavingsGoal: Identifiable, Codable, Equatable {
         notifySlowProgress = try c.decodeIfPresent(Bool.self, forKey: .notifySlowProgress) ?? true
         notifyFastProgress = try c.decodeIfPresent(Bool.self, forKey: .notifyFastProgress) ?? false
         notifyAt50Percent = try c.decodeIfPresent(Bool.self, forKey: .notifyAt50Percent) ?? true
+        notifyAt75Percent = try c.decodeIfPresent(Bool.self, forKey: .notifyAt75Percent) ?? true
+        goalTimeTrackingEnabled = try c.decodeIfPresent(Bool.self, forKey: .goalTimeTrackingEnabled) ?? true
         notifiedMilestones = try c.decodeIfPresent([Int].self, forKey: .notifiedMilestones) ?? []
     }
 
     enum CodingKeys: String, CodingKey {
         case id, name, targetAmount, currentAmount, createdAt, targetDate
-        case notifySlowProgress, notifyFastProgress, notifyAt50Percent, notifiedMilestones
+        case notifySlowProgress, notifyFastProgress, notifyAt50Percent, notifyAt75Percent, goalTimeTrackingEnabled, notifiedMilestones
     }
 
     func encode(to encoder: Encoder) throws {
@@ -73,6 +83,8 @@ struct SavingsGoal: Identifiable, Codable, Equatable {
         try c.encode(notifySlowProgress, forKey: .notifySlowProgress)
         try c.encode(notifyFastProgress, forKey: .notifyFastProgress)
         try c.encode(notifyAt50Percent, forKey: .notifyAt50Percent)
+        try c.encode(notifyAt75Percent, forKey: .notifyAt75Percent)
+        try c.encode(goalTimeTrackingEnabled, forKey: .goalTimeTrackingEnabled)
         try c.encode(notifiedMilestones, forKey: .notifiedMilestones)
     }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 
 struct ReceiptScanView: View {
     @EnvironmentObject private var store: FinanceStore
@@ -14,6 +15,7 @@ struct ReceiptScanView: View {
     @State private var errorMessage: String?
     @State private var savedCount = 0
     @State private var showCamera = false
+    @State private var showFileImporter = false
 
     var body: some View {
         NavigationStack {
@@ -47,6 +49,17 @@ struct ReceiptScanView: View {
                                 .foregroundStyle(.primary)
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
+                    }
+
+                    Button {
+                        showFileImporter = true
+                    } label: {
+                        Label("Datei (PDF, Text)", systemImage: "doc.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(LiveCashTheme.cardBackground)
+                            .foregroundStyle(.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
 
                     if isProcessing {
@@ -87,6 +100,19 @@ struct ReceiptScanView: View {
                     Task { await processImage(image) }
                 }
                 .ignoresSafeArea()
+            }
+            .fileImporter(
+                isPresented: $showFileImporter,
+                allowedContentTypes: [.pdf, .plainText, .commaSeparatedText, .image],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
+                    Task { await processFile(url) }
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }
@@ -200,6 +226,41 @@ struct ReceiptScanView: View {
         } catch {
             errorMessage = "Bild konnte nicht geladen werden."
         }
+    }
+
+    private func processFile(_ url: URL) async {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        isProcessing = true
+        errorMessage = nil
+
+        let ext = url.pathExtension.lowercased()
+        if ["jpg", "jpeg", "png", "heic", "webp"].contains(ext),
+           let data = try? Data(contentsOf: url),
+           let image = UIImage(data: data) {
+            await processImage(image)
+            return
+        }
+
+        guard let text = DocumentImportService.extractText(from: url) else {
+            errorMessage = "Datei konnte nicht gelesen werden."
+            isProcessing = false
+            return
+        }
+        ocrText = text
+        documentKind = SmartInputParser.shared.detectDocumentKind(text)
+        if documentKind == .balance {
+            draft = SmartInputParser.shared.parseBalanceText(text)
+        } else if let single = SmartInputParser.shared.parseSingle(text) {
+            draft = single
+        } else {
+            let drafts = DocumentImportService.parseTransactions(from: text)
+            draft = drafts.first
+        }
+        if draft == nil {
+            errorMessage = "Kein Betrag in der Datei erkannt."
+        }
+        isProcessing = false
     }
 
     private func processImage(_ image: UIImage) async {

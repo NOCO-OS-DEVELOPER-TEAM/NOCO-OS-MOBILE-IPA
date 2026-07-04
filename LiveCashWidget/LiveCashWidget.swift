@@ -3,17 +3,19 @@ import SwiftUI
 
 struct LiveCashWidgetEntry: TimelineEntry {
     let date: Date
-    let snapshot: WidgetSnapshot?
+    let snapshot: WidgetSnapshot
 }
 
 struct LiveCashWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> LiveCashWidgetEntry {
         LiveCashWidgetEntry(date: Date(), snapshot: WidgetSnapshot(
-            balance: 240, monthExpenses: 820, monthIncome: 1200,
+            balance: 1240, monthExpenses: 820, monthIncome: 1200,
             topCategoryName: "Lebensmittel", topCategoryAmount: 210,
-            savingsProgressPercent: 35, primaryGoalName: "iPhone",
+            savingsProgressPercent: 65, primaryGoalName: "iPhone",
             monthlySubscriptionCost: 42,
             lastExpenseMerchant: "Döner", lastExpenseAmount: 6,
+            lastTransactionMerchant: "Döner", lastTransactionAmount: 6,
+            lastTransactionIsIncome: false, refreshIntervalMinutes: 15,
             showBalance: true, showExpenses: true, showSavings: true,
             showSubscriptions: true, showRecentExpense: true,
             updatedAt: Date()
@@ -25,9 +27,10 @@ struct LiveCashWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<LiveCashWidgetEntry>) -> Void) {
-        let entry = LiveCashWidgetEntry(date: Date(), snapshot: WidgetSnapshotLoader.load())
-        let minutes = 15
-        let next = Calendar.current.date(byAdding: .minute, value: minutes, to: Date()) ?? Date().addingTimeInterval(900)
+        let snapshot = WidgetSnapshotLoader.load()
+        let entry = LiveCashWidgetEntry(date: Date(), snapshot: snapshot)
+        let minutes = max(snapshot.refreshIntervalMinutes, 15)
+        let next = Calendar.current.date(byAdding: .minute, value: minutes, to: Date()) ?? Date().addingTimeInterval(Double(minutes * 60))
         completion(Timeline(entries: [entry], policy: .after(next)))
     }
 }
@@ -36,33 +39,31 @@ struct LiveCashWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: LiveCashWidgetEntry
 
+    private var s: WidgetSnapshot { entry.snapshot }
     private var accent: Color { Color(red: 0.12, green: 0.72, blue: 0.52) }
     private var income: Color { Color(red: 0.15, green: 0.78, blue: 0.42) }
     private var expense: Color { Color(red: 0.94, green: 0.32, blue: 0.36) }
+    private var hasData: Bool { s.updatedAt.timeIntervalSince1970 > 0 }
 
     var body: some View {
         Group {
-            if let s = entry.snapshot {
-                if family == .systemMedium {
-                    mediumLayout(s)
-                } else {
-                    smallLayout(s)
-                }
+            if family == .systemMedium {
+                mediumLayout
             } else {
-                emptyLayout
+                smallLayout
             }
         }
         .widgetURL(URL(string: "livecash://widget"))
     }
 
-    private func smallLayout(_ s: WidgetSnapshot) -> some View {
+    private var smallLayout: some View {
         VStack(alignment: .leading, spacing: 8) {
-            header(s)
+            header
             if s.showBalance {
                 Text(String(format: "%.0f€", s.balance))
                     .font(.system(.title2, design: .rounded).weight(.bold))
                     .foregroundStyle(s.balance >= 0 ? income : expense)
-                Text("Saldo · Monat")
+                Text("Verfügbar")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -71,40 +72,35 @@ struct LiveCashWidgetView: View {
                     statCol("Ausgaben", value: s.monthExpenses, color: expense)
                 }
                 Spacer()
-                if s.showSavings {
-                    statCol("Sparen", valueText: "\(s.savingsProgressPercent)%", color: income)
+                if s.showSavings, let goal = s.primaryGoalName {
+                    statCol("Sparen", valueText: "\(goal) \(s.savingsProgressPercent)%", color: income)
                 }
             }
-            if s.showSubscriptions, s.monthlySubscriptionCost > 0 {
+            if s.showRecentExpense {
+                lastTransactionRow
+            } else if s.showSubscriptions, s.monthlySubscriptionCost > 0 {
                 Text(String(format: "Abos: %.0f€/M", s.monthlySubscriptionCost))
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
-            } else if s.showRecentExpense, let merchant = s.lastExpenseMerchant, s.lastExpenseAmount > 0 {
-                Text("Letzte: \(merchant) · \(String(format: "%.0f€", s.lastExpenseAmount))")
-                    .font(.system(size: 10, design: .rounded))
-                    .foregroundStyle(expense)
-                    .lineLimit(1)
-            } else if let cat = s.topCategoryName, s.showExpenses {
-                Text("Top: \(cat)")
-                    .font(.system(size: 10, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
         }
         .padding()
     }
 
-    private func mediumLayout(_ s: WidgetSnapshot) -> some View {
+    private var mediumLayout: some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
-                header(s)
+                header
                 if s.showBalance {
                     Text(String(format: "%.0f€", s.balance))
                         .font(.system(.title, design: .rounded).weight(.bold))
                         .foregroundStyle(s.balance >= 0 ? income : expense)
-                    Text("Monatssaldo")
+                    Text("Verfügbar")
                         .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
+                }
+                if s.showRecentExpense {
+                    lastTransactionRow
                 }
             }
             Spacer()
@@ -113,10 +109,15 @@ struct LiveCashWidgetView: View {
                     statCol("Ausgaben", value: s.monthExpenses, color: expense)
                 }
                 if s.showSavings, let goal = s.primaryGoalName {
-                    Text("\(goal) · \(s.savingsProgressPercent)%")
-                        .font(.system(size: 10, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    VStack(alignment: .trailing) {
+                        Text(goal)
+                            .font(.system(size: 10, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Text("\(s.savingsProgressPercent)%")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(income)
+                    }
                 }
                 if s.showSubscriptions, s.monthlySubscriptionCost > 0 {
                     statCol("Abos/M", value: s.monthlySubscriptionCost, color: accent)
@@ -126,18 +127,23 @@ struct LiveCashWidgetView: View {
         .padding()
     }
 
-    private var emptyLayout: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Live Cash")
-                .font(.headline)
-            Text("App öffnen für Kontostand")
-                .font(.caption)
+    @ViewBuilder
+    private var lastTransactionRow: some View {
+        if let merchant = s.lastTransactionMerchant, s.lastTransactionAmount > 0 {
+            let color = s.lastTransactionIsIncome ? income : expense
+            let prefix = s.lastTransactionIsIncome ? "+" : "−"
+            Text("Letzte: \(merchant) · \(prefix)\(String(format: "%.0f€", s.lastTransactionAmount))")
+                .font(.system(size: 10, design: .rounded))
+                .foregroundStyle(color)
+                .lineLimit(1)
+        } else if !hasData {
+            Text("App öffnen für Live-Daten")
+                .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.secondary)
         }
-        .padding()
     }
 
-    private func header(_ s: WidgetSnapshot) -> some View {
+    private var header: some View {
         HStack {
             Text("Live Cash")
                 .font(.system(.caption, design: .rounded).weight(.semibold))
@@ -161,6 +167,7 @@ struct LiveCashWidgetView: View {
             Text(valueText)
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundStyle(color)
+                .lineLimit(1)
         }
     }
 }
@@ -174,7 +181,7 @@ struct LiveCashWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Live Cash")
-        .description("Kontostand, Ausgaben, Sparfortschritt und Abo-Kosten.")
+        .description("Kontostand, Ausgaben, Sparfortschritt und letzte Bewegung.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

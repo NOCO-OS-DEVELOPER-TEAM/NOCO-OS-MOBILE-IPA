@@ -30,8 +30,8 @@ struct SpendingLimitsView: View {
                 }
             }
 
-            Section {
-                Text("Bei Überschreitung erscheint eine Bestätigung vor dem Speichern. Nahe am Limit erhältst du eine sanfte Warnung.")
+            Section("Benachrichtigungen") {
+                Text("Bei 50% deines Limits erhältst du eine Warnung, bei 80% eine starke Warnung. Überschreitungen werden beim Buchen bestätigt.")
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)
             }

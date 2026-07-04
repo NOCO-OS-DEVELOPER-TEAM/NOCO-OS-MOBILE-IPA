@@ -7,16 +7,22 @@ enum SavingsGoalTrackingEngine {
         guard settings.smartInsightsEnabled || settings.progressAlerts else { return alerts }
 
         if settings.progressAlerts, goal.notifyAt50Percent,
-           goal.progressPercent >= 50, goal.progressPercent < 100,
+           goal.progressPercent >= 50, goal.progressPercent < 75,
            !goal.notifiedMilestones.contains(50) {
             alerts.append(.milestone(percent: 50, goalName: goal.name))
+        }
+
+        if settings.progressAlerts, goal.notifyAt75Percent,
+           goal.progressPercent >= 75, goal.progressPercent < 100,
+           !goal.notifiedMilestones.contains(75) {
+            alerts.append(.milestone(percent: 75, goalName: goal.name))
         }
 
         if goal.progressPercent >= 100, !goal.notifiedMilestones.contains(100) {
             alerts.append(.completed(goalName: goal.name))
         }
 
-        let pace = goal.paceStatus(referenceMonthlySavings: monthlySavingsRate)
+        let pace = goal.goalTimeTrackingEnabled ? goal.paceStatus(referenceMonthlySavings: monthlySavingsRate) : .noDeadline
         switch pace {
         case .slow where goal.notifySlowProgress && settings.slowProgressAlerts:
             alerts.append(.slowProgress(goalName: goal.name, percent: goal.progressPercent))
@@ -56,8 +62,8 @@ enum GoalTrackingAlert: Equatable {
         switch self {
         case .contributed(let amount, let name, _):
             return "+\(Int(amount))€ → \(name)"
-        case .milestone(_, let name):
-            return "50% bei \(name) 🎯"
+        case .milestone(let percent, let name):
+            return "\(percent)% bei \(name) 🎯"
         case .completed:
             return "Sparziel erreicht! 🎉"
         case .slowProgress(let name, _):
@@ -73,8 +79,8 @@ enum GoalTrackingAlert: Equatable {
         switch self {
         case .contributed(_, _, let percent):
             return "Du bist jetzt bei \(percent)% deines Sparziels."
-        case .milestone:
-            return "Halbzeit — weiter so!"
+        case .milestone(let percent, _):
+            return percent >= 75 ? "Fast geschafft — weiter so!" : "Halbzeit — weiter so!"
         case .completed(let name):
             return "\(name) ist vollständig finanziert."
         case .slowProgress(_, let percent):

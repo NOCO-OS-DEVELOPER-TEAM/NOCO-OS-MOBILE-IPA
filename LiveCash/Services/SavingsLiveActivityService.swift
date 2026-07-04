@@ -7,6 +7,7 @@ struct SavingsGoalActivityAttributes: ActivityAttributes {
         var progressPercent: Int
         var currentAmount: Double
         var targetAmount: Double
+        var todayExpenses: Double
         var warning: String?
     }
 
@@ -19,13 +20,14 @@ enum SavingsLiveActivityService {
         ActivityAuthorizationInfo().areActivitiesEnabled
     }
 
-    static func updateOrStart(goal: SavingsGoal, warning: String? = nil) {
+    static func updateOrStart(goal: SavingsGoal, warning: String? = nil, todayExpenses: Double = 0) {
         guard isSupported else { return }
         let state = SavingsGoalActivityAttributes.ContentState(
             goalName: goal.name,
             progressPercent: goal.progressPercent,
             currentAmount: goal.currentAmount,
             targetAmount: goal.targetAmount,
+            todayExpenses: todayExpenses,
             warning: warning
         )
         let activities = Activity<SavingsGoalActivityAttributes>.activities

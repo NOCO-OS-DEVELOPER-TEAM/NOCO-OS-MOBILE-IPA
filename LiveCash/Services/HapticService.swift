@@ -8,6 +8,22 @@ enum HapticService {
     }
 
     @MainActor
+    static func selection(store: FinanceStore) {
+        guard store.appSettings.ui.hapticsEnabled else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    @MainActor
+    static func progressStep(store: FinanceStore, percent: Int) {
+        guard store.appSettings.ui.hapticsEnabled else { return }
+        if percent == 50 || percent == 75 || percent == 100 {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        } else if percent % 10 == 0 {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+
+    @MainActor
     static func light(store: FinanceStore) {
         impact(.light, store: store)
     }

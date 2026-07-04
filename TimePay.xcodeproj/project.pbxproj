@@ -87,6 +87,8 @@
 		LC0000010000000000000067 /* GoalContributionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006C /* GoalContributionView.swift */; };
 		LC0000010000000000000068 /* AddActionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006D /* AddActionSheet.swift */; };
 		LC0000010000000000000069 /* DataManagementSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006E /* DataManagementSettingsView.swift */; };
+		LC000001000000000000006A /* GoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006F /* GoalDetailView.swift */; };
+		LC000001000000000000006B /* SavingsGoalLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000070 /* SavingsGoalLiveActivityWidget.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -177,6 +179,8 @@
 		LC000002000000000000006C /* GoalContributionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalContributionView.swift; sourceTree = "<group>"; };
 		LC000002000000000000006D /* AddActionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddActionSheet.swift; sourceTree = "<group>"; };
 		LC000002000000000000006E /* DataManagementSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementSettingsView.swift; sourceTree = "<group>"; };
+		LC000002000000000000006F /* GoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalDetailView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000070 /* SavingsGoalLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsGoalLiveActivityWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -260,6 +264,7 @@
 			isa = PBXGroup;
 			children = (
 				LC0000020000000000000030 /* LiveCashWidget.swift */,
+				LC0000020000000000000070 /* SavingsGoalLiveActivityWidget.swift */,
 				LC0000020000000000000031 /* LiveCashWidgetBundle.swift */,
 				LC0000020000000000000032 /* WidgetSnapshot.swift */,
 				LC0000020000000000000034 /* Info.plist */,
@@ -388,6 +393,7 @@
 				LC0000020000000000000059 /* SensitiveBalanceView.swift */,
 				LC000002000000000000006B /* GoalFormView.swift */,
 				LC000002000000000000006C /* GoalContributionView.swift */,
+				LC000002000000000000006F /* GoalDetailView.swift */,
 				LC000002000000000000006D /* AddActionSheet.swift */,
 			);
 			path = Components;
@@ -571,6 +577,7 @@
 				LC0000010000000000000067 /* GoalContributionView.swift in Sources */,
 				LC0000010000000000000068 /* AddActionSheet.swift in Sources */,
 				LC0000010000000000000069 /* DataManagementSettingsView.swift in Sources */,
+				LC000001000000000000006A /* GoalDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -579,6 +586,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				LC0000010000000000000035 /* LiveCashWidget.swift in Sources */,
+				LC000001000000000000006B /* SavingsGoalLiveActivityWidget.swift in Sources */,
 				LC0000010000000000000036 /* LiveCashWidgetBundle.swift in Sources */,
 				LC0000010000000000000037 /* WidgetSnapshot.swift in Sources */,
 			);
@@ -639,7 +647,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -675,7 +683,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -709,7 +717,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
@@ -736,7 +744,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";

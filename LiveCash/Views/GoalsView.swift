@@ -4,6 +4,8 @@ struct GoalsView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var showAdd = false
     @State private var editingGoal: SavingsGoal?
+    @State private var detailGoal: SavingsGoal?
+    @State private var goalToDelete: SavingsGoal?
 
     private var totalSaved: Double {
         store.goals.reduce(0) { $0 + $1.currentAmount }
@@ -30,29 +32,24 @@ struct GoalsView: View {
                 )
                 .listRowBackground(Color.clear)
             } else {
-                ForEach(store.goals) { goal in
-                    Button {
-                        editingGoal = goal
-                    } label: {
-                        GoalCard(
-                            goal: goal,
-                            monthlySavingsRate: store.monthlySavingsRate,
-                            showProgress: store.appSettings.savings.showProgress
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .swipeActions {
-                        Button("+\(50)€") {
-                            store.addToGoal(goal, amount: 50)
+                if !store.activeGoals.isEmpty {
+                    Section {
+                        ForEach(store.activeGoals) { goal in
+                            goalRow(goal)
                         }
-                        .tint(LiveCashTheme.income)
+                    } header: {
+                        Text("Aktive Ziele")
                     }
                 }
-                .onDelete { idx in
-                    idx.forEach { store.deleteGoal(store.goals[$0]) }
+
+                if !store.completedGoals.isEmpty {
+                    Section {
+                        ForEach(store.completedGoals) { goal in
+                            goalRow(goal, completed: true)
+                        }
+                    } header: {
+                        Text("Abgeschlossen")
+                    }
                 }
             }
         }
@@ -75,6 +72,59 @@ struct GoalsView: View {
         .sheet(item: $editingGoal) { goal in
             GoalFormView(editingGoal: goal)
         }
+        .sheet(item: $detailGoal) { goal in
+            GoalDetailView(goal: goal)
+        }
+        .alert("Sparziel löschen?", isPresented: Binding(
+            get: { goalToDelete != nil },
+            set: { if !$0 { goalToDelete = nil } }
+        )) {
+            Button("Löschen", role: .destructive) {
+                if let goal = goalToDelete {
+                    store.deleteGoal(goal)
+                    goalToDelete = nil
+                }
+            }
+            Button("Abbrechen", role: .cancel) { goalToDelete = nil }
+        } message: {
+            if let goal = goalToDelete {
+                Text("\"\(goal.name)\" wird unwiderruflich gelöscht.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func goalRow(_ goal: SavingsGoal, completed: Bool = false) -> some View {
+        Button {
+            editingGoal = goal
+        } label: {
+            GoalCard(
+                goal: goal,
+                monthlySavingsRate: store.monthlySavingsRate,
+                showProgress: store.appSettings.savings.showProgress,
+                completed: completed
+            )
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                detailGoal = goal
+                HapticService.light(store: store)
+            } label: {
+                Label("Details", systemImage: "info.circle")
+            }
+            .tint(LiveCashTheme.accent)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                goalToDelete = goal
+            } label: {
+                Label("Löschen", systemImage: "trash")
+            }
+        }
     }
 
     private var summaryHeader: some View {
@@ -89,6 +139,16 @@ struct GoalsView: View {
                             .font(LiveCashTheme.headlineFont)
                     }
                     Spacer()
+                    if store.blockedInGoals > 0 {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text(String(format: "%.0f€", store.blockedInGoals))
+                                .font(LiveCashTheme.captionFont.weight(.semibold))
+                                .foregroundStyle(LiveCashTheme.accent)
+                            Text("Geblockt")
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     if store.savingsStreakDays > 0 {
                         VStack(alignment: .trailing, spacing: 4) {
                             Label("\(store.savingsStreakDays) Tage", systemImage: "flame.fill")

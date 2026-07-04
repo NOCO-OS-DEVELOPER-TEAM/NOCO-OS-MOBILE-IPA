@@ -415,7 +415,9 @@ final class FinanceStore: ObservableObject {
         targetDate: Date? = nil,
         notifySlowProgress: Bool = true,
         notifyFastProgress: Bool = false,
-        notifyAt50Percent: Bool = true
+        notifyAt50Percent: Bool = true,
+        notifyAt75Percent: Bool = true,
+        goalTimeTrackingEnabled: Bool = true
     ) {
         guard goals.count < appSettings.savings.maxGoals else {
             lastFeedback = "Max. \(appSettings.savings.maxGoals) Sparziele"
@@ -427,13 +429,15 @@ final class FinanceStore: ObservableObject {
             targetDate: targetDate,
             notifySlowProgress: notifySlowProgress,
             notifyFastProgress: notifyFastProgress,
-            notifyAt50Percent: notifyAt50Percent
+            notifyAt50Percent: notifyAt50Percent,
+            notifyAt75Percent: notifyAt75Percent,
+            goalTimeTrackingEnabled: goalTimeTrackingEnabled
         )
         goals.append(goal)
         recordDailyActivity()
         persist()
         if appSettings.savings.liveActivityEnabled {
-            SavingsLiveActivityService.updateOrStart(goal: goal)
+            SavingsLiveActivityService.updateOrStart(goal: goal, todayExpenses: todayExpenses)
         }
     }
 
@@ -452,8 +456,21 @@ final class FinanceStore: ObservableObject {
         guard amount > 0, let idx = goals.firstIndex(where: { $0.id == goal.id }) else { return }
         goals[idx].currentAmount += amount
         let updated = goals[idx]
+
+        let contribution = Transaction(
+            amount: amount,
+            type: .expense,
+            category: .other,
+            merchant: "Sparziel: \(updated.name)",
+            rawInput: "goal:\(updated.id.uuidString)"
+        )
+        transactions.insert(contribution, at: 0)
+        transactions.sort { $0.date > $1.date }
+
         recordDailyActivity()
         persist()
+
+        HapticService.success(store: self)
 
         let contributionAlert = GoalTrackingAlert.contributed(
             amount: amount,
@@ -480,8 +497,10 @@ final class FinanceStore: ObservableObject {
 
         if appSettings.savings.liveActivityEnabled {
             let warning = trackingAlerts.first.map { $0.body }
-            SavingsLiveActivityService.updateOrStart(goal: goals[idx], warning: warning)
+            SavingsLiveActivityService.updateOrStart(goal: goals[idx], warning: warning, todayExpenses: todayExpenses)
         }
+
+        HapticService.progressStep(store: self, percent: updated.progressPercent)
 
         lastFeedback = String(format: "%.0f€ zu „%@“ — jetzt %d%%", amount, updated.name, updated.progressPercent)
     }
@@ -797,9 +816,7 @@ final class FinanceStore: ObservableObject {
     }
 
     var todayExpenses: Double {
-        let cal = Calendar.current
-        return accountFilteredTransactions.filter { cal.isDateInToday($0.date) && $0.type == .expense }
-            .reduce(0) { $0 + $1.amount }
+        spendingTransactions(todayOnly: true).reduce(0) { $0 + $1.amount }
     }
 
     var dailyAverageExpenses: Double {
@@ -830,9 +847,39 @@ final class FinanceStore: ObservableObject {
         accountFilteredTransactions.reduce(0) { $0 + $1.signedAmount }
     }
 
+    var blockedInGoals: Double {
+        goals.reduce(0) { $0 + $1.currentAmount }
+    }
+
+    var availableBalance: Double {
+        allTimeBalance
+    }
+
+    var activeGoals: [SavingsGoal] {
+        goals.filter { !$0.isCompleted }.sorted { $0.progress > $1.progress }
+    }
+
+    var completedGoals: [SavingsGoal] {
+        goals.filter(\.isCompleted)
+    }
+
+    static func isGoalContribution(_ transaction: Transaction) -> Bool {
+        transaction.merchant.hasPrefix("Sparziel:")
+    }
+
+    private func spendingTransactions(since start: Date? = nil, todayOnly: Bool = false) -> [Transaction] {
+        let cal = Calendar.current
+        return accountFilteredTransactions.filter { tx in
+            guard tx.type == .expense, !Self.isGoalContribution(tx) else { return false }
+            if todayOnly { return cal.isDateInToday(tx.date) }
+            if let start { return tx.date >= start }
+            return true
+        }
+    }
+
     var weeklyExpenses: Double {
         let start = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return accountFilteredTransactions.filter { $0.date >= start && $0.type == .expense }.reduce(0) { $0 + $1.amount }
+        return spendingTransactions(since: start).reduce(0) { $0 + $1.amount }
     }
 
     var weeklyIncome: Double {
@@ -859,7 +906,9 @@ final class FinanceStore: ObservableObject {
             }
         }
         if let monthly = spendingLimits.monthlyLimit {
-            let total = currentMonthExpenses + amount
+            let total = transactions(inMonth: Date())
+                .filter { $0.type == .expense && !Self.isGoalContribution($0) }
+                .reduce(0) { $0 + $1.amount } + amount
             if total > monthly {
                 return String(format: "Monatslimit %.0f€ überschritten (%.0f€ gesamt).", monthly, total)
             }
@@ -896,6 +945,9 @@ final class FinanceStore: ObservableObject {
         WidgetDataSync.writeSnapshot(from: self)
         if appSettings.cloud.iCloudSyncEnabled {
             CloudSyncService.shared.push(store: self)
+        }
+        if appSettings.savings.liveActivityEnabled, let goal = activeGoals.first {
+            SavingsLiveActivityService.updateOrStart(goal: goal, todayExpenses: todayExpenses)
         }
     }
 

@@ -93,12 +93,18 @@ struct DashboardView: View {
                 SensitiveBalanceView(scope: .home) {
                     Text(balanceText)
                         .font(.system(size: 52, weight: .bold, design: .rounded))
-                        .foregroundStyle(store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+                        .foregroundStyle(store.availableBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
                 }
 
-                Text("Saldo diesen Monat")
+                Text("Verfügbar")
                     .font(LiveCashTheme.bodyFont.weight(.medium))
                     .foregroundStyle(.secondary)
+
+                if store.blockedInGoals > 0 {
+                    Text(String(format: "%.0f€ in Sparzielen geblockt", store.blockedInGoals))
+                        .font(LiveCashTheme.captionFont)
+                        .foregroundStyle(LiveCashTheme.accent)
+                }
 
                 HStack(spacing: 16) {
                     Label(LiveCashTheme.money(store.currentMonthExpenses), systemImage: "arrow.down.circle.fill")
@@ -222,7 +228,7 @@ struct DashboardView: View {
     }
 
     private var balanceText: String {
-        let value = store.currentBalance
+        let value = store.availableBalance
         let prefix = value >= 0 ? "+" : ""
         return "\(prefix)\(String(format: "%.2f€", value))"
     }

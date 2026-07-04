@@ -5,6 +5,7 @@ struct GoalCard: View {
     var monthlySavingsRate: Double = 0
     var compact: Bool = false
     var showProgress: Bool = true
+    var completed: Bool = false
 
     private var etaMonths: Int? {
         goal.estimatedMonthsToComplete(monthlySavings: monthlySavingsRate > 0 ? monthlySavingsRate : goal.monthlyRequired())
@@ -19,7 +20,7 @@ struct GoalCard: View {
                     Spacer()
                     Text("\(goal.progressPercent)%")
                         .font(.system(.caption, design: .rounded).weight(.bold))
-                        .foregroundStyle(LiveCashTheme.income)
+                        .foregroundStyle(completed ? LiveCashTheme.income : LiveCashTheme.income)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(LiveCashTheme.incomeSoft)
@@ -50,7 +51,11 @@ struct GoalCard: View {
 
                 if !compact {
                     HStack(spacing: 12) {
-                        if let targetDate = goal.targetDate {
+                        if let days = goal.daysRemaining, goal.goalTimeTrackingEnabled, !completed {
+                            Label("\(days) Tage übrig", systemImage: "clock")
+                                .font(LiveCashTheme.captionFont)
+                                .foregroundStyle(days < 14 ? LiveCashTheme.expense : .secondary)
+                        } else if let targetDate = goal.targetDate {
                             Label(targetDate.formatted(date: .abbreviated, time: .omitted), systemImage: "flag.checkered")
                                 .font(LiveCashTheme.captionFont)
                                 .foregroundStyle(.secondary)

@@ -11,6 +11,10 @@ struct WidgetSnapshot: Codable {
     var monthlySubscriptionCost: Double
     var lastExpenseMerchant: String?
     var lastExpenseAmount: Double
+    var lastTransactionMerchant: String?
+    var lastTransactionAmount: Double
+    var lastTransactionIsIncome: Bool
+    var refreshIntervalMinutes: Int
     var showBalance: Bool
     var showExpenses: Bool
     var showSavings: Bool
@@ -29,6 +33,10 @@ struct WidgetSnapshot: Codable {
         monthlySubscriptionCost: 0,
         lastExpenseMerchant: nil,
         lastExpenseAmount: 0,
+        lastTransactionMerchant: nil,
+        lastTransactionAmount: 0,
+        lastTransactionIsIncome: false,
+        refreshIntervalMinutes: 15,
         showBalance: true,
         showExpenses: true,
         showSavings: true,
@@ -48,6 +56,10 @@ struct WidgetSnapshot: Codable {
         monthlySubscriptionCost: Double,
         lastExpenseMerchant: String?,
         lastExpenseAmount: Double,
+        lastTransactionMerchant: String? = nil,
+        lastTransactionAmount: Double = 0,
+        lastTransactionIsIncome: Bool = false,
+        refreshIntervalMinutes: Int = 15,
         showBalance: Bool,
         showExpenses: Bool,
         showSavings: Bool,
@@ -65,6 +77,10 @@ struct WidgetSnapshot: Codable {
         self.monthlySubscriptionCost = monthlySubscriptionCost
         self.lastExpenseMerchant = lastExpenseMerchant
         self.lastExpenseAmount = lastExpenseAmount
+        self.lastTransactionMerchant = lastTransactionMerchant
+        self.lastTransactionAmount = lastTransactionAmount
+        self.lastTransactionIsIncome = lastTransactionIsIncome
+        self.refreshIntervalMinutes = refreshIntervalMinutes
         self.showBalance = showBalance
         self.showExpenses = showExpenses
         self.showSavings = showSavings
@@ -85,6 +101,10 @@ struct WidgetSnapshot: Codable {
         monthlySubscriptionCost = try c.decodeIfPresent(Double.self, forKey: .monthlySubscriptionCost) ?? 0
         lastExpenseMerchant = try c.decodeIfPresent(String.self, forKey: .lastExpenseMerchant)
         lastExpenseAmount = try c.decodeIfPresent(Double.self, forKey: .lastExpenseAmount) ?? 0
+        lastTransactionMerchant = try c.decodeIfPresent(String.self, forKey: .lastTransactionMerchant)
+        lastTransactionAmount = try c.decodeIfPresent(Double.self, forKey: .lastTransactionAmount) ?? 0
+        lastTransactionIsIncome = try c.decodeIfPresent(Bool.self, forKey: .lastTransactionIsIncome) ?? false
+        refreshIntervalMinutes = try c.decodeIfPresent(Int.self, forKey: .refreshIntervalMinutes) ?? 15
         showBalance = try c.decodeIfPresent(Bool.self, forKey: .showBalance) ?? true
         showExpenses = try c.decodeIfPresent(Bool.self, forKey: .showExpenses) ?? true
         showSavings = try c.decodeIfPresent(Bool.self, forKey: .showSavings) ?? true
@@ -97,6 +117,7 @@ struct WidgetSnapshot: Codable {
         case balance, monthExpenses, monthIncome, topCategoryName, topCategoryAmount
         case savingsProgressPercent, primaryGoalName, monthlySubscriptionCost
         case lastExpenseMerchant, lastExpenseAmount
+        case lastTransactionMerchant, lastTransactionAmount, lastTransactionIsIncome, refreshIntervalMinutes
         case showBalance, showExpenses, showSavings, showSubscriptions, showRecentExpense, updatedAt
     }
 
@@ -112,6 +133,10 @@ struct WidgetSnapshot: Codable {
         try c.encode(monthlySubscriptionCost, forKey: .monthlySubscriptionCost)
         try c.encodeIfPresent(lastExpenseMerchant, forKey: .lastExpenseMerchant)
         try c.encode(lastExpenseAmount, forKey: .lastExpenseAmount)
+        try c.encodeIfPresent(lastTransactionMerchant, forKey: .lastTransactionMerchant)
+        try c.encode(lastTransactionAmount, forKey: .lastTransactionAmount)
+        try c.encode(lastTransactionIsIncome, forKey: .lastTransactionIsIncome)
+        try c.encode(refreshIntervalMinutes, forKey: .refreshIntervalMinutes)
         try c.encode(showBalance, forKey: .showBalance)
         try c.encode(showExpenses, forKey: .showExpenses)
         try c.encode(showSavings, forKey: .showSavings)

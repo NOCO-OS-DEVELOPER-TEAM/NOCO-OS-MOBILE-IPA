@@ -11,12 +11,29 @@ struct WidgetSnapshot: Codable {
     var monthlySubscriptionCost: Double
     var lastExpenseMerchant: String?
     var lastExpenseAmount: Double
+    var lastTransactionMerchant: String?
+    var lastTransactionAmount: Double
+    var lastTransactionIsIncome: Bool
+    var refreshIntervalMinutes: Int
     var showBalance: Bool
     var showExpenses: Bool
     var showSavings: Bool
     var showSubscriptions: Bool
     var showRecentExpense: Bool
     var updatedAt: Date
+
+    static let empty = WidgetSnapshot(
+        balance: 0, monthExpenses: 0, monthIncome: 0,
+        topCategoryName: nil, topCategoryAmount: 0,
+        savingsProgressPercent: 0, primaryGoalName: nil,
+        monthlySubscriptionCost: 0,
+        lastExpenseMerchant: nil, lastExpenseAmount: 0,
+        lastTransactionMerchant: nil, lastTransactionAmount: 0,
+        lastTransactionIsIncome: false, refreshIntervalMinutes: 15,
+        showBalance: true, showExpenses: true, showSavings: true,
+        showSubscriptions: true, showRecentExpense: true,
+        updatedAt: Date()
+    )
 
     init(
         balance: Double,
@@ -29,6 +46,10 @@ struct WidgetSnapshot: Codable {
         monthlySubscriptionCost: Double = 0,
         lastExpenseMerchant: String? = nil,
         lastExpenseAmount: Double = 0,
+        lastTransactionMerchant: String? = nil,
+        lastTransactionAmount: Double = 0,
+        lastTransactionIsIncome: Bool = false,
+        refreshIntervalMinutes: Int = 15,
         showBalance: Bool = true,
         showExpenses: Bool = true,
         showSavings: Bool = true,
@@ -46,6 +67,10 @@ struct WidgetSnapshot: Codable {
         self.monthlySubscriptionCost = monthlySubscriptionCost
         self.lastExpenseMerchant = lastExpenseMerchant
         self.lastExpenseAmount = lastExpenseAmount
+        self.lastTransactionMerchant = lastTransactionMerchant
+        self.lastTransactionAmount = lastTransactionAmount
+        self.lastTransactionIsIncome = lastTransactionIsIncome
+        self.refreshIntervalMinutes = refreshIntervalMinutes
         self.showBalance = showBalance
         self.showExpenses = showExpenses
         self.showSavings = showSavings
@@ -66,12 +91,24 @@ struct WidgetSnapshot: Codable {
         monthlySubscriptionCost = try c.decodeIfPresent(Double.self, forKey: .monthlySubscriptionCost) ?? 0
         lastExpenseMerchant = try c.decodeIfPresent(String.self, forKey: .lastExpenseMerchant)
         lastExpenseAmount = try c.decodeIfPresent(Double.self, forKey: .lastExpenseAmount) ?? 0
+        lastTransactionMerchant = try c.decodeIfPresent(String.self, forKey: .lastTransactionMerchant)
+        lastTransactionAmount = try c.decodeIfPresent(Double.self, forKey: .lastTransactionAmount) ?? 0
+        lastTransactionIsIncome = try c.decodeIfPresent(Bool.self, forKey: .lastTransactionIsIncome) ?? false
+        refreshIntervalMinutes = try c.decodeIfPresent(Int.self, forKey: .refreshIntervalMinutes) ?? 15
         showBalance = try c.decodeIfPresent(Bool.self, forKey: .showBalance) ?? true
         showExpenses = try c.decodeIfPresent(Bool.self, forKey: .showExpenses) ?? true
         showSavings = try c.decodeIfPresent(Bool.self, forKey: .showSavings) ?? true
         showSubscriptions = try c.decodeIfPresent(Bool.self, forKey: .showSubscriptions) ?? true
         showRecentExpense = try c.decodeIfPresent(Bool.self, forKey: .showRecentExpense) ?? true
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case balance, monthExpenses, monthIncome, topCategoryName, topCategoryAmount
+        case savingsProgressPercent, primaryGoalName, monthlySubscriptionCost
+        case lastExpenseMerchant, lastExpenseAmount
+        case lastTransactionMerchant, lastTransactionAmount, lastTransactionIsIncome, refreshIntervalMinutes
+        case showBalance, showExpenses, showSavings, showSubscriptions, showRecentExpense, updatedAt
     }
 }
 
@@ -81,11 +118,12 @@ enum WidgetConstants {
 }
 
 enum WidgetSnapshotLoader {
-    static func load() -> WidgetSnapshot? {
-        guard let data = UserDefaults(suiteName: WidgetConstants.appGroup)?.data(forKey: WidgetConstants.snapshotKey),
-              let snapshot = try? JSONDecoder().decode(WidgetSnapshot.self, from: data) else {
-            return nil
+    static func load() -> WidgetSnapshot {
+        guard let data = UserDefaults(suiteName: WidgetConstants.appGroup)?.data(forKey: WidgetConstants.snapshotKey) else {
+            return .empty
         }
-        return snapshot
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return (try? decoder.decode(WidgetSnapshot.self, from: data)) ?? .empty
     }
 }

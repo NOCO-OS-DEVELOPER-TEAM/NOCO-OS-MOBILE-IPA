@@ -136,6 +136,7 @@ struct AssistantSettingsView: View {
                                 var s = store.appSettings
                                 s.assistant.confidenceThreshold = Int($0)
                                 store.setAppSettings(s)
+                                HapticService.selection(store: store)
                             }
                         ),
                         in: 40...95,

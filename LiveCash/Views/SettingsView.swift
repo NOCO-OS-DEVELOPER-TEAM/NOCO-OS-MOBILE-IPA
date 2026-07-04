@@ -8,12 +8,6 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            Section {
-                Text("Control Center — hier wird alles konfiguriert. Der Start-Tab bleibt zum Nutzen.")
-                    .font(LiveCashTheme.captionFont)
-                    .foregroundStyle(.secondary)
-            }
-
             Section("System") {
                 NavigationLink {
                     AssistantSettingsView()
@@ -34,6 +28,11 @@ struct SettingsView: View {
                     NotificationSettingsView()
                 } label: {
                     Label("Benachrichtigungen", systemImage: "bell.badge")
+                }
+                NavigationLink {
+                    SpendingLimitsView()
+                } label: {
+                    Label("Ausgabenlimits", systemImage: "gauge.with.dots.needle.67percent")
                 }
             }
 
@@ -89,9 +88,6 @@ struct SettingsView: View {
                 LabeledContent("Sparziele", value: "\(store.goals.count)")
                 LabeledContent("Abos", value: "\(store.subscriptions.count)")
                 LabeledContent("Spar-Streak", value: "\(store.savingsStreakDays) Tage")
-                NavigationLink("Ausgaben-Limits") {
-                    SpendingLimitsView()
-                }
             }
 
             Section {
