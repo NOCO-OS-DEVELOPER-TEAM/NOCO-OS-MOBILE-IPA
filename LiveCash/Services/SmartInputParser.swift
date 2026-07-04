@@ -15,6 +15,7 @@ struct ParsedTransactionDraft {
     var date: Date
 }
 
+@MainActor
 final class SmartInputParser {
     static let shared = SmartInputParser()
 

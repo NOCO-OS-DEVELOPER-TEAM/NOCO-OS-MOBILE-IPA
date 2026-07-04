@@ -4,7 +4,7 @@ import MapKit
 struct MoneyMapView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var selectedCategory: FinanceCategory?
-    @State private var selectedTransaction: Transaction?
+    @State private var selectedID: UUID?
     @State private var cameraPosition: MapCameraPosition = .automatic
 
     private var mappedTransactions: [Transaction] {
@@ -15,32 +15,49 @@ struct MoneyMapView: View {
         }
     }
 
+    private var selectedTransaction: Transaction? {
+        guard let selectedID else { return nil }
+        return mappedTransactions.first { $0.id == selectedID }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 categoryFilter
-                Map(position: $cameraPosition, selection: $selectedTransaction) {
-                    ForEach(mappedTransactions) { tx in
-                        if let loc = tx.location {
-                            Annotation(tx.merchant, coordinate: loc.coordinate) {
-                                MapPinView(amount: tx.amount, selected: selectedTransaction?.id == tx.id)
-                            }
-                            .tag(tx)
-                        }
-                    }
-                }
-                .mapStyle(.standard(elevation: .realistic))
-                .onAppear(adjustCamera)
-                .onChange(of: mappedTransactions.count) { _, _ in adjustCamera() }
-
-                if let tx = selectedTransaction {
-                    TransactionRow(transaction: tx)
-                        .padding()
-                        .background(.ultraThinMaterial)
-                }
+                mapContent
+                transactionDetail
             }
             .navigationTitle("Geldkarte")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { adjustCamera() }
+            .onChange(of: mappedTransactions.count) { _, _ in adjustCamera() }
+        }
+    }
+
+    private var mapContent: some View {
+        Map(position: $cameraPosition) {
+            ForEach(mappedTransactions) { tx in
+                if let loc = tx.location {
+                    Annotation(tx.merchant, coordinate: loc.coordinate) {
+                        Button {
+                            selectedID = tx.id
+                        } label: {
+                            MapPinView(amount: tx.amount, selected: selectedID == tx.id)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .mapStyle(.standard(elevation: .realistic))
+    }
+
+    @ViewBuilder
+    private var transactionDetail: some View {
+        if let tx = selectedTransaction {
+            TransactionRow(transaction: tx)
+                .padding()
+                .background(.ultraThinMaterial)
         }
     }
 

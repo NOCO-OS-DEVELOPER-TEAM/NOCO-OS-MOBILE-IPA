@@ -119,6 +119,7 @@ struct QueryContext: Equatable {
     var category: FinanceCategory?
 }
 
+@MainActor
 final class FinanceAssistant {
     static let shared = FinanceAssistant()
 
@@ -185,7 +186,7 @@ final class FinanceAssistant {
     }
 
     func matchIntent(_ input: String) -> FinanceIntent? {
-        bestIntent(for: normalize(input))?.intent
+        bestIntent(for: normalize(input))?.0
     }
 
     func suggestionButtons(for intent: FinanceIntent, store: FinanceStore) -> [InsightAction] {
