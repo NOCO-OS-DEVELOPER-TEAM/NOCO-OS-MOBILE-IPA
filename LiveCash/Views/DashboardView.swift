@@ -3,11 +3,20 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var showReceiptScan = false
+    @State private var showQuickInsight = false
+    @State private var idleTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    if showQuickInsight {
+                        QuickInsightPanel {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showQuickInsight = false
+                            }
+                        }
+                    }
                     headerSection
                     summaryCards
                     if let top = store.topCategoryThisMonth {
@@ -30,6 +39,9 @@ struct DashboardView: View {
             .sheet(isPresented: $showReceiptScan) {
                 ReceiptScanView()
             }
+            .onAppear { scheduleQuickInsight() }
+            .onDisappear { idleTask?.cancel() }
+            .onTapGesture { resetQuickInsightTimer() }
         }
     }
 
@@ -52,7 +64,7 @@ struct DashboardView: View {
     private var summaryCards: some View {
         HStack(spacing: 12) {
             miniCard(title: "Einnahmen", value: store.currentMonthIncome, color: LiveCashTheme.income, positive: true)
-            miniCard(title: "Saldo", value: store.currentMonthIncome - store.currentMonthExpenses, color: store.currentMonthIncome >= store.currentMonthExpenses ? LiveCashTheme.income : LiveCashTheme.expense, positive: store.currentMonthIncome >= store.currentMonthExpenses)
+            miniCard(title: "Saldo", value: store.currentBalance, color: store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense, positive: store.currentBalance >= 0)
         }
     }
 
@@ -100,7 +112,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     SectionHeader(title: "Sparziele")
                     ForEach(store.goals.prefix(2)) { goal in
-                        GoalCard(goal: goal, compact: true)
+                        GoalCard(goal: goal, monthlySavingsRate: store.monthlySavingsRate, compact: true)
                     }
                 }
             }
@@ -153,5 +165,23 @@ struct DashboardView: View {
         f.locale = Locale(identifier: "de_DE")
         f.dateFormat = "MMMM yyyy"
         return f.string(from: Date()).capitalized
+    }
+
+    private func scheduleQuickInsight() {
+        idleTask?.cancel()
+        idleTask = Task {
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    showQuickInsight = true
+                }
+            }
+        }
+    }
+
+    private func resetQuickInsightTimer() {
+        showQuickInsight = false
+        scheduleQuickInsight()
     }
 }

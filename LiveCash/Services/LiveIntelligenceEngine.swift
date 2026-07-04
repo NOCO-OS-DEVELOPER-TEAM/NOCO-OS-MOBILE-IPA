@@ -6,11 +6,11 @@ final class LiveIntelligenceEngine {
 
     private let merchantHints = ["netflix", "spotify", "lidl", "aldi", "rewe", "amazon", "dm", "apple", "disney", "prime", "uber"]
 
-    func interpret(_ partial: String) -> InputInterpretation {
+    func interpret(_ partial: String, preferredType: TransactionType = .expense) -> InputInterpretation {
         let t = partial.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else { return .empty }
 
-        guard let draft = SmartInputParser.shared.parseSingle(t) else {
+        guard var draft = SmartInputParser.shared.parseSingle(t) else {
             if SmartInputParser.shared.isLikelyQuery(t) {
                 return InputInterpretation(
                     amount: nil, type: nil, category: nil, merchant: nil,
@@ -21,7 +21,8 @@ final class LiveIntelligenceEngine {
             return .empty
         }
 
-        let uncertain = isUncertainInput(t, draft: draft)
+        SmartInputParser.shared.applyPreferredType(preferredType, to: &draft, text: t)
+        let uncertain = isUncertainInput(t, draft: draft, preferredType: preferredType)
         let typeLabel = draft.type == .income ? "Einnahme" : "Ausgabe"
         let hint = uncertain
             ? "Unklar — bitte bestätigen"
@@ -39,6 +40,7 @@ final class LiveIntelligenceEngine {
 
     func liveSuggestions(for partial: String, store: FinanceStore) -> [LiveSuggestion] {
         let t = partial.trimmingCharacters(in: .whitespacesAndNewlines)
+        let preferredType = store.inputMode
         if t.isEmpty { return idleSuggestions(store) }
 
         let lower = t.lowercased()
@@ -79,8 +81,9 @@ final class LiveIntelligenceEngine {
             ]
         }
 
-        if let draft = SmartInputParser.shared.parseSingle(t), SmartInputParser.shared.containsAmount(t) {
-            if isUncertainInput(t, draft: draft) {
+        if var draft = SmartInputParser.shared.parseSingle(t), SmartInputParser.shared.containsAmount(t) {
+            SmartInputParser.shared.applyPreferredType(preferredType, to: &draft, text: t)
+            if isUncertainInput(t, draft: draft, preferredType: preferredType) {
                 return [
                     LiveSuggestion(title: "Als Ausgabe speichern", action: .saveDraft(uncertainDraft(draft, type: .expense))),
                     LiveSuggestion(title: "Als Einnahme speichern", action: .saveDraft(uncertainDraft(draft, type: .income))),
@@ -113,16 +116,17 @@ final class LiveIntelligenceEngine {
         ]
     }
 
-    func isUncertainInput(_ text: String, draft: ParsedTransactionDraft) -> Bool {
+    func isUncertainInput(_ text: String, draft: ParsedTransactionDraft, preferredType: TransactionType? = nil) -> Bool {
         let lower = text.lowercased()
         let vague = ["irgendwas", "etwas", "unklar", "diverses", "sonstiges", "xyz", "test"]
         if vague.contains(where: { lower.contains($0) }) { return true }
         if draft.merchant.lowercased() == "unbekannt" { return true }
-        if draft.merchant.count <= 2 && draft.amount > 0 { return true }
+
         let words = lower.split(separator: " ").map(String.init)
         if words.count == 1, draft.amount > 0, Double(words[0].replacingOccurrences(of: ",", with: ".")) != nil {
-            return true
+            return false
         }
+        if draft.merchant.count <= 2 && draft.amount > 0 && preferredType == nil { return true }
         return false
     }
 

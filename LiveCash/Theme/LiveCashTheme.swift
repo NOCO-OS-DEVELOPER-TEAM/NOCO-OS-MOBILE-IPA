@@ -26,7 +26,9 @@ struct LiveCashCard<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        LiveCashGlassCard(content: content)
+        LiveCashGlassCard {
+            content
+        }
     }
 }
 

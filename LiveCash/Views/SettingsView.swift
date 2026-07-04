@@ -15,6 +15,16 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Benachrichtigungen") {
+                Toggle("Smarte Hinweise", isOn: Binding(
+                    get: { store.notificationsEnabled },
+                    set: { store.setNotificationsEnabled($0) }
+                ))
+                Text("Fortschritt, Ausgaben-Warnungen und Erinnerungen — nur lokal.")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Daten") {
                 LabeledContent("Buchungen", value: "\(store.transactions.count)")
                 LabeledContent("Sparziele", value: "\(store.goals.count)")

@@ -41,6 +41,16 @@
 		LC0000010000000000000021 /* LiveIntelligenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000023 /* LiveIntelligenceEngine.swift */; };
 		LC0000010000000000000022 /* LiveSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000024 /* LiveSuggestionsView.swift */; };
 		LC0000010000000000000023 /* AddTransactionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000025 /* AddTransactionView.swift */; };
+		LC0000010000000000000024 /* InputTypeToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000026 /* InputTypeToggle.swift */; };
+		LC0000010000000000000025 /* QuickInsightPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000027 /* QuickInsightPanel.swift */; };
+		LC0000010000000000000026 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000028 /* WidgetSnapshot.swift */; };
+		LC0000010000000000000027 /* WidgetDataSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000029 /* WidgetDataSync.swift */; };
+		LC0000010000000000000028 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000002A /* NotificationService.swift */; };
+		LC0000010000000000000029 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000002B /* AppDelegate.swift */; };
+		LC0000010000000000000035 /* LiveCashWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000030 /* LiveCashWidget.swift */; };
+		LC0000010000000000000036 /* LiveCashWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000031 /* LiveCashWidgetBundle.swift */; };
+		LC0000010000000000000037 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000032 /* WidgetSnapshot.swift */; };
+		LC0000010000000000000038 /* LiveCashWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = LC0000030000000000000002 /* LiveCashWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -83,9 +93,52 @@
 		LC0000020000000000000023 /* LiveIntelligenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveIntelligenceEngine.swift; sourceTree = "<group>"; };
 		LC0000020000000000000024 /* LiveSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSuggestionsView.swift; sourceTree = "<group>"; };
 		LC0000020000000000000025 /* AddTransactionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000026 /* InputTypeToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputTypeToggle.swift; sourceTree = "<group>"; };
+		LC0000020000000000000027 /* QuickInsightPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickInsightPanel.swift; sourceTree = "<group>"; };
+		LC0000020000000000000028 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		LC0000020000000000000029 /* WidgetDataSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataSync.swift; sourceTree = "<group>"; };
+		LC000002000000000000002A /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		LC000002000000000000002B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		LC0000020000000000000030 /* LiveCashWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCashWidget.swift; sourceTree = "<group>"; };
+		LC0000020000000000000031 /* LiveCashWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCashWidgetBundle.swift; sourceTree = "<group>"; };
+		LC0000020000000000000032 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		LC0000020000000000000033 /* LiveCashWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LiveCashWidget.entitlements; sourceTree = "<group>"; };
+		LC0000020000000000000034 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		LC0000030000000000000002 /* LiveCashWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LiveCashWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXContainerItemProxy section */
+		LC00000E0000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = LC00000A0000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = LC0000060000000000000002;
+			remoteInfo = LiveCashWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		LC00000C0000000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				LC0000010000000000000038 /* LiveCashWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		LC0000040000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		LC0000040000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -100,6 +153,7 @@
 			isa = PBXGroup;
 			children = (
 				LC0000050000000000000002 /* LiveCash */,
+				LC000005000000000000000A /* LiveCashWidget */,
 				LC0000050000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -108,6 +162,7 @@
 			isa = PBXGroup;
 			children = (
 				LC0000020000000000000001 /* LiveCashApp.swift */,
+				LC000002000000000000002B /* AppDelegate.swift */,
 				LC0000050000000000000004 /* Models */,
 				LC0000050000000000000005 /* Services */,
 				LC0000050000000000000006 /* Store */,
@@ -124,8 +179,21 @@
 			isa = PBXGroup;
 			children = (
 				LC0000030000000000000001 /* TimePay.app */,
+				LC0000030000000000000002 /* LiveCashWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		LC000005000000000000000A /* LiveCashWidget */ = {
+			isa = PBXGroup;
+			children = (
+				LC0000020000000000000030 /* LiveCashWidget.swift */,
+				LC0000020000000000000031 /* LiveCashWidgetBundle.swift */,
+				LC0000020000000000000032 /* WidgetSnapshot.swift */,
+				LC0000020000000000000034 /* Info.plist */,
+				LC0000020000000000000033 /* LiveCashWidget.entitlements */,
+			);
+			path = LiveCashWidget;
 			sourceTree = "<group>";
 		};
 		LC0000050000000000000004 /* Models */ = {
@@ -136,6 +204,7 @@
 				LC0000020000000000000004 /* Goal.swift */,
 				LC0000020000000000000005 /* Subscription.swift */,
 				LC0000020000000000000022 /* LiveSuggestion.swift */,
+				LC0000020000000000000028 /* WidgetSnapshot.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -150,6 +219,8 @@
 				LC000002000000000000000A /* OCRService.swift */,
 				LC000002000000000000001F /* MapPinLayout.swift */,
 				LC0000020000000000000023 /* LiveIntelligenceEngine.swift */,
+				LC0000020000000000000029 /* WidgetDataSync.swift */,
+				LC000002000000000000002A /* NotificationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -200,6 +271,8 @@
 				LC0000020000000000000014 /* GoalCard.swift */,
 				LC0000020000000000000021 /* CameraCaptureView.swift */,
 				LC0000020000000000000024 /* LiveSuggestionsView.swift */,
+				LC0000020000000000000026 /* InputTypeToggle.swift */,
+				LC0000020000000000000027 /* QuickInsightPanel.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -214,15 +287,34 @@
 				LC0000070000000000000001 /* Sources */,
 				LC0000040000000000000001 /* Frameworks */,
 				LC0000080000000000000001 /* Resources */,
+				LC00000C0000000000000001 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				LC00000D0000000000000001 /* PBXTargetDependency */,
 			);
 			name = TimePay;
 			productName = TimePay;
 			productReference = LC0000030000000000000001 /* TimePay.app */;
 			productType = "com.apple.product-type.application";
+		};
+		LC0000060000000000000002 /* LiveCashWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = LC0000090000000000000004 /* Build configuration list for PBXNativeTarget "LiveCashWidget" */;
+			buildPhases = (
+				LC0000070000000000000002 /* Sources */,
+				LC0000040000000000000002 /* Frameworks */,
+				LC0000080000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiveCashWidget;
+			productName = LiveCashWidget;
+			productReference = LC0000030000000000000002 /* LiveCashWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -235,6 +327,9 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					LC0000060000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					LC0000060000000000000002 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -253,6 +348,7 @@
 			projectRoot = "";
 			targets = (
 				LC0000060000000000000001 /* TimePay */,
+				LC0000060000000000000002 /* LiveCashWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -263,6 +359,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				LC000001000000000000001C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		LC0000080000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -307,10 +413,34 @@
 				LC0000010000000000000021 /* LiveIntelligenceEngine.swift in Sources */,
 				LC0000010000000000000022 /* LiveSuggestionsView.swift in Sources */,
 				LC0000010000000000000023 /* AddTransactionView.swift in Sources */,
+				LC0000010000000000000024 /* InputTypeToggle.swift in Sources */,
+				LC0000010000000000000025 /* QuickInsightPanel.swift in Sources */,
+				LC0000010000000000000026 /* WidgetSnapshot.swift in Sources */,
+				LC0000010000000000000027 /* WidgetDataSync.swift in Sources */,
+				LC0000010000000000000028 /* NotificationService.swift in Sources */,
+				LC0000010000000000000029 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		LC0000070000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				LC0000010000000000000035 /* LiveCashWidget.swift in Sources */,
+				LC0000010000000000000036 /* LiveCashWidgetBundle.swift in Sources */,
+				LC0000010000000000000037 /* WidgetSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		LC00000D0000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = LC0000060000000000000002 /* LiveCashWidget */;
+			targetProxy = LC00000E0000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		LC00000B0000000000000001 /* Debug */ = {
@@ -357,7 +487,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -393,7 +523,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -421,6 +551,60 @@
 			};
 			name = Release;
 		};
+		LC00000B0000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CURRENT_PROJECT_VERSION = 8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LiveCashWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = NO;
+			};
+			name = Debug;
+		};
+		LC00000B0000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CURRENT_PROJECT_VERSION = 8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LiveCashWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.noco.timepay.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -438,6 +622,15 @@
 			buildConfigurations = (
 				LC00000B0000000000000003 /* Debug */,
 				LC00000B0000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		LC0000090000000000000004 /* Build configuration list for PBXNativeTarget "LiveCashWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				LC00000B0000000000000005 /* Debug */,
+				LC00000B0000000000000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

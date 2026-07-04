@@ -6,6 +6,9 @@ struct SmartInputBar: View {
     @State private var text = ""
     @FocusState private var focused: Bool
 
+    private var isIncome: Bool { store.inputMode == .income }
+    private var modeColor: Color { isIncome ? LiveCashTheme.income : LiveCashTheme.expense }
+
     private var showLivePanel: Bool {
         focused || !text.isEmpty || store.pendingConfirmation != nil
     }
@@ -32,30 +35,41 @@ struct SmartInputBar: View {
             if let feedback = store.lastFeedback, !focused {
                 Text(feedback)
                     .font(LiveCashTheme.captionFont)
-                    .foregroundStyle(LiveCashTheme.accent)
+                    .foregroundStyle(modeColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
             }
 
             HStack(spacing: 10) {
+                InputTypeToggle(isIncome: isIncome) {
+                    store.toggleInputMode()
+                    store.updateLiveIntelligence(for: text)
+                }
+
                 Button {
                     focused = false
                     showReceiptScan = true
                 } label: {
                     Image(systemName: "camera.fill")
                         .font(.body.weight(.medium))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                         .background(.ultraThinMaterial)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
 
-                TextField("Eingeben oder fragen…", text: $text)
+                TextField(isIncome ? "Einnahme eingeben…" : "Ausgabe eingeben…", text: $text)
                     .focused($focused)
                     .submitLabel(.send)
                     .onSubmit(submit)
                     .onChange(of: text) { _, newValue in
                         store.updateLiveIntelligence(for: newValue)
+                    }
+                    .onChange(of: store.focusInputOnAppear) { _, shouldFocus in
+                        if shouldFocus {
+                            focused = true
+                            store.focusInputOnAppear = false
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
@@ -63,13 +77,13 @@ struct SmartInputBar: View {
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(focused ? LiveCashTheme.accent.opacity(0.4) : LiveCashTheme.glassBorder, lineWidth: 0.8)
+                            .strokeBorder(focused ? modeColor.opacity(0.45) : LiveCashTheme.glassBorder, lineWidth: 0.8)
                     )
 
                 Button(action: submit) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 32))
-                        .foregroundStyle(text.trimmingCharacters(in: .whitespaces).isEmpty ? .secondary : LiveCashTheme.accent)
+                        .foregroundStyle(text.trimmingCharacters(in: .whitespaces).isEmpty ? .secondary : modeColor)
                 }
                 .buttonStyle(.plain)
                 .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -87,6 +101,10 @@ struct SmartInputBar: View {
         }
         .onAppear {
             store.updateLiveIntelligence(for: "")
+            if store.focusInputOnAppear {
+                focused = true
+                store.focusInputOnAppear = false
+            }
         }
     }
 
@@ -123,8 +141,9 @@ struct SmartInputBar: View {
                             text = s
                             store.updateLiveIntelligence(for: s)
                             submit()
-                        case .saveDraft(let draft):
-                            if LiveIntelligenceEngine.shared.isUncertainInput(text, draft: draft) {
+                        case .saveDraft(var draft):
+                            SmartInputParser.shared.applyPreferredType(store.inputMode, to: &draft, text: text)
+                            if LiveIntelligenceEngine.shared.isUncertainInput(text, draft: draft, preferredType: store.inputMode) {
                                 store.pendingConfirmation = PendingConfirmation(
                                     draft: draft,
                                     rawInput: text,

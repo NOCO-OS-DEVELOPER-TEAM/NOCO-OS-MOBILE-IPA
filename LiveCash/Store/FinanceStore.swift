@@ -8,6 +8,9 @@ final class FinanceStore: ObservableObject {
     @Published private(set) var goals: [SavingsGoal] = []
     @Published private(set) var subscriptions: [Subscription] = []
     @Published var locationEnabled: Bool = false
+    @Published var notificationsEnabled: Bool = true
+    @Published var savingsStreakDays: Int = 0
+    @Published var inputMode: TransactionType = .expense
     @Published var lastFeedback: String?
     @Published var pendingIntent: FinanceIntent?
     @Published var activeInsight: FinanceInsight?
@@ -16,9 +19,12 @@ final class FinanceStore: ObservableObject {
     @Published var liveSuggestions: [LiveSuggestion] = []
     @Published var inputInterpretation: InputInterpretation = .empty
     @Published var pendingConfirmation: PendingConfirmation?
+    @Published var focusInputOnAppear = false
+    @Published var pendingQuickAction: LiveCashQuickAction?
 
     private let persistence = PersistenceService.shared
     private let locationManager = CLLocationManager()
+    private var lastActiveDate: Date?
 
     init() {
         let data = persistence.load()
@@ -26,7 +32,31 @@ final class FinanceStore: ObservableObject {
         goals = data.goals
         subscriptions = data.subscriptions
         locationEnabled = data.locationEnabled
+        savingsStreakDays = data.savingsStreakDays
+        lastActiveDate = data.lastActiveDate
+        notificationsEnabled = data.notificationsEnabled
         refreshSubscriptions()
+        WidgetDataSync.writeSnapshot(from: self)
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    func onAppBecameActive() {
+        let data = persistence.load()
+        if data.transactions.count > transactions.count {
+            transactions = data.transactions.sorted { $0.date > $1.date }
+            goals = data.goals
+            subscriptions = data.subscriptions
+            refreshSubscriptions()
+        }
+        WidgetDataSync.writeSnapshot(from: self)
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    func toggleInputMode() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+            inputMode = inputMode == .expense ? .income : .expense
+        }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     // MARK: - Transactions
@@ -41,6 +71,7 @@ final class FinanceStore: ObservableObject {
             )
         }
         transactions.insert(tx, at: 0)
+        recordDailyActivity()
         persist()
         refreshSubscriptions()
     }
@@ -56,6 +87,7 @@ final class FinanceStore: ObservableObject {
             }
             transactions.insert(tx, at: 0)
         }
+        recordDailyActivity()
         persist()
         refreshSubscriptions()
     }
@@ -76,7 +108,7 @@ final class FinanceStore: ObservableObject {
 
     func updateLiveIntelligence(for partial: String) {
         liveSuggestions = LiveIntelligenceEngine.shared.liveSuggestions(for: partial, store: self)
-        inputInterpretation = LiveIntelligenceEngine.shared.interpret(partial)
+        inputInterpretation = LiveIntelligenceEngine.shared.interpret(partial, preferredType: inputMode)
     }
 
     func clearLiveIntelligence() {
@@ -91,7 +123,8 @@ final class FinanceStore: ObservableObject {
         case .insight(let action):
             pendingConfirmation = nil
             showInsight(for: action)
-        case .saveDraft(let draft):
+        case .saveDraft(var draft):
+            SmartInputParser.shared.applyPreferredType(inputMode, to: &draft, text: "")
             saveDraft(draft, rawInput: nil)
         case .addSubscription(let name):
             if subscriptions.contains(where: { $0.name.lowercased() == name.lowercased() }) {
@@ -122,17 +155,21 @@ final class FinanceStore: ObservableObject {
     }
 
     func saveDraft(_ draft: ParsedTransactionDraft, rawInput: String?) {
+        var resolved = draft
+        if let raw = rawInput {
+            SmartInputParser.shared.applyPreferredType(inputMode, to: &resolved, text: raw)
+        }
         let tx = Transaction(
-            amount: draft.amount,
-            type: draft.type,
-            category: draft.category,
-            merchant: draft.merchant,
-            date: draft.date,
+            amount: resolved.amount,
+            type: resolved.type,
+            category: resolved.category,
+            merchant: resolved.merchant,
+            date: resolved.date,
             rawInput: rawInput
         )
         addTransaction(tx)
-        let sign = draft.type == .income ? "+" : "-"
-        lastFeedback = String(format: "Hinzugefügt: %@ %@%.2f€ (%@)", draft.merchant, sign, draft.amount, draft.category.rawValue)
+        let sign = resolved.type == .income ? "+" : "-"
+        lastFeedback = String(format: "Hinzugefügt: %@ %@%.2f€ (%@)", resolved.merchant, sign, resolved.amount, resolved.category.rawValue)
         pendingConfirmation = nil
         activeInsight = nil
         pendingIntent = nil
@@ -153,10 +190,10 @@ final class FinanceStore: ObservableObject {
             }
         }
 
-        // Buchung — bei Unsicherheit erst bestätigen
-        if let draft = SmartInputParser.shared.parseSingle(trimmed),
+        if var draft = SmartInputParser.shared.parseSingle(trimmed),
            SmartInputParser.shared.looksLikeTransaction(trimmed) || SmartInputParser.shared.containsAmount(trimmed) {
-            if LiveIntelligenceEngine.shared.isUncertainInput(trimmed, draft: draft) {
+            SmartInputParser.shared.applyPreferredType(inputMode, to: &draft, text: trimmed)
+            if LiveIntelligenceEngine.shared.isUncertainInput(trimmed, draft: draft, preferredType: inputMode) {
                 pendingConfirmation = PendingConfirmation(
                     draft: draft,
                     rawInput: trimmed,
@@ -208,6 +245,7 @@ final class FinanceStore: ObservableObject {
 
     func addGoal(name: String, target: Double) {
         goals.append(SavingsGoal(name: name, targetAmount: target))
+        recordDailyActivity()
         persist()
     }
 
@@ -225,6 +263,7 @@ final class FinanceStore: ObservableObject {
     func addToGoal(_ goal: SavingsGoal, amount: Double) {
         guard let idx = goals.firstIndex(where: { $0.id == goal.id }) else { return }
         goals[idx].currentAmount += amount
+        recordDailyActivity()
         persist()
     }
 
@@ -258,6 +297,13 @@ final class FinanceStore: ObservableObject {
         persist()
     }
 
+    func setNotificationsEnabled(_ enabled: Bool) {
+        notificationsEnabled = enabled
+        persist()
+        Task { await NotificationService.shared.requestAuthorizationIfNeeded() }
+        NotificationService.shared.refreshNotifications(for: self, enabled: enabled)
+    }
+
     // MARK: - Analytics
 
     func transactions(inMonth date: Date) -> [Transaction] {
@@ -271,6 +317,31 @@ final class FinanceStore: ObservableObject {
 
     var currentMonthIncome: Double {
         transactions(inMonth: Date()).filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
+    }
+
+    var currentBalance: Double {
+        currentMonthIncome - currentMonthExpenses
+    }
+
+    var todayExpenses: Double {
+        let cal = Calendar.current
+        return transactions.filter { cal.isDateInToday($0.date) && $0.type == .expense }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    var dailyAverageExpenses: Double {
+        let cal = Calendar.current
+        let monthTx = transactions(inMonth: Date()).filter { $0.type == .expense }
+        let day = max(cal.component(.day, from: Date()), 1)
+        return monthTx.reduce(0) { $0 + $1.amount } / Double(day)
+    }
+
+    var lastTransactionDate: Date? {
+        transactions.first?.date
+    }
+
+    var monthlySavingsRate: Double {
+        max(currentMonthIncome - currentMonthExpenses, 0)
     }
 
     var topCategoryThisMonth: (FinanceCategory, Double)? {
@@ -290,12 +361,32 @@ final class FinanceStore: ObservableObject {
         persist()
     }
 
+    private func recordDailyActivity() {
+        let today = Calendar.current.startOfDay(for: Date())
+        if let last = lastActiveDate {
+            let lastDay = Calendar.current.startOfDay(for: last)
+            let diff = Calendar.current.dateComponents([.day], from: lastDay, to: today).day ?? 0
+            if diff == 1 {
+                savingsStreakDays += 1
+            } else if diff > 1 {
+                savingsStreakDays = 1
+            }
+        } else {
+            savingsStreakDays = max(savingsStreakDays, 1)
+        }
+        lastActiveDate = today
+    }
+
     private func persist() {
         persistence.save(AppData(
             transactions: transactions,
             goals: goals,
             subscriptions: subscriptions,
-            locationEnabled: locationEnabled
+            locationEnabled: locationEnabled,
+            savingsStreakDays: savingsStreakDays,
+            lastActiveDate: lastActiveDate,
+            notificationsEnabled: notificationsEnabled
         ))
+        WidgetDataSync.writeSnapshot(from: self)
     }
 }

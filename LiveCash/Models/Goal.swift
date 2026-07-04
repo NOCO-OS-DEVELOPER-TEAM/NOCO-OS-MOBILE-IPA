@@ -34,10 +34,14 @@ struct SavingsGoal: Identifiable, Codable, Equatable {
         max(targetAmount - currentAmount, 0)
     }
 
-    func estimatedCompletionDate(monthlySavings: Double) -> Date? {
+    func estimatedMonthsToComplete(monthlySavings: Double) -> Int? {
         guard monthlySavings > 0, remaining > 0 else { return nil }
-        let months = ceil(remaining / monthlySavings)
-        return Calendar.current.date(byAdding: .month, value: Int(months), to: Date())
+        return max(1, Int(ceil(remaining / monthlySavings)))
+    }
+
+    func estimatedCompletionDate(monthlySavings: Double) -> Date? {
+        guard let months = estimatedMonthsToComplete(monthlySavings: monthlySavings) else { return nil }
+        return Calendar.current.date(byAdding: .month, value: months, to: Date())
     }
 
     func monthlyRequired(months: Int = 12) -> Double {

@@ -107,6 +107,27 @@ final class SmartInputParser {
         extractAmount(from: text) != nil
     }
 
+    func containsAmount(_ text: String) -> Bool {
+        extractAmount(from: text) != nil
+    }
+
+    func hasExplicitType(in text: String) -> Bool {
+        let lower = text.lowercased()
+        if text.contains("+") { return true }
+        if text.contains("-"), containsAmount(text) { return true }
+        return ["gehalt", "lohn", "einkommen", "salary"].contains(where: { lower.contains($0) })
+    }
+
+    func applyPreferredType(_ type: TransactionType, to draft: inout ParsedTransactionDraft, text: String) {
+        guard !hasExplicitType(in: text) else { return }
+        draft.type = type
+        if type == .income {
+            draft.category = .income
+        } else if draft.category == .income {
+            draft.category = FinanceCategory.detect(from: text + " " + draft.merchant)
+        }
+    }
+
     func parseSingle(_ text: String) -> ParsedTransactionDraft? {
         guard let amount = extractAmount(from: text) else { return nil }
         if isLikelyQuery(text) { return nil }
