@@ -40,6 +40,9 @@ final class FinanceStore: ObservableObject {
     @Published var showInputSourceSheet = false
     @Published var showGoalContributionSheet = false
     @Published var pendingGoalContributionAmount: Double?
+    @Published var hasCompletedOnboarding = true
+    @Published private(set) var userCategories: [UserCategory] = []
+    @Published var onboardingProfile: OnboardingProfile?
 
     private let persistence = PersistenceService.shared
     private let locationManager = CLLocationManager()
@@ -62,6 +65,9 @@ final class FinanceStore: ObservableObject {
         notificationLearning = data.notificationLearning
         widgetPreferences = data.widgetPreferences
         appSettings = data.appSettings
+        hasCompletedOnboarding = data.hasCompletedOnboarding
+        userCategories = data.userCategories
+        onboardingProfile = data.onboardingProfile
         if !data.notificationPreferences.assistantSuggestionsOnIdle {
             appSettings.assistant.suggestionsEnabled = false
         }
@@ -272,7 +278,7 @@ final class FinanceStore: ObservableObject {
         )
         addTransaction(tx)
         let sign = resolved.type == .income ? "+" : "-"
-        lastFeedback = String(format: "Hinzugefügt: %@ %@%.2f€ (%@)", resolved.merchant, sign, resolved.amount, resolved.category.rawValue)
+        lastFeedback = String(format: "Hinzugefügt: %@ %@%.2f€ (%@)", resolved.merchant, sign, resolved.amount, categoryName(for: tx))
         pendingConfirmation = nil
         pendingSpendLimit = nil
         activeInsight = nil
@@ -765,30 +771,127 @@ final class FinanceStore: ObservableObject {
 
     func resetAllData() {
         persistence.resetAll()
-        let fresh = AppData.empty
+        WidgetDataSync.clearSnapshot()
+        SavingsLiveActivityService.endAll()
+        AppleSignInService.shared.signOut()
+        SecurityService.shared.resetLockState(for: AppSettings().security)
+
         transactions = []
         goals = []
         subscriptions = []
         shortcuts = []
         spendingLimits = .default
-        accounts = fresh.accounts
-        activeAccountId = fresh.activeAccountId
-        notificationPreferences = fresh.notificationPreferences
-        notificationLearning = fresh.notificationLearning
-        widgetPreferences = fresh.widgetPreferences
-        appSettings = fresh.appSettings
-        assistantModePreference = fresh.assistantModePreference
+        accounts = [FinanceAccount.defaultPrivate]
+        activeAccountId = FinanceAccount.defaultPrivate.id
+        notificationPreferences = NotificationPreferences()
+        notificationLearning = NotificationLearning()
+        widgetPreferences = WidgetPreferences()
+        appSettings = AppSettings()
+        assistantModePreference = .suggestion
+        userCategories = []
+        onboardingProfile = nil
+        hasCompletedOnboarding = false
+        locationEnabled = false
+        notificationsEnabled = true
         savingsStreakDays = 0
         lastActiveDate = nil
+        inputMode = .expense
         pendingConfirmation = nil
         pendingShakeUndo = nil
         pendingSpendLimit = nil
         activeInsight = nil
         pendingIntent = nil
+        pendingQuickAction = nil
+        pendingMoreDestination = nil
+        pendingTabSelection = nil
+        lastFeedback = nil
+        clearLiveIntelligence()
         refreshShortcuts()
         persist()
-        WidgetDataSync.writeSnapshot(from: self)
         NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    func completeOnboarding(profile: OnboardingProfile, goalName: String?, goalAmount: Double?) {
+        onboardingProfile = profile
+        hasCompletedOnboarding = true
+        if profile.budgetTrackingEnabled {
+            spendingLimits.enabled = true
+        }
+        if let goalName, let goalAmount, goalAmount > 0 {
+            addGoal(name: goalName, target: goalAmount)
+        }
+        persist()
+    }
+
+    func refreshWidgets() {
+        WidgetDataSync.writeSnapshot(from: self)
+        HapticService.light(store: self)
+        lastFeedback = "Widget aktualisiert"
+    }
+
+    func retrySavingsLiveActivity() {
+        SavingsLiveActivityService.endAll()
+        if appSettings.savings.liveActivityEnabled, let goal = activeGoals.first {
+            SavingsLiveActivityService.updateOrStart(goal: goal, todayExpenses: todayExpenses)
+            lastFeedback = "Live Activity für „\(goal.name)“ aktiviert"
+        } else if let goal = activeGoals.first {
+            SavingsLiveActivityService.updateOrStart(goal: goal, todayExpenses: todayExpenses)
+            lastFeedback = "Live Activity für „\(goal.name)“ aktiviert"
+        } else {
+            lastFeedback = "Kein aktives Sparziel vorhanden"
+        }
+        HapticService.success(store: self)
+    }
+
+    // MARK: - Custom Categories
+
+    func addUserCategory(name: String, icon: String) {
+        let category = UserCategory(name: name, icon: icon)
+        userCategories.append(category)
+        persist()
+    }
+
+    func updateUserCategory(id: UUID, name: String, icon: String) {
+        guard let idx = userCategories.firstIndex(where: { $0.id == id }) else { return }
+        userCategories[idx].name = name
+        userCategories[idx].icon = icon
+        persist()
+    }
+
+    func deleteUserCategory(id: UUID) {
+        userCategories.removeAll { $0.id == id }
+        for i in transactions.indices where transactions[i].userCategoryId == id {
+            transactions[i].userCategoryId = nil
+            transactions[i].category = .other
+        }
+        persist()
+    }
+
+    func categoryName(for transaction: Transaction) -> String {
+        if let id = transaction.userCategoryId,
+           let custom = userCategories.first(where: { $0.id == id }) {
+            return custom.name
+        }
+        return transaction.category.rawValue
+    }
+
+    func categoryIcon(for transaction: Transaction) -> String {
+        if let id = transaction.userCategoryId,
+           let custom = userCategories.first(where: { $0.id == id }) {
+            return custom.icon
+        }
+        return transaction.category.icon
+    }
+
+    var expenseCategoryPickerOptions: [(id: String, name: String, icon: String, builtIn: FinanceCategory?, customId: UUID?)] {
+        var options: [(id: String, name: String, icon: String, builtIn: FinanceCategory?, customId: UUID?)] =
+            FinanceCategory.allCases
+                .filter { $0 != .income }
+                .map { (id: "builtin:\($0.rawValue)", name: $0.rawValue, icon: $0.icon, builtIn: $0, customId: nil) }
+        for custom in userCategories {
+            options.append((id: "custom:\(custom.id.uuidString)", name: custom.name, icon: custom.icon, builtIn: nil, customId: custom.id))
+        }
+        return options
     }
 
     private func migrateLegacyAccountIds() {
@@ -853,6 +956,10 @@ final class FinanceStore: ObservableObject {
 
     var availableBalance: Double {
         allTimeBalance
+    }
+
+    var totalWealth: Double {
+        availableBalance + blockedInGoals
     }
 
     var activeGoals: [SavingsGoal] {
@@ -968,7 +1075,10 @@ final class FinanceStore: ObservableObject {
             assistantModePreference: assistantModePreference,
             notificationLearning: notificationLearning,
             widgetPreferences: widgetPreferences,
-            appSettings: appSettings
+            appSettings: appSettings,
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            userCategories: userCategories,
+            onboardingProfile: onboardingProfile
         )
     }
 
@@ -989,6 +1099,9 @@ final class FinanceStore: ObservableObject {
         notificationLearning = data.notificationLearning
         widgetPreferences = data.widgetPreferences
         appSettings = data.appSettings
+        hasCompletedOnboarding = data.hasCompletedOnboarding
+        userCategories = data.userCategories
+        onboardingProfile = data.onboardingProfile
         refreshSubscriptions()
         refreshShortcuts()
         WidgetDataSync.writeSnapshot(from: self)
@@ -1015,6 +1128,10 @@ final class FinanceStore: ObservableObject {
 
         if data.shortcuts.count > shortcuts.count {
             shortcuts = data.shortcuts
+        }
+        let existingCategoryIds = Set(userCategories.map(\.id))
+        for category in data.userCategories where !existingCategoryIds.contains(category.id) {
+            userCategories.append(category)
         }
         appSettings = data.appSettings
         widgetPreferences = data.widgetPreferences

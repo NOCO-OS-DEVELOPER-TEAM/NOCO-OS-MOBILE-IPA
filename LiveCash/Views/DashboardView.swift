@@ -96,15 +96,11 @@ struct DashboardView: View {
                         .foregroundStyle(store.availableBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
                 }
 
-                Text("Verfügbar")
+                Text("Verfügbares Geld")
                     .font(LiveCashTheme.bodyFont.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                if store.blockedInGoals > 0 {
-                    Text(String(format: "%.0f€ in Sparzielen geblockt", store.blockedInGoals))
-                        .font(LiveCashTheme.captionFont)
-                        .foregroundStyle(LiveCashTheme.accent)
-                }
+                wealthOverviewRow
 
                 HStack(spacing: 16) {
                     Label(LiveCashTheme.money(store.currentMonthExpenses), systemImage: "arrow.down.circle.fill")
@@ -116,6 +112,30 @@ struct DashboardView: View {
                 }
             }
         }
+    }
+
+    private var wealthOverviewRow: some View {
+        HStack(spacing: 12) {
+            wealthChip(title: "Gebunden im Sparziel", value: store.blockedInGoals, color: LiveCashTheme.accent)
+            wealthChip(title: "Gesamt Vermögen", value: store.totalWealth, color: store.totalWealth >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+        }
+    }
+
+    private func wealthChip(title: String, value: Double, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+            Text(LiveCashTheme.money(value))
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var summaryCards: some View {

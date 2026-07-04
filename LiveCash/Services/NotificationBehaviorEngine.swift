@@ -72,7 +72,7 @@ enum NotificationBehaviorEngine {
         if prefs.unusualActivityAlerts, let p = unusualActivityReminder(for: store) {
             candidates.append(p)
         }
-        if prefs.softEngagement, let p = adaptiveCheckIn(for: store) {
+        if prefs.softEngagement, candidates.count < limit - 1, let p = adaptiveCheckIn(for: store) {
             candidates.append(p)
         }
 
@@ -153,8 +153,8 @@ enum NotificationBehaviorEngine {
         guard avg > 5, today > avg * 1.45 else { return nil }
         return SmartNotificationPayload(
             id: "high-spending-today",
-            title: "Heute",
-            body: String(format: "Du gibst heute mehr aus als üblich (%.0f€ vs. Ø %.0f€).", today, avg),
+            title: "Heute viel ausgegeben",
+            body: String(format: "Du hast heute %.0f€ ausgegeben — deutlich über deinem Ø von %.0f€.", today, avg),
             kind: .highSpendingToday,
             delay: 60 * 60 * 4,
             priority: 70
@@ -196,8 +196,8 @@ enum NotificationBehaviorEngine {
             if days == 7 {
                 return SmartNotificationPayload(
                     id: "sub-7d-\(sub.id.uuidString)",
-                    title: "Abo-Erinnerung",
-                    body: "Dein Abo ‚\(sub.name)‘ läuft in 7 Tagen erneut ab. Willst du prüfen, ob du es noch brauchst?",
+                    title: "Abo steht bald an",
+                    body: "‚\(sub.name)‘ verlängert sich in 7 Tagen — noch gebraucht?",
                     kind: .subscriptionRenewal,
                     delay: 60 * 60 * 10,
                     priority: 72
@@ -208,8 +208,8 @@ enum NotificationBehaviorEngine {
             let when = days == 0 ? "heute" : "in \(days) Tag\(days == 1 ? "" : "en")"
             return SmartNotificationPayload(
                 id: "sub-soon-\(sub.id.uuidString)",
-                title: "Abo-Erinnerung",
-                body: "\(sub.name) wird \(when) erneut abgebucht (\(String(format: "%.2f€", sub.amount))).",
+                title: "Abo steht bald an",
+                body: "\(sub.name) wird \(when) abgebucht (\(String(format: "%.2f€", sub.amount))).",
                 kind: .subscriptionRenewal,
                 delay: 60 * 60 * 12,
                 priority: 58
@@ -253,8 +253,8 @@ enum NotificationBehaviorEngine {
             guard pace == .slow, goal.notifySlowProgress else { return nil }
             return SmartNotificationPayload(
                 id: "goal-slow-\(goal.id.uuidString)",
-                title: "Sparziel-Tempo",
-                body: "„\(goal.name)“ liegt bei \(goal.progressPercent)% — etwas mehr Schwung würde helfen.",
+                title: "Sparziel braucht Aufmerksamkeit",
+                body: "„\(goal.name)“ liegt bei \(goal.progressPercent)% — ein kleiner Beitrag heute hilft.",
                 kind: .softEngagement,
                 delay: 60 * 60 * 24,
                 priority: 60

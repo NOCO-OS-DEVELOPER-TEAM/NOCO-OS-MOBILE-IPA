@@ -40,6 +40,14 @@ enum WidgetDataSync {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    @MainActor
+    static func clearSnapshot() {
+        let defaults = UserDefaults(suiteName: LiveCashAppGroup.identifier)
+        defaults?.removeObject(forKey: LiveCashAppGroup.widgetSnapshotKey)
+        defaults?.synchronize()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
     static func loadSnapshot() -> WidgetSnapshot {
         guard let data = UserDefaults(suiteName: LiveCashAppGroup.identifier)?.data(forKey: LiveCashAppGroup.widgetSnapshotKey) else {
             return .empty

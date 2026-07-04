@@ -17,6 +17,9 @@ struct AppData: Codable {
     var notificationLearning: NotificationLearning
     var widgetPreferences: WidgetPreferences
     var appSettings: AppSettings
+    var hasCompletedOnboarding: Bool
+    var userCategories: [UserCategory]
+    var onboardingProfile: OnboardingProfile?
 
     static let empty = AppData(
         transactions: [],
@@ -34,7 +37,10 @@ struct AppData: Codable {
         assistantModePreference: .suggestion,
         notificationLearning: NotificationLearning(),
         widgetPreferences: WidgetPreferences(),
-        appSettings: AppSettings()
+        appSettings: AppSettings(),
+        hasCompletedOnboarding: false,
+        userCategories: [],
+        onboardingProfile: nil
     )
 
     enum CodingKeys: String, CodingKey {
@@ -42,7 +48,7 @@ struct AppData: Codable {
         case savingsStreakDays, lastActiveDate, notificationsEnabled
         case shortcuts, spendingLimits, accounts, activeAccountId
         case notificationPreferences, assistantModePreference, notificationLearning
-        case widgetPreferences, appSettings
+        case widgetPreferences, appSettings, hasCompletedOnboarding, userCategories, onboardingProfile
     }
 
     init(
@@ -61,7 +67,10 @@ struct AppData: Codable {
         assistantModePreference: AssistantMode = .suggestion,
         notificationLearning: NotificationLearning = NotificationLearning(),
         widgetPreferences: WidgetPreferences = WidgetPreferences(),
-        appSettings: AppSettings = AppSettings()
+        appSettings: AppSettings = AppSettings(),
+        hasCompletedOnboarding: Bool = false,
+        userCategories: [UserCategory] = [],
+        onboardingProfile: OnboardingProfile? = nil
     ) {
         self.transactions = transactions
         self.goals = goals
@@ -79,6 +88,9 @@ struct AppData: Codable {
         self.notificationLearning = notificationLearning
         self.widgetPreferences = widgetPreferences
         self.appSettings = appSettings
+        self.hasCompletedOnboarding = hasCompletedOnboarding
+        self.userCategories = userCategories
+        self.onboardingProfile = onboardingProfile
     }
 
     init(from decoder: Decoder) throws {
@@ -105,6 +117,10 @@ struct AppData: Codable {
         notificationLearning = try c.decodeIfPresent(NotificationLearning.self, forKey: .notificationLearning) ?? NotificationLearning()
         widgetPreferences = try c.decodeIfPresent(WidgetPreferences.self, forKey: .widgetPreferences) ?? WidgetPreferences()
         appSettings = try c.decodeIfPresent(AppSettings.self, forKey: .appSettings) ?? AppSettings()
+        hasCompletedOnboarding = try c.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
+            ?? (!transactions.isEmpty || !goals.isEmpty)
+        userCategories = try c.decodeIfPresent([UserCategory].self, forKey: .userCategories) ?? []
+        onboardingProfile = try c.decodeIfPresent(OnboardingProfile.self, forKey: .onboardingProfile)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -125,6 +141,9 @@ struct AppData: Codable {
         try c.encode(notificationLearning, forKey: .notificationLearning)
         try c.encode(widgetPreferences, forKey: .widgetPreferences)
         try c.encode(appSettings, forKey: .appSettings)
+        try c.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
+        try c.encode(userCategories, forKey: .userCategories)
+        try c.encodeIfPresent(onboardingProfile, forKey: .onboardingProfile)
     }
 }
 

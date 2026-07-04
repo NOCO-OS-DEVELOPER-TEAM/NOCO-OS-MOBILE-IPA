@@ -7,13 +7,10 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            MainTabView()
-                .preferredColorScheme(nil)
-                .blur(radius: needsLockOverlay ? 12 : 0)
-                .disabled(needsLockOverlay)
-
-            if needsLockOverlay {
-                AppLockOverlay()
+            if !store.hasCompletedOnboarding {
+                OnboardingView()
+            } else {
+                mainContent
             }
         }
         .onShake()
@@ -51,7 +48,7 @@ struct RootView: View {
             if let undo = store.pendingShakeUndo {
                 let tx = undo.transaction
                 let sign = tx.type == .income ? "+" : "-"
-                Text("\(tx.merchant)\n\(sign)\(String(format: "%.2f€", tx.amount)) · \(tx.category.rawValue)\n\(tx.date.formatted(date: .abbreviated, time: .shortened))")
+                Text("\(tx.merchant)\n\(sign)\(String(format: "%.2f€", tx.amount)) · \(store.categoryName(for: tx))\n\(tx.date.formatted(date: .abbreviated, time: .shortened))")
             }
         }
     }
@@ -80,6 +77,22 @@ struct RootView: View {
             store.focusInputOnAppear = true
         case .openOverview:
             store.pendingQuickAction = .openOverview
+        case .openGoals:
+            store.pendingQuickAction = .openGoals
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        ZStack {
+            MainTabView()
+                .preferredColorScheme(nil)
+                .blur(radius: needsLockOverlay ? 12 : 0)
+                .disabled(needsLockOverlay)
+
+            if needsLockOverlay {
+                AppLockOverlay()
+            }
         }
     }
 }

@@ -54,6 +54,16 @@ struct MoreView: View {
                         Text("Adaptives Finanz-Verhaltenssystem — lokal, privat, unter deiner Kontrolle.")
                             .font(LiveCashTheme.captionFont)
                             .foregroundStyle(.secondary)
+                        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+                           let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+                            Text("Version \(version) (\(build))")
+                                .font(LiveCashTheme.captionFont)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Text("Designed by Noah Pohlmann")
+                            .font(LiveCashTheme.captionFont)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
                     }
                     .padding(.vertical, 4)
                 }

@@ -12,14 +12,14 @@ struct MapPinDisplay: Identifiable {
 
 enum MapPinLayout {
     /// Gruppiert Pins am gleichen Ort und streut sie in einem Ring auseinander.
-    static func layout(transactions: [Transaction]) -> [MapPinDisplay] {
+    static func layout(transactions: [Transaction], clusterModeEnabled: Bool = true) -> [MapPinDisplay] {
         let located: [(Transaction, CLLocationCoordinate2D)] = transactions.compactMap { tx in
             guard let loc = tx.location else { return nil }
             return (tx, loc.coordinate)
         }
 
         let groups = Dictionary(grouping: located) { item in
-            coordinateKey(item.1)
+            coordinateKey(item.1, clusterModeEnabled: clusterModeEnabled)
         }
 
         var result: [MapPinDisplay] = []
@@ -43,7 +43,7 @@ enum MapPinLayout {
                 continue
             }
 
-            let radius = min(0.00018, 0.00005 + Double(count) * 0.000012)
+            let radius = min(0.00024, 0.00007 + Double(count) * 0.000018)
             for (index, item) in sorted.enumerated() {
                 let angle = (Double(index) / Double(count)) * 2 * Double.pi - Double.pi / 2
                 let lat = center.latitude + radius * cos(angle)
@@ -62,7 +62,10 @@ enum MapPinLayout {
         return result
     }
 
-    private static func coordinateKey(_ c: CLLocationCoordinate2D) -> String {
-        String(format: "%.3f,%.3f", c.latitude, c.longitude)
+    private static func coordinateKey(_ c: CLLocationCoordinate2D, clusterModeEnabled: Bool) -> String {
+        if clusterModeEnabled {
+            return String(format: "%.4f,%.4f", c.latitude, c.longitude)
+        }
+        return String(format: "%.5f,%.5f", c.latitude, c.longitude)
     }
 }

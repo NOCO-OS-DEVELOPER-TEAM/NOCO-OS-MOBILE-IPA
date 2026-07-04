@@ -13,6 +13,17 @@ enum LiveCashTheme {
     static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
     static let screenBackground = Color(uiColor: .systemGroupedBackground)
 
+    static var backgroundGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(uiColor: .systemGroupedBackground),
+                accent.opacity(0.08)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
     static let titleFont = Font.system(.title2, design: .rounded).weight(.semibold)
     static let headlineFont = Font.system(.headline, design: .rounded)
     static let bodyFont = Font.system(.body, design: .default)

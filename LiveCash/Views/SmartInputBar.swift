@@ -75,7 +75,7 @@ struct SmartInputBar: View {
                 }
                 .buttonStyle(.plain)
 
-                TextField(isIncome ? "Einnahme eingeben…" : "Ausgabe eingeben…", text: $text)
+                TextField(isIncome ? "Einnahme eingeben" : "Ausgabe eingeben", text: $text)
                     .focused($focused)
                     .submitLabel(.send)
                     .onSubmit(submit)

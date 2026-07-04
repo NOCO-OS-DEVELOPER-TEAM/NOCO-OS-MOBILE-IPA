@@ -4,6 +4,7 @@ enum LiveCashQuickAction: String, Equatable {
     case addTransaction
     case openAssistant
     case openOverview
+    case openGoals
 
     var type: String { rawValue }
 }

@@ -370,6 +370,12 @@ struct MoneyCardSettingsView: View {
                     Text("30 Min").tag(30)
                     Text("60 Min").tag(60)
                 }
+                Button("Widget aktualisieren") {
+                    store.refreshWidgets()
+                }
+                Text("Erzwingt eine sofortige Widget-Aktualisierung — hilfreich wenn die Anzeige hängt.")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("Money Card")
@@ -402,7 +408,10 @@ struct SavingsSettingsView: View {
 
             Section("Live Features") {
                 Toggle("Lock Screen Live Activity", isOn: store.savingsBinding(\.liveActivityEnabled))
-                Text("Zeigt Sparziel-Fortschritt auf dem Sperrbildschirm.")
+                Button("Erneut aktivieren") {
+                    store.retrySavingsLiveActivity()
+                }
+                Text("Startet die Sparziel-Live-Activity neu — falls die Anzeige auf dem Sperrbildschirm hängt.")
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)
             }

@@ -17,6 +17,7 @@ struct AddTransactionView: View {
     @State private var amountText = ""
     @State private var type: TransactionType = .expense
     @State private var category: FinanceCategory = .other
+    @State private var selectedCategoryKey = "builtin:Sonstiges"
     @State private var date = Date()
     @State private var lat: Double?
     @State private var lon: Double?
@@ -63,9 +64,9 @@ struct AddTransactionView: View {
                         TextField("Betrag", text: $amountText)
                             .keyboardType(.decimalPad)
                         if entryMode == .expense {
-                            Picker("Kategorie", selection: $category) {
-                                ForEach(FinanceCategory.allCases.filter { $0 != .income }) { cat in
-                                    Text(cat.rawValue).tag(cat)
+                            Picker("Kategorie", selection: $selectedCategoryKey) {
+                                ForEach(store.expenseCategoryPickerOptions, id: \.id) { option in
+                                    Label(option.name, systemImage: option.icon).tag(option.id)
                                 }
                             }
                         }
@@ -127,11 +128,12 @@ struct AddTransactionView: View {
             location = TransactionLocation(latitude: lat, longitude: lon, label: locationLabel.isEmpty ? nil : locationLabel)
         }
         let resolvedType: TransactionType = entryMode == .income ? .income : .expense
+        let (resolvedCategory, customId) = resolvedCategorySelection(for: resolvedType)
         let draft = ParsedTransactionDraft(
             amount: abs(amount),
             type: resolvedType,
             merchant: merchant.trimmingCharacters(in: .whitespaces),
-            category: resolvedType == .income ? .income : category,
+            category: resolvedCategory,
             date: date
         )
         if resolvedType == .expense, let message = store.spendLimitExceededMessage(adding: abs(amount)) {
@@ -142,14 +144,26 @@ struct AddTransactionView: View {
         let tx = Transaction(
             amount: abs(amount),
             type: resolvedType,
-            category: resolvedType == .income ? .income : category,
+            category: resolvedCategory,
             merchant: merchant.trimmingCharacters(in: .whitespaces),
             date: date,
             location: location,
-            accountId: store.activeAccountId
+            accountId: store.activeAccountId,
+            userCategoryId: customId
         )
         store.addTransaction(tx)
         store.lastFeedback = tx.formattedAmount + " · \(tx.merchant)"
         dismiss()
+    }
+
+    private func resolvedCategorySelection(for type: TransactionType) -> (FinanceCategory, UUID?) {
+        guard type == .expense else { return (.income, nil) }
+        if let option = store.expenseCategoryPickerOptions.first(where: { $0.id == selectedCategoryKey }) {
+            if let customId = option.customId {
+                return (.other, customId)
+            }
+            return (option.builtIn ?? .other, nil)
+        }
+        return (category, nil)
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TransactionRow: View {
+    @EnvironmentObject private var store: FinanceStore
     let transaction: Transaction
 
     private var accentColor: Color {
@@ -13,7 +14,7 @@ struct TransactionRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: transaction.category.icon)
+            Image(systemName: store.categoryIcon(for: transaction))
                 .font(.body.weight(.semibold))
                 .foregroundStyle(accentColor)
                 .frame(width: 40, height: 40)
@@ -31,7 +32,7 @@ struct TransactionRow: View {
                         .background(accentSoft)
                         .foregroundStyle(accentColor)
                         .clipShape(Capsule())
-                    Text(transaction.category.rawValue)
+                    Text(store.categoryName(for: transaction))
                         .font(LiveCashTheme.captionFont)
                         .foregroundStyle(.secondary)
                 }

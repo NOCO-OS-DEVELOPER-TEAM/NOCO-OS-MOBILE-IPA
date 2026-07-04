@@ -39,6 +39,9 @@ struct MainTabView: View {
             case .openOverview:
                 selectedTab = 0
                 store.showInsight(for: .monthlySummary)
+            case .openGoals:
+                selectedTab = 3
+                store.pendingMoreDestination = .goals
             }
             store.pendingQuickAction = nil
         }

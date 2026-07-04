@@ -25,7 +25,10 @@ struct MoneyMapView: View {
     }
 
     private var pinDisplays: [MapPinDisplay] {
-        MapPinLayout.layout(transactions: filteredTransactions)
+        MapPinLayout.layout(
+            transactions: filteredTransactions,
+            clusterModeEnabled: store.appSettings.map.clusterModeEnabled
+        )
     }
 
     private var selectedTransaction: Transaction? {

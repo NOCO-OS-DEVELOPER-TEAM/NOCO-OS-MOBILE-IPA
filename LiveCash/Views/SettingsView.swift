@@ -34,6 +34,11 @@ struct SettingsView: View {
                 } label: {
                     Label("Ausgabenlimits", systemImage: "gauge.with.dots.needle.67percent")
                 }
+                NavigationLink {
+                    CategoriesSettingsView()
+                } label: {
+                    Label("Kategorien", systemImage: "tag.fill")
+                }
             }
 
             Section("Bereiche") {
@@ -102,7 +107,7 @@ struct SettingsView: View {
             Button("Löschen", role: .destructive) { store.resetAllData() }
             Button("Abbrechen", role: .cancel) {}
         } message: {
-            Text("Buchungen, Ziele, Abos und Einstellungen werden unwiderruflich gelöscht.")
+            Text("Buchungen, Ziele, Abos, Einstellungen und Widgets werden gelöscht. Die App startet wie bei einer Neuinstallation — inklusive Einrichtungsassistent.")
         }
         .alert("Neues Konto", isPresented: $showAddAccount) {
             TextField("Name", text: $newAccountName)
