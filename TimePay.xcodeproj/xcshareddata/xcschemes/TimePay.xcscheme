@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B10000060000000000000001"
+               BlueprintIdentifier = "LC0000060000000000000001"
                BuildableName = "TimePay.app"
                BlueprintName = "TimePay"
                ReferencedContainer = "container:TimePay.xcodeproj">
@@ -43,7 +43,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B10000060000000000000001"
+            BlueprintIdentifier = "LC0000060000000000000001"
             BuildableName = "TimePay.app"
             BlueprintName = "TimePay"
             ReferencedContainer = "container:TimePay.xcodeproj">
@@ -60,7 +60,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B10000060000000000000001"
+            BlueprintIdentifier = "LC0000060000000000000001"
             BuildableName = "TimePay.app"
             BlueprintName = "TimePay"
             ReferencedContainer = "container:TimePay.xcodeproj">

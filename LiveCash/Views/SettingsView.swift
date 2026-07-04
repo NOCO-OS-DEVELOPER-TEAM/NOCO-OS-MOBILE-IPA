@@ -1,0 +1,33 @@
+import SwiftUI
+
+struct SettingsView: View {
+    @EnvironmentObject private var store: FinanceStore
+
+    var body: some View {
+        List {
+            Section("Standort") {
+                Toggle("Standort bei Buchungen speichern", isOn: Binding(
+                    get: { store.locationEnabled },
+                    set: { store.setLocationEnabled($0) }
+                ))
+                Text("Für die Geldkarte. Optional und nur lokal gespeichert.")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Daten") {
+                LabeledContent("Buchungen", value: "\(store.transactions.count)")
+                LabeledContent("Sparziele", value: "\(store.goals.count)")
+                LabeledContent("Abos", value: "\(store.subscriptions.count)")
+            }
+
+            Section("Hinweise") {
+                Text("Alle Daten bleiben auf deinem Gerät. Live Cash verbindet sich nicht mit Banken oder externen APIs.")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Einstellungen")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}

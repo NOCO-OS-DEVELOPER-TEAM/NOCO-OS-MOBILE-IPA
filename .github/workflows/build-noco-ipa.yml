@@ -34,7 +34,6 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_STYLE=Manual \
             VALIDATE_PRODUCT=NO \
-            VALIDATE_EMBEDDED_BINARY_BUNDLE_IDENTIFIER=NO \
             2>&1 | tee build/xcodebuild.log
 
           if ! grep -q "BUILD SUCCEEDED" build/xcodebuild.log; then
@@ -50,44 +49,14 @@ jobs:
             exit 1
           fi
 
-          echo "=== PlugIns ==="
-          ls -la "$APP_PATH/PlugIns/"
+          cp LiveCash/LiveCash.entitlements "$APP_PATH/LiveCash.entitlements"
 
-          # Entitlements for SideStore re-sign (not applied during unsigned xcodebuild)
-          cp TimePay/TimePay.entitlements "$APP_PATH/TimePay.entitlements"
-          cp Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements \
-            "$APP_PATH/PlugIns/TimePayShieldConfiguration.appex/TimePayShieldConfiguration.entitlements"
-          cp Extensions/TimePayShieldAction/TimePayShieldAction.entitlements \
-            "$APP_PATH/PlugIns/TimePayShieldAction.appex/TimePayShieldAction.entitlements"
-          cp Extensions/TimePayMonitor/TimePayMonitor.entitlements \
-            "$APP_PATH/PlugIns/TimePayMonitor.appex/TimePayMonitor.entitlements"
-          if [ -d "$APP_PATH/PlugIns/TimePayWidgets.appex" ]; then
-            cp Extensions/TimePayWidgets/TimePayWidgets.entitlements \
-              "$APP_PATH/PlugIns/TimePayWidgets.appex/TimePayWidgets.entitlements"
-          fi
-
-          # Ad-hoc sign binaries (no restricted entitlements in signature)
-          set +e
-          for APPEX in "$APP_PATH/PlugIns/"*.appex; do
-            codesign --force --sign - --timestamp=none "$APPEX"
-          done
           codesign --force --sign - --timestamp=none "$APP_PATH"
-          set -e
 
           mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/TimePay.app
           mkdir -p build/sidestore-entitlements
-          cp TimePay/TimePay.entitlements build/sidestore-entitlements/TimePay.plist
-          cp Extensions/TimePayShieldConfiguration/TimePayShieldConfiguration.entitlements \
-            build/sidestore-entitlements/TimePayShieldConfiguration.plist
-          cp Extensions/TimePayShieldAction/TimePayShieldAction.entitlements \
-            build/sidestore-entitlements/TimePayShieldAction.plist
-          cp Extensions/TimePayMonitor/TimePayMonitor.entitlements \
-            build/sidestore-entitlements/TimePayMonitor.plist
-          if [ -f Extensions/TimePayWidgets/TimePayWidgets.entitlements ]; then
-            cp Extensions/TimePayWidgets/TimePayWidgets.entitlements \
-              build/sidestore-entitlements/TimePayWidgets.plist
-          fi
+          cp LiveCash/LiveCash.entitlements build/sidestore-entitlements/TimePay.plist
           cp sidestore-entitlements/ANLEITUNG.txt build/sidestore-entitlements/ANLEITUNG.txt
           cd build && zip -rq NOCO-TIMEPAY.ipa Payload sidestore-entitlements
           ls -la NOCO-TIMEPAY.ipa

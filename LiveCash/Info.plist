@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>de</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>de</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Live Cash nutzt die Kamera zum Scannen von Belegen.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Live Cash speichert optional deinen Standort bei Buchungen für die Geldkarte.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Live Cash benötigt Zugriff auf Fotos, um Belege zu importieren.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+</dict>
+</plist>
