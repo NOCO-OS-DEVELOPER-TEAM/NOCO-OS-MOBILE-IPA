@@ -31,7 +31,7 @@ enum FinancialStoryEngine {
     @MainActor
     static func slides(for period: StoryPeriod, store: FinanceStore) -> [StorySlide] {
         let range = dateRange(for: period)
-        let txs = store.transactions.filter { $0.date >= range.start && $0.date <= range.end }
+        let txs = store.accountFilteredTransactions.filter { $0.date >= range.start && $0.date <= range.end }
         let expenses = txs.filter { $0.type == .expense }
         let income = txs.filter { $0.type == .income }
         let totalExp = expenses.reduce(0) { $0 + $1.amount }
@@ -39,16 +39,9 @@ enum FinancialStoryEngine {
 
         var slides: [StorySlide] = [
             StorySlide(
-                title: period.rawValue,
-                headline: "Dein Finanz-Recap",
-                detail: "\(txs.count) Buchungen in diesem Zeitraum",
-                value: String(format: "%.0f€ Saldo", totalInc - totalExp),
-                isIncome: totalInc >= totalExp
-            ),
-            StorySlide(
                 title: "Ausgaben",
                 headline: String(format: "%.0f€ ausgegeben", totalExp),
-                detail: expenses.isEmpty ? "Keine Ausgaben" : "Durchschnitt \(String(format: "%.0f€", totalExp / Double(max(expenses.count, 1)))) pro Buchung",
+                detail: expenses.isEmpty ? "Keine Ausgaben in diesem Zeitraum" : "\(expenses.count) Buchungen · Ø \(String(format: "%.0f€", totalExp / Double(max(expenses.count, 1))))",
                 value: String(format: "%.0f€", totalExp)
             )
         ]
@@ -56,45 +49,43 @@ enum FinancialStoryEngine {
         if let top = Dictionary(grouping: expenses, by: \.category)
             .map({ ($0.key, $0.value.reduce(0) { $0 + $1.amount }) })
             .max(by: { $0.1 < $1.1 }) {
+            let insight = totalInc >= totalExp
+                ? "Du hältst dein Budget im Griff."
+                : "Hier liegt dein größtes Sparpotenzial."
             slides.append(StorySlide(
-                title: "Top-Kategorie",
+                title: "Insight",
                 headline: top.0.rawValue,
-                detail: "Größter Ausgabenblock",
+                detail: insight,
                 value: String(format: "%.0f€", top.1)
             ))
-        }
-
-        if totalInc > 0 {
+        } else {
             slides.append(StorySlide(
-                title: "Einnahmen",
-                headline: String(format: "%.0f€ erhalten", totalInc),
-                detail: "Positiver Cashflow",
-                value: String(format: "+%.0f€", totalInc),
-                isIncome: true
+                title: "Insight",
+                headline: "Noch keine Daten",
+                detail: "Buche Ausgaben, um Muster zu sehen.",
+                value: "—"
             ))
         }
 
-        if let goal = store.goals.max(by: { $0.progress < $1.progress }), goal.progress > 0 {
+        if let goal = store.goals.max(by: { $0.progress < $1.progress }) {
             slides.append(StorySlide(
-                title: "Sparziel",
+                title: "Sparstatus",
                 headline: goal.name,
-                detail: "Fortschritt in diesem Zeitraum",
+                detail: goal.progress > 0 ? "Weiter so — jedes Stück zählt." : "Lege heute den ersten Betrag an.",
                 value: "\(goal.progressPercent)%",
                 isIncome: true
             ))
+        } else {
+            slides.append(StorySlide(
+                title: "Sparstatus",
+                headline: "Kein Sparziel",
+                detail: "Erstelle ein Ziel unter Sparziele.",
+                value: "0%",
+                isIncome: true
+            ))
         }
 
-        let tip = totalExp > totalInc
-            ? "Tipp: Setze ein Tageslimit in den Einstellungen."
-            : "Tipp: Du sparst mehr als du ausgibst — stark!"
-        slides.append(StorySlide(
-            title: "Insight",
-            headline: "Verhalten",
-            detail: tip,
-            value: totalInc >= totalExp ? "✓" : "!"
-        ))
-
-        return slides
+        return Array(slides.prefix(3))
     }
 
     private static func dateRange(for period: StoryPeriod) -> (start: Date, end: Date) {

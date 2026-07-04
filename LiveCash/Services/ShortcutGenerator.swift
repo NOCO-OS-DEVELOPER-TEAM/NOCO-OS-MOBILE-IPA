@@ -33,13 +33,15 @@ enum ShortcutGenerator {
         }
 
         if result.count < 6 {
-            let defaults = [
+            let defaults: [QuickShortcut] = [
                 QuickShortcut(merchant: "Kaffee", amount: 3.5, category: .food, sortOrder: result.count),
                 QuickShortcut(merchant: "Mittagessen", amount: 12, category: .food, sortOrder: result.count + 1),
-                QuickShortcut(merchant: "Tanken", amount: 50, category: .transport, sortOrder: result.count + 2)
+                QuickShortcut(merchant: "Tanken", amount: 50, category: .transport, sortOrder: result.count + 2),
+                QuickShortcut(merchant: "Assistant", amount: 0, sortOrder: result.count + 3, actionType: .assistant),
+                QuickShortcut(merchant: "Übersicht", amount: 0, sortOrder: result.count + 4, actionType: .overview)
             ]
             for d in defaults where result.count < 6 {
-                if !result.contains(where: { $0.merchant.lowercased() == d.merchant.lowercased() }) {
+                if d.actionType != .book || !result.contains(where: { $0.merchant.lowercased() == d.merchant.lowercased() }) {
                     var item = d
                     item.sortOrder = result.count
                     result.append(item)

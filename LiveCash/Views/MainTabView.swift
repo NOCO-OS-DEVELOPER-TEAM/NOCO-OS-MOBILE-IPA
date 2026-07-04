@@ -28,15 +28,22 @@ struct MainTabView: View {
             guard let action else { return }
             switch action {
             case .addTransaction:
-                selectedTab = 1
+                selectedTab = 0
                 showAddTransaction = true
             case .openAssistant:
                 selectedTab = 0
+                store.focusInputOnAppear = true
             case .openOverview:
                 selectedTab = 0
                 store.showInsight(for: .monthlySummary)
             }
             store.pendingQuickAction = nil
+        }
+        .onChange(of: store.pendingTabSelection) { _, tab in
+            if let tab {
+                selectedTab = tab
+                store.pendingTabSelection = nil
+            }
         }
         .sheet(isPresented: $showAddTransaction) {
             AddTransactionView()

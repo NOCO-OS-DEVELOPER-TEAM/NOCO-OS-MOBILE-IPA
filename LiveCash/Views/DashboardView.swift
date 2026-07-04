@@ -10,7 +10,23 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 28) {
+                    headerSection
+
+                    summaryCards
+
+                    SmartShortcutsView()
+
+                    recentSection
+
+                    if let top = store.topCategoryThisMonth {
+                        detailInsightCard(title: "Top-Kategorie", value: top.0.rawValue, subtitle: LiveCashTheme.money(top.1))
+                    }
+
+                    goalsPreview
+
+                    subscriptionsPreview
+
                     if showQuickInsight {
                         QuickInsightPanel {
                             withAnimation(.easeOut(duration: 0.2)) {
@@ -18,15 +34,6 @@ struct DashboardView: View {
                             }
                         }
                     }
-                    headerSection
-                    summaryCards
-                    SmartShortcutsView()
-                    if let top = store.topCategoryThisMonth {
-                        insightCard(title: "Top-Kategorie", value: top.0.rawValue, subtitle: LiveCashTheme.money(top.1))
-                    }
-                    goalsPreview
-                    subscriptionsPreview
-                    recentSection
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 120)
@@ -43,7 +50,7 @@ struct DashboardView: View {
                         Image(systemName: "sparkles.rectangle.stack")
                             .foregroundStyle(LiveCashTheme.accent)
                     }
-                    .accessibilityLabel("Financial Story")
+                    .accessibilityLabel("Finanz-Story")
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -62,31 +69,49 @@ struct DashboardView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
+            if let account = store.activeAccount, store.accounts.count > 1 {
+                Label(account.name, systemImage: account.icon)
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(LiveCashTheme.accent)
+            }
             Text(monthTitle)
                 .font(LiveCashTheme.captionFont)
                 .foregroundStyle(.secondary)
-            Text(LiveCashTheme.money(store.currentMonthExpenses))
-                .font(.system(size: 42, weight: .bold, design: .rounded))
-                .foregroundStyle(LiveCashTheme.expense)
-            Text("Ausgaben diesen Monat")
-                .font(LiveCashTheme.captionFont)
+
+            Text(balanceText)
+                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .foregroundStyle(store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+
+            Text("Saldo diesen Monat")
+                .font(LiveCashTheme.bodyFont.weight(.medium))
                 .foregroundStyle(.secondary)
+
+            HStack(spacing: 16) {
+                Label(LiveCashTheme.money(store.currentMonthExpenses), systemImage: "arrow.down.circle.fill")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(LiveCashTheme.expense)
+                Label(LiveCashTheme.money(store.currentMonthIncome), systemImage: "arrow.up.circle.fill")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(LiveCashTheme.income)
+            }
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 
     private var summaryCards: some View {
         HStack(spacing: 12) {
-            miniCard(title: "Einnahmen", value: store.currentMonthIncome, color: LiveCashTheme.income, positive: true)
-            miniCard(title: "Saldo", value: store.currentBalance, color: store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense, positive: store.currentBalance >= 0)
+            miniCard(title: "Heute ausgegeben", value: store.todayExpenses, color: LiveCashTheme.expense, positive: false)
+            miniCard(title: "Ø pro Tag", value: store.dailyAverageExpenses, color: .secondary, positive: false)
         }
     }
 
     private func miniCard(title: String, value: Double, color: Color, positive: Bool) -> some View {
         LiveCashCard {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text(title)
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)
@@ -94,10 +119,11 @@ struct DashboardView: View {
                     .font(.system(.title3, design: .rounded).weight(.semibold))
                     .foregroundStyle(color)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    private func insightCard(title: String, value: String, subtitle: String) -> some View {
+    private func detailInsightCard(title: String, value: String, subtitle: String) -> some View {
         LiveCashCard {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -105,19 +131,15 @@ struct DashboardView: View {
                         .font(LiveCashTheme.captionFont)
                         .foregroundStyle(.secondary)
                     Text(value)
-                        .font(LiveCashTheme.headlineFont)
+                        .font(LiveCashTheme.bodyFont.weight(.medium))
                     Text(subtitle)
                         .font(LiveCashTheme.captionFont)
                         .foregroundStyle(LiveCashTheme.expense)
                 }
                 Spacer()
                 Image(systemName: "chart.pie.fill")
-                    .font(.title2)
-                    .foregroundStyle(LiveCashTheme.accentSoft)
-                    .overlay {
-                        Image(systemName: "chart.pie.fill")
-                            .foregroundStyle(LiveCashTheme.accent)
-                    }
+                    .font(.body)
+                    .foregroundStyle(LiveCashTheme.accent.opacity(0.8))
             }
         }
     }
@@ -125,7 +147,7 @@ struct DashboardView: View {
     private var goalsPreview: some View {
         Group {
             if !store.goals.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 14) {
                     SectionHeader(title: "Sparziele")
                     ForEach(store.goals.prefix(2)) { goal in
                         GoalCard(goal: goal, monthlySavingsRate: store.monthlySavingsRate, compact: true)
@@ -139,7 +161,7 @@ struct DashboardView: View {
         Group {
             if !store.subscriptions.isEmpty {
                 LiveCashCard {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Abonnements")
                             .font(LiveCashTheme.captionFont)
                             .foregroundStyle(.secondary)
@@ -149,13 +171,14 @@ struct DashboardView: View {
                             .font(LiveCashTheme.captionFont)
                             .foregroundStyle(.secondary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
     }
 
     private var recentSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             SectionHeader(title: "Zuletzt")
             if store.transactions.isEmpty {
                 LiveCashCard {
@@ -181,6 +204,12 @@ struct DashboardView: View {
         f.locale = Locale(identifier: "de_DE")
         f.dateFormat = "MMMM yyyy"
         return f.string(from: Date()).capitalized
+    }
+
+    private var balanceText: String {
+        let value = store.currentBalance
+        let prefix = value >= 0 ? "+" : ""
+        return "\(prefix)\(String(format: "%.2f€", value))"
     }
 
     private func scheduleQuickInsight() {

@@ -6,6 +6,7 @@ struct SmartInputBar: View {
     @Binding var showReceiptScan: Bool
     @State private var text = ""
     @FocusState private var focused: Bool
+    @State private var showCamera = false
 
     private var isIncome: Bool { store.inputMode == .income }
     private var modeColor: Color { isIncome ? LiveCashTheme.income : LiveCashTheme.expense }
@@ -52,13 +53,11 @@ struct SmartInputBar: View {
 
                 Button {
                     focused = false
-                    showReceiptScan = true
+                    store.showInputSourceSheet = true
                 } label: {
-                    Image(systemName: "camera.fill")
-                        .font(.body.weight(.medium))
-                        .frame(width: 40, height: 40)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(LiveCashTheme.accent)
                 }
                 .buttonStyle(.plain)
 
@@ -110,6 +109,18 @@ struct SmartInputBar: View {
                 store.focusInputOnAppear = false
             }
         }
+        .sheet(isPresented: $store.showInputSourceSheet) {
+            InputSourceSheet(showReceiptScan: $showReceiptScan) {
+                showCamera = true
+            }
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraCaptureView(source: .camera) { image in
+                store.pendingScanImage = image
+                showReceiptScan = true
+            }
+            .ignoresSafeArea()
+        }
     }
 
     @ViewBuilder
@@ -141,6 +152,12 @@ struct SmartInputBar: View {
                         focused = false
                         store.clearLiveIntelligence()
                     },
+                    onOption: { option in
+                        store.confirmWithOption(option)
+                        text = ""
+                        focused = false
+                        store.clearLiveIntelligence()
+                    },
                     onCancel: {
                         store.cancelConfirmation()
                         store.clearLiveIntelligence()
@@ -148,7 +165,10 @@ struct SmartInputBar: View {
                 )
             } else {
                 InterpretationChip(interpretation: store.inputInterpretation)
-                LiveSuggestionsView(suggestions: store.liveSuggestions) { suggestion in
+                LiveSuggestionsView(
+                    suggestions: store.liveSuggestions,
+                    mode: store.currentAssistantMode
+                ) { suggestion in
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     withAnimation(.easeOut(duration: 0.15)) {
                         switch suggestion.action {
@@ -158,17 +178,29 @@ struct SmartInputBar: View {
                             submit()
                         case .saveDraft(var draft):
                             SmartInputParser.shared.applyPreferredType(store.inputMode, to: &draft, text: text)
-                            if LiveIntelligenceEngine.shared.isUncertainInput(text, draft: draft, preferredType: store.inputMode) {
-                                store.pendingConfirmation = PendingConfirmation(
-                                    draft: draft,
-                                    rawInput: text,
-                                    message: "Ist das eine Ausgabe oder Einnahme?"
-                                )
-                            } else {
+                            let engine = LiveIntelligenceEngine.shared
+                            let confidence = engine.classifyInputConfidence(text, draft: draft, preferredType: store.inputMode)
+                            switch confidence {
+                            case .safe:
                                 store.saveDraft(draft, rawInput: text)
                                 text = ""
                                 focused = false
                                 store.clearLiveIntelligence()
+                            case .uncertain:
+                                store.pendingConfirmation = PendingConfirmation(
+                                    draft: draft,
+                                    rawInput: text,
+                                    message: engine.uncertainMessage(for: draft, text: text),
+                                    confidence: .uncertain
+                                )
+                            case .highRisk:
+                                store.pendingConfirmation = PendingConfirmation(
+                                    draft: draft,
+                                    rawInput: text,
+                                    message: "Mehrdeutig — was meinst du?",
+                                    confidence: .highRisk,
+                                    options: engine.highRiskOptions(for: draft, text: text)
+                                )
                             }
                         default:
                             store.applyLiveSuggestion(suggestion)

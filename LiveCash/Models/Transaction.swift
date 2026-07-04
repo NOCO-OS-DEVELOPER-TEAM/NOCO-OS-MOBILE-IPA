@@ -26,6 +26,7 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
     var location: TransactionLocation?
     var rawInput: String?
     var ocrText: String?
+    var accountId: UUID?
 
     init(
         id: UUID = UUID(),
@@ -36,7 +37,8 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
         date: Date = Date(),
         location: TransactionLocation? = nil,
         rawInput: String? = nil,
-        ocrText: String? = nil
+        ocrText: String? = nil,
+        accountId: UUID? = nil
     ) {
         self.id = id
         self.amount = abs(amount)
@@ -47,6 +49,7 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
         self.location = location
         self.rawInput = rawInput
         self.ocrText = ocrText
+        self.accountId = accountId
     }
 
     var signedAmount: Double {

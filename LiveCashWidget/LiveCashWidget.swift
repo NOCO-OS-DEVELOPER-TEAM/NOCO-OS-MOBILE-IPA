@@ -21,12 +21,13 @@ struct LiveCashWidgetProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<LiveCashWidgetEntry>) -> Void) {
         let entry = LiveCashWidgetEntry(date: Date(), snapshot: WidgetSnapshotLoader.load())
-        let next = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date().addingTimeInterval(1800)
+        let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date().addingTimeInterval(900)
         completion(Timeline(entries: [entry], policy: .after(next)))
     }
 }
 
 struct LiveCashWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     let entry: LiveCashWidgetEntry
 
     private var accent: Color { Color(red: 0.12, green: 0.72, blue: 0.52) }
@@ -34,59 +35,105 @@ struct LiveCashWidgetView: View {
     private var expense: Color { Color(red: 0.94, green: 0.32, blue: 0.36) }
 
     var body: some View {
-        if let s = entry.snapshot {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Live Cash")
-                        .font(.system(.caption, design: .rounded).weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text(s.updatedAt, style: .time)
-                        .font(.system(size: 10, design: .rounded))
-                        .foregroundStyle(.secondary)
+        Group {
+            if let s = entry.snapshot {
+                if family == .systemMedium {
+                    mediumLayout(s)
+                } else {
+                    smallLayout(s)
                 }
-                Text(String(format: "%.0f€", s.balance))
-                    .font(.system(.title2, design: .rounded).weight(.bold))
-                    .foregroundStyle(s.balance >= 0 ? income : expense)
-                Text("Saldo · Monat")
+            } else {
+                emptyLayout
+            }
+        }
+        .widgetURL(URL(string: "livecash://widget"))
+    }
+
+    private func smallLayout(_ s: WidgetSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            header(s)
+            Text(String(format: "%.0f€", s.balance))
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .foregroundStyle(s.balance >= 0 ? income : expense)
+            Text("Saldo · Monat")
+                .font(.system(size: 10, design: .rounded))
+                .foregroundStyle(.secondary)
+            HStack {
+                statCol("Ausgaben", value: s.monthExpenses, color: expense)
+                Spacer()
+                statCol("Sparen", valueText: "\(s.savingsProgressPercent)%", color: income)
+            }
+            if let cat = s.topCategoryName {
+                Text("Top: \(cat)")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Ausgaben")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.0f€", s.monthExpenses))
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(expense)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing) {
-                        Text("Sparen")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.secondary)
-                        Text("\(s.savingsProgressPercent)%")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(income)
-                    }
-                }
-                if let cat = s.topCategoryName {
-                    Text("Top: \(cat)")
+                    .lineLimit(1)
+            }
+        }
+        .padding()
+    }
+
+    private func mediumLayout(_ s: WidgetSnapshot) -> some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                header(s)
+                Text(String(format: "%.0f€", s.balance))
+                    .font(.system(.title, design: .rounded).weight(.bold))
+                    .foregroundStyle(s.balance >= 0 ? income : expense)
+                Text("Monatssaldo")
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 10) {
+                statCol("Einnahmen", value: s.monthIncome, color: income)
+                statCol("Ausgaben", value: s.monthExpenses, color: expense)
+                if let goal = s.primaryGoalName {
+                    Text("\(goal) · \(s.savingsProgressPercent)%")
                         .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
-            .padding()
-        } else {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Live Cash")
-                    .font(.headline)
-                Text("App öffnen für Daten")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+        }
+        .padding()
+    }
+
+    private var emptyLayout: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Live Cash")
+                .font(.headline)
+            Text("App öffnen für Kontostand")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+    }
+
+    private func header(_ s: WidgetSnapshot) -> some View {
+        HStack {
+            Text("Live Cash")
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(s.updatedAt, style: .time)
+                .font(.system(size: 10, design: .rounded))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func statCol(_ title: String, value: Double, color: Color) -> some View {
+        statCol(title, valueText: String(format: "%.0f€", value), color: color)
+    }
+
+    private func statCol(_ title: String, valueText: String, color: Color) -> some View {
+        VStack(alignment: .leading) {
+            Text(title)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+            Text(valueText)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(color)
         }
     }
 }
@@ -100,7 +147,7 @@ struct LiveCashWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Live Cash")
-        .description("Saldo, Ausgaben und Sparfortschritt.")
+        .description("Echter Kontostand, Ausgaben und Sparfortschritt.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

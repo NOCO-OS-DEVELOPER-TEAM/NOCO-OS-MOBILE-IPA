@@ -14,6 +14,17 @@
 	<string>Live Cash speichert optional deinen Standort bei Buchungen für die Geldkarte.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Live Cash benötigt Zugriff auf Fotos, um Belege zu importieren.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>de.noco.timepay</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>livecash</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 </dict>

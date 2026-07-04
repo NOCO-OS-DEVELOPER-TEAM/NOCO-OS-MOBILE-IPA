@@ -76,6 +76,12 @@ struct ReceiptScanView: View {
             .onChange(of: pickerItem) { _, item in
                 Task { await loadImage(from: item) }
             }
+            .onAppear {
+                if let image = store.pendingScanImage {
+                    store.pendingScanImage = nil
+                    Task { await processImage(image) }
+                }
+            }
             .fullScreenCover(isPresented: $showCamera) {
                 CameraCaptureView(source: .camera) { image in
                     Task { await processImage(image) }
@@ -165,15 +171,7 @@ struct ReceiptScanView: View {
     }
 
     private func saveDraft(_ draft: ParsedTransactionDraft) {
-        let tx = Transaction(
-            amount: draft.amount,
-            type: draft.type,
-            category: draft.category,
-            merchant: draft.merchant,
-            date: draft.date,
-            ocrText: ocrText
-        )
-        store.addTransaction(tx)
+        store.saveDraft(draft, rawInput: ocrText.isEmpty ? nil : ocrText)
         savedCount += 1
         store.lastFeedback = documentKind == .balance
             ? "Kontostand gespeichert: \(draft.merchant)"

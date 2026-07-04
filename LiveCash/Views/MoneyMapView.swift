@@ -6,10 +6,15 @@ struct MoneyMapView: View {
     @State private var selectedCategory: FinanceCategory?
     @State private var selectedID: UUID?
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var mapSelectedDate = Date()
+
+    private var mapEndDate: Date {
+        Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: mapSelectedDate) ?? mapSelectedDate
+    }
 
     private var filteredTransactions: [Transaction] {
-        store.transactions.filter { tx in
-            guard tx.location != nil else { return false }
+        store.accountFilteredTransactions.filter { tx in
+            guard tx.location != nil, tx.date <= mapEndDate else { return false }
             if let cat = selectedCategory { return tx.category == cat }
             return true
         }
@@ -41,18 +46,28 @@ struct MoneyMapView: View {
         return pinDisplays.first { $0.transaction.id == selectedID }
     }
 
+    private var earliestMapDate: Date {
+        let dates = store.accountFilteredTransactions.filter { $0.location != nil }.map(\.date)
+        return dates.min() ?? Date()
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 mapSummaryBar
                 categoryFilter
                 mapContent
+                timelineBar
                 transactionDetail
             }
             .navigationTitle("Geldkarte")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear { adjustCamera() }
+            .onAppear {
+                store.ensureLocationForMap()
+                adjustCamera()
+            }
             .onChange(of: pinDisplays.count) { _, _ in adjustCamera() }
+            .onChange(of: mapSelectedDate) { _, _ in adjustCamera() }
         }
     }
 
@@ -60,10 +75,8 @@ struct MoneyMapView: View {
         HStack {
             Label("\(filteredTransactions.count) mit Standort", systemImage: "mappin.and.ellipse")
             Spacer()
-            if locationGroupCount > 0 {
-                Text("\(locationGroupCount) Orte")
-                    .foregroundStyle(.secondary)
-            }
+            Text(mapSelectedDate.formatted(date: .abbreviated, time: .omitted))
+                .foregroundStyle(.secondary)
         }
         .font(LiveCashTheme.captionFont)
         .padding(.horizontal, 16)
@@ -71,8 +84,36 @@ struct MoneyMapView: View {
         .background(.ultraThinMaterial)
     }
 
+    private var timelineBar: some View {
+        VStack(spacing: 6) {
+            HStack {
+                Text("Zeitverlauf")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if Calendar.current.isDateInToday(mapSelectedDate) {
+                    Text("Heute")
+                        .font(LiveCashTheme.captionFont.weight(.semibold))
+                        .foregroundStyle(LiveCashTheme.accent)
+                }
+            }
+            Slider(
+                value: Binding(
+                    get: { mapSelectedDate.timeIntervalSince1970 },
+                    set: { mapSelectedDate = Date(timeIntervalSince1970: $0) }
+                ),
+                in: earliestMapDate.timeIntervalSince1970...Date().timeIntervalSince1970
+            )
+            .tint(LiveCashTheme.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+    }
+
     private var mapContent: some View {
         Map(position: $cameraPosition) {
+            UserAnnotation()
             ForEach(heatZones) { zone in
                 MapCircle(center: zone.coordinate, radius: zone.radius)
                     .foregroundStyle(
@@ -91,15 +132,26 @@ struct MoneyMapView: View {
                             selected: selectedID == pin.transaction.id,
                             clusterSize: pin.clusterSize > 1 ? pin.clusterSize : nil,
                             clusterTotal: pin.clusterSize > 1 ? pin.clusterTotal : nil,
-                            dimmed: pin.clusterSize > 1 && !pin.isClusterRepresentative
+                            dimmed: pin.clusterSize > 1 && !pin.isClusterRepresentative,
+                            opacity: pinOpacity(for: pin.transaction)
                         )
                     }
                     .buttonStyle(.plain)
-                    .opacity(pin.clusterSize > 1 && !pin.isClusterRepresentative ? 0.75 : 1)
                 }
             }
         }
         .mapStyle(.standard(elevation: .realistic))
+        .mapControls {
+            MapUserLocationButton()
+            MapCompass()
+        }
+    }
+
+    private func pinOpacity(for tx: Transaction) -> Double {
+        let cal = Calendar.current
+        if cal.isDate(tx.date, inSameDayAs: mapSelectedDate) { return 1 }
+        let days = cal.dateComponents([.day], from: cal.startOfDay(for: tx.date), to: cal.startOfDay(for: mapSelectedDate)).day ?? 0
+        return max(0.2, 1.0 - Double(days) / 21.0)
     }
 
     @ViewBuilder
@@ -124,7 +176,8 @@ struct MoneyMapView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
             .background(.ultraThinMaterial)
         }
     }
@@ -142,9 +195,8 @@ struct MoneyMapView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
         }
-        .background(LiveCashTheme.screenBackground)
     }
 
     private func filterChip(title: String, active: Bool, action: @escaping () -> Void) -> some View {
@@ -193,6 +245,7 @@ private struct MapPinView: View {
     var clusterSize: Int?
     var clusterTotal: Double?
     var dimmed: Bool = false
+    var opacity: Double = 1
 
     private var pinColor: Color {
         type == .income ? LiveCashTheme.income : LiveCashTheme.expense
@@ -230,5 +283,6 @@ private struct MapPinView: View {
                     .clipShape(Capsule())
             }
         }
+        .opacity(opacity)
     }
 }

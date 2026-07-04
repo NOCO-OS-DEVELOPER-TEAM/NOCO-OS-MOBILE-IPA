@@ -63,6 +63,14 @@
 		LC0000010000000000000042 /* FutureSimulationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004A /* FutureSimulationView.swift */; };
 		LC0000010000000000000043 /* SpendingLimitsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004B /* SpendingLimitsView.swift */; };
 		LC0000010000000000000044 /* SpendLimitBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004C /* SpendLimitBanner.swift */; };
+		LC0000010000000000000045 /* FinanceAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004D /* FinanceAccount.swift */; };
+		LC0000010000000000000046 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004E /* NotificationPreferences.swift */; };
+		LC0000010000000000000047 /* AssistantMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000050 /* AssistantMode.swift */; };
+		LC0000010000000000000048 /* NotificationBehaviorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004F /* NotificationBehaviorEngine.swift */; };
+		LC0000010000000000000049 /* DocumentImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000051 /* DocumentImportService.swift */; };
+		LC000001000000000000004A /* InputSourceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000052 /* InputSourceSheet.swift */; };
+		LC000001000000000000004B /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000053 /* ShakeDetector.swift */; };
+		LC000001000000000000004C /* NotificationLearning.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000054 /* NotificationLearning.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -129,6 +137,14 @@
 		LC000002000000000000004A /* FutureSimulationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FutureSimulationView.swift; sourceTree = "<group>"; };
 		LC000002000000000000004B /* SpendingLimitsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingLimitsView.swift; sourceTree = "<group>"; };
 		LC000002000000000000004C /* SpendLimitBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendLimitBanner.swift; sourceTree = "<group>"; };
+		LC000002000000000000004D /* FinanceAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceAccount.swift; sourceTree = "<group>"; };
+		LC000002000000000000004E /* NotificationPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPreferences.swift; sourceTree = "<group>"; };
+		LC000002000000000000004F /* NotificationBehaviorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBehaviorEngine.swift; sourceTree = "<group>"; };
+		LC0000020000000000000050 /* AssistantMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMode.swift; sourceTree = "<group>"; };
+		LC0000020000000000000051 /* DocumentImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportService.swift; sourceTree = "<group>"; };
+		LC0000020000000000000052 /* InputSourceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSourceSheet.swift; sourceTree = "<group>"; };
+		LC0000020000000000000053 /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
+		LC0000020000000000000054 /* NotificationLearning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationLearning.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -231,6 +247,10 @@
 				LC0000020000000000000028 /* WidgetSnapshot.swift */,
 				LC0000020000000000000041 /* QuickShortcut.swift */,
 				LC0000020000000000000042 /* SpendingLimits.swift */,
+				LC000002000000000000004D /* FinanceAccount.swift */,
+				LC000002000000000000004E /* NotificationPreferences.swift */,
+				LC0000020000000000000050 /* AssistantMode.swift */,
+				LC0000020000000000000054 /* NotificationLearning.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -251,6 +271,9 @@
 				LC0000020000000000000044 /* FinancialStoryEngine.swift */,
 				LC0000020000000000000045 /* FutureSimulationEngine.swift */,
 				LC0000020000000000000046 /* MapHeatLayout.swift */,
+				LC000002000000000000004F /* NotificationBehaviorEngine.swift */,
+				LC0000020000000000000051 /* DocumentImportService.swift */,
+				LC0000020000000000000053 /* ShakeDetector.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -309,6 +332,7 @@
 				LC000002000000000000004C /* SpendLimitBanner.swift */,
 				LC0000020000000000000026 /* InputTypeToggle.swift */,
 				LC0000020000000000000027 /* QuickInsightPanel.swift */,
+				LC0000020000000000000052 /* InputSourceSheet.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -467,6 +491,14 @@
 				LC0000010000000000000042 /* FutureSimulationView.swift in Sources */,
 				LC0000010000000000000043 /* SpendingLimitsView.swift in Sources */,
 				LC0000010000000000000044 /* SpendLimitBanner.swift in Sources */,
+				LC0000010000000000000045 /* FinanceAccount.swift in Sources */,
+				LC0000010000000000000046 /* NotificationPreferences.swift in Sources */,
+				LC0000010000000000000047 /* AssistantMode.swift in Sources */,
+				LC0000010000000000000048 /* NotificationBehaviorEngine.swift in Sources */,
+				LC0000010000000000000049 /* DocumentImportService.swift in Sources */,
+				LC000001000000000000004A /* InputSourceSheet.swift in Sources */,
+				LC000001000000000000004B /* ShakeDetector.swift in Sources */,
+				LC000001000000000000004C /* NotificationLearning.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -535,7 +567,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 12;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -571,7 +603,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 12;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -605,7 +637,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 12;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
@@ -632,7 +664,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 12;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";

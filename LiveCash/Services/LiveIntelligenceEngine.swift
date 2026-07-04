@@ -5,6 +5,82 @@ final class LiveIntelligenceEngine {
     static let shared = LiveIntelligenceEngine()
 
     private let merchantHints = ["netflix", "spotify", "lidl", "aldi", "rewe", "amazon", "dm", "apple", "disney", "prime", "uber"]
+    private let vagueTokens = ["irgendwas", "etwas", "unklar", "diverses", "sonstiges", "xyz", "test", "irgendwo", "keine ahnung"]
+
+    func detectMode(for partial: String, store: FinanceStore) -> AssistantMode {
+        let t = partial.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.isEmpty { return .suggestion }
+        if SmartInputParser.shared.isLikelyQuery(t) || t.contains("?") { return .question }
+        if SmartInputParser.shared.containsAmount(t) || SmartInputParser.shared.looksLikeTransaction(t) { return .input }
+        if FinanceAssistant.shared.matchIntent(t) != nil { return .question }
+        return store.assistantModePreference
+    }
+
+    func classifyInputConfidence(
+        _ text: String,
+        draft: ParsedTransactionDraft,
+        preferredType: TransactionType?
+    ) -> InputConfidence {
+        let lower = text.lowercased()
+
+        if vagueTokens.contains(where: { lower.contains($0) }) { return .highRisk }
+        if draft.merchant.lowercased() == "unbekannt",
+           !SmartInputParser.shared.hasExplicitType(in: text),
+           preferredType == nil {
+            return .highRisk
+        }
+        if draft.merchant.count <= 2, draft.amount > 0 { return .highRisk }
+
+        let words = lower.split(separator: " ").map(String.init)
+        if words.count == 1, draft.amount > 0,
+           Double(words[0].replacingOccurrences(of: ",", with: ".")) != nil {
+            return .safe
+        }
+
+        if draft.merchant.lowercased() == "unbekannt" { return .uncertain }
+        if !SmartInputParser.shared.hasExplicitType(in: text), preferredType == nil { return .uncertain }
+
+        return .safe
+    }
+
+    func highRiskOptions(for draft: ParsedTransactionDraft, text: String) -> [ConfirmationOption] {
+        var expense = draft
+        expense.type = .expense
+        if expense.category == .income { expense.category = .other }
+
+        var income = draft
+        income.type = .income
+        income.category = .income
+
+        var food = draft
+        food.type = .expense
+        food.category = .food
+
+        return [
+            ConfirmationOption(
+                id: "expense",
+                title: "Ausgabe · \(expense.merchant)",
+                draft: expense
+            ),
+            ConfirmationOption(
+                id: "income",
+                title: "Einnahme · \(income.merchant)",
+                draft: income
+            ),
+            ConfirmationOption(
+                id: "food",
+                title: "Lebensmittel · \(String(format: "%.2f€", food.amount))",
+                draft: food
+            )
+        ]
+    }
+
+    func uncertainMessage(for draft: ParsedTransactionDraft, text: String) -> String {
+        if draft.merchant.lowercased() == "unbekannt" || draft.merchant.count <= 3 {
+            return "Wofür war das? Bitte kurz bestätigen."
+        }
+        return "Ausgabe oder Einnahme?"
+    }
 
     func interpret(_ partial: String, preferredType: TransactionType = .expense) -> InputInterpretation {
         let t = partial.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -14,163 +90,129 @@ final class LiveIntelligenceEngine {
             if SmartInputParser.shared.isLikelyQuery(t) {
                 return InputInterpretation(
                     amount: nil, type: nil, category: nil, merchant: nil,
-                    isUncertain: false,
-                    hint: "Analyse-Anfrage erkannt"
+                    confidence: .safe,
+                    hint: "Frage — wähle eine Antwort"
                 )
             }
             return .empty
         }
 
         SmartInputParser.shared.applyPreferredType(preferredType, to: &draft, text: t)
-        let uncertain = isUncertainInput(t, draft: draft, preferredType: preferredType)
+        let confidence = classifyInputConfidence(t, draft: draft, preferredType: preferredType)
         let typeLabel = draft.type == .income ? "Einnahme" : "Ausgabe"
-        let hint = uncertain
-            ? "Unklar — bitte bestätigen"
-            : "\(typeLabel) · \(draft.category.rawValue)"
+
+        let hint: String
+        switch confidence {
+        case .safe:
+            hint = "\(typeLabel) · \(draft.merchant)"
+        case .uncertain:
+            hint = uncertainMessage(for: draft, text: t)
+        case .highRisk:
+            hint = "Mehrdeutig — bitte auswählen"
+        }
 
         return InputInterpretation(
             amount: draft.amount,
             type: draft.type,
             category: draft.category,
             merchant: draft.merchant,
-            isUncertain: uncertain,
+            confidence: confidence,
             hint: hint
         )
     }
 
     func liveSuggestions(for partial: String, store: FinanceStore) -> [LiveSuggestion] {
-        let t = partial.trimmingCharacters(in: .whitespacesAndNewlines)
-        let preferredType = store.inputMode
-        if t.isEmpty { return idleSuggestions(store) }
+        let mode = detectMode(for: partial, store: store)
+        store.currentAssistantMode = mode
 
-        let lower = t.lowercased()
-
-        if let merchant = merchantHints.first(where: { lower.contains($0) }) {
-            return merchantSuggestions(merchant: merchant.capitalized, partial: t, store: store)
+        switch mode {
+        case .suggestion:
+            return suggestionModeChips(store: store)
+        case .question:
+            return questionModeChips(for: partial, store: store)
+        case .input:
+            return inputModeChips(for: partial, store: store)
         }
+    }
 
-        if lower.hasPrefix("spar") || lower.contains(" spar") {
+    private func suggestionModeChips(store: FinanceStore) -> [LiveSuggestion] {
+        var chips: [LiveSuggestion] = [
+            LiveSuggestion(title: "Wo gebe ich am meisten aus?", action: .submitText("wo gebe ich am meisten aus")),
+            LiveSuggestion(title: "Wie kann ich sparen?", action: .insight(.savingsTips)),
+            LiveSuggestion(title: "Welche Abos habe ich?", action: .insight(.allSubscriptions)),
+            LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary)),
+            LiveSuggestion(title: "Einnahmen vs. Ausgaben", action: .insight(.incomeVsExpense))
+        ]
+        if store.transactions.isEmpty {
+            chips[0] = LiveSuggestion(title: "Beispiel: Kaffee 4,50", action: .submitText("Kaffee 4,50"))
+        }
+        return Array(chips.prefix(5))
+    }
+
+    private func questionModeChips(for partial: String, store: FinanceStore) -> [LiveSuggestion] {
+        let lower = partial.lowercased()
+        if lower.contains("abo") {
             return [
-                LiveSuggestion(title: "Wie kann ich am besten sparen?", action: .insight(.savingsTips)),
-                LiveSuggestion(title: "Top-Ausgaben reduzieren", action: .insight(.top5Expenses)),
-                LiveSuggestion(title: "Monatsübersicht analysieren", action: .insight(.monthlySummary))
+                LiveSuggestion(title: "Alle Abos anzeigen", action: .insight(.allSubscriptions)),
+                LiveSuggestion(title: "Monatliche Abo-Kosten", action: .insight(.monthlySubCost)),
+                LiveSuggestion(title: "Einspar-Potenzial", action: .insight(.potentialSavings))
             ]
         }
-
-        if lower.contains("abo") || lower.contains("abonn") {
+        if lower.contains("spar") {
             return [
-                LiveSuggestion(title: "Alle Abos anzeigen", action: .insight(.monthlySubCost)),
-                LiveSuggestion(title: "Einspar-Potenzial prüfen", action: .insight(.potentialSavings)),
-                LiveSuggestion(title: "Jährliche Abo-Kosten", action: .insight(.yearlySubCost))
-            ]
-        }
-
-        if lower.contains("wo gebe") || lower.contains("ausgab") || lower.contains("meiste") {
-            return [
-                LiveSuggestion(title: "Wo gebe ich am meisten aus?", action: .submitText("wo gebe ich am meisten aus")),
-                LiveSuggestion(title: "Nach Kategorie", action: .insight(.byCategory)),
-                LiveSuggestion(title: "Nach Händler", action: .insight(.byMerchant))
-            ]
-        }
-
-        if lower.contains("übersicht") || lower.contains("monat") {
-            return [
-                LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary)),
-                LiveSuggestion(title: "Einnahmen vs. Ausgaben", action: .insight(.incomeVsExpense)),
+                LiveSuggestion(title: "Spar-Tipps", action: .insight(.savingsTips)),
+                LiveSuggestion(title: "Top-Ausgaben", action: .insight(.top5Expenses)),
                 LiveSuggestion(title: "Ausgaben-Tempo", action: .insight(.spendingPace))
             ]
         }
+        return [
+            LiveSuggestion(title: "Antwort anzeigen", action: .submitText(partial)),
+            LiveSuggestion(title: "Nach Kategorie", action: .insight(.byCategory)),
+            LiveSuggestion(title: "Nach Händler", action: .insight(.byMerchant))
+        ]
+    }
 
-        if var draft = SmartInputParser.shared.parseSingle(t), SmartInputParser.shared.containsAmount(t) {
-            SmartInputParser.shared.applyPreferredType(preferredType, to: &draft, text: t)
-            if isUncertainInput(t, draft: draft, preferredType: preferredType) {
-                return [
-                    LiveSuggestion(title: "Als Ausgabe speichern", action: .saveDraft(uncertainDraft(draft, type: .expense))),
-                    LiveSuggestion(title: "Als Einnahme speichern", action: .saveDraft(uncertainDraft(draft, type: .income))),
-                    LiveSuggestion(title: "Kategorie: \(draft.category.rawValue)", action: .saveDraft(draft))
-                ]
-            }
+    private func inputModeChips(for partial: String, store: FinanceStore) -> [LiveSuggestion] {
+        let t = partial.trimmingCharacters(in: .whitespacesAndNewlines)
+        let preferredType = store.inputMode
+
+        guard var draft = SmartInputParser.shared.parseSingle(t),
+              SmartInputParser.shared.containsAmount(t) else {
+            return Array(suggestionModeChips(store: store).prefix(3))
+        }
+
+        SmartInputParser.shared.applyPreferredType(preferredType, to: &draft, text: t)
+        let confidence = classifyInputConfidence(t, draft: draft, preferredType: preferredType)
+
+        switch confidence {
+        case .safe:
             let sign = draft.type == .income ? "+" : "-"
             return [
                 LiveSuggestion(
                     title: "Speichern: \(draft.merchant) \(sign)\(String(format: "%.2f", draft.amount))€",
                     action: .saveDraft(draft)
-                ),
-                LiveSuggestion(title: "Kategorie ändern → Lebensmittel", action: .saveDraft(copy(draft, category: .food))),
-                LiveSuggestion(title: "Kategorie ändern → Einkaufen", action: .saveDraft(copy(draft, category: .shopping)))
+                )
             ]
-        }
-
-        if lower.hasPrefix("wie ") || lower.hasPrefix("was ") || lower.contains("?") {
+        case .uncertain:
             return [
-                LiveSuggestion(title: "Ausgaben nach Kategorie", action: .insight(.byCategory)),
-                LiveSuggestion(title: "Letzte Transaktionen", action: .insight(.recentTransactions)),
-                LiveSuggestion(title: "Spar-Tipps", action: .insight(.savingsTips))
+                LiveSuggestion(title: "Als Ausgabe speichern", action: .saveDraft(uncertainDraft(draft, type: .expense))),
+                LiveSuggestion(title: "Als Einnahme speichern", action: .saveDraft(uncertainDraft(draft, type: .income)))
             ]
+        case .highRisk:
+            return highRiskOptions(for: draft, text: t).map { option in
+                LiveSuggestion(id: option.id, title: option.title, action: .saveDraft(option.draft))
+            }
         }
-
-        return [
-            LiveSuggestion(title: "Finanzübersicht", action: .insight(.incomeVsExpense)),
-            LiveSuggestion(title: "Top-Ausgaben", action: .insight(.top5Expenses)),
-            LiveSuggestion(title: "Spar-Analyse", action: .insight(.savingsTips))
-        ]
     }
 
     func isUncertainInput(_ text: String, draft: ParsedTransactionDraft, preferredType: TransactionType? = nil) -> Bool {
-        let lower = text.lowercased()
-        let vague = ["irgendwas", "etwas", "unklar", "diverses", "sonstiges", "xyz", "test"]
-        if vague.contains(where: { lower.contains($0) }) { return true }
-        if draft.merchant.lowercased() == "unbekannt" { return true }
-
-        let words = lower.split(separator: " ").map(String.init)
-        if words.count == 1, draft.amount > 0, Double(words[0].replacingOccurrences(of: ",", with: ".")) != nil {
-            return false
-        }
-        if draft.merchant.count <= 2 && draft.amount > 0 && preferredType == nil { return true }
-        return false
-    }
-
-    private func idleSuggestions(_ store: FinanceStore) -> [LiveSuggestion] {
-        if store.transactions.isEmpty {
-            return [
-                LiveSuggestion(title: "Beispiel: Kaffee 4,50", action: .submitText("Kaffee 4,50")),
-                LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary)),
-                LiveSuggestion(title: "Spar-Tipps", action: .insight(.savingsTips))
-            ]
-        }
-        return [
-            LiveSuggestion(title: "Wo gebe ich am meisten aus?", action: .submitText("wo gebe ich am meisten aus")),
-            LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary)),
-            LiveSuggestion(title: "Top-Ausgaben", action: .insight(.top5Expenses))
-        ]
-    }
-
-    private func merchantSuggestions(merchant: String, partial: String, store: FinanceStore) -> [LiveSuggestion] {
-        let yearly = store.subscriptions.first(where: { $0.name.lowercased().contains(merchant.lowercased()) })?.yearlyCost
-        var items: [LiveSuggestion] = [
-            LiveSuggestion(title: "Abo hinzufügen: \(merchant)", action: .addSubscription(name: merchant)),
-            LiveSuggestion(title: "Wie viel kostet \(merchant)?", action: .submitText("was kostet \(merchant.lowercased())")),
-            LiveSuggestion(title: "Alle Abos anzeigen", action: .insight(.allSubscriptions))
-        ]
-        if let yearly {
-            items[1] = LiveSuggestion(title: "\(merchant): \(String(format: "%.0f€", yearly))/Jahr", action: .insight(.monthlySubCost))
-        }
-        if let draft = SmartInputParser.shared.parseSingle(partial), SmartInputParser.shared.containsAmount(partial) {
-            items[0] = LiveSuggestion(title: "Speichern: \(merchant)", action: .saveDraft(draft))
-        }
-        return Array(items.prefix(3))
+        classifyInputConfidence(text, draft: draft, preferredType: preferredType) != .safe
     }
 
     private func uncertainDraft(_ draft: ParsedTransactionDraft, type: TransactionType) -> ParsedTransactionDraft {
         var d = draft
         d.type = type
         d.category = type == .income ? .income : d.category
-        return d
-    }
-
-    private func copy(_ draft: ParsedTransactionDraft, category: FinanceCategory) -> ParsedTransactionDraft {
-        var d = draft
-        d.category = category
         return d
     }
 }

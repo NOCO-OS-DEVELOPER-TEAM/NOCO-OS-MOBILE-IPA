@@ -48,7 +48,7 @@ struct FinancialStoryView: View {
                 .padding()
             }
             .background(LiveCashTheme.screenBackground)
-            .navigationTitle("Financial Story")
+            .navigationTitle("Finanz-Story")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

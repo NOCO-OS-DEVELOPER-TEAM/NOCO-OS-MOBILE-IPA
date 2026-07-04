@@ -1,6 +1,7 @@
 import Foundation
 import CoreLocation
 import Combine
+import UIKit
 
 @MainActor
 final class FinanceStore: ObservableObject {
@@ -19,11 +20,21 @@ final class FinanceStore: ObservableObject {
     @Published var liveSuggestions: [LiveSuggestion] = []
     @Published var inputInterpretation: InputInterpretation = .empty
     @Published var pendingConfirmation: PendingConfirmation?
+    @Published var pendingShakeUndo: PendingShakeUndo?
     @Published var pendingSpendLimit: PendingSpendLimit?
     @Published var shortcuts: [QuickShortcut] = []
     @Published var spendingLimits: SpendingLimits = .default
     @Published var focusInputOnAppear = false
     @Published var pendingQuickAction: LiveCashQuickAction?
+    @Published var accounts: [FinanceAccount] = []
+    @Published var activeAccountId: UUID?
+    @Published var notificationPreferences = NotificationPreferences()
+    @Published var notificationLearning = NotificationLearning()
+    @Published var assistantModePreference: AssistantMode = .suggestion
+    @Published var currentAssistantMode: AssistantMode = .suggestion
+    @Published var pendingTabSelection: Int?
+    @Published var pendingScanImage: UIImage?
+    @Published var showInputSourceSheet = false
 
     private let persistence = PersistenceService.shared
     private let locationManager = CLLocationManager()
@@ -40,6 +51,12 @@ final class FinanceStore: ObservableObject {
         notificationsEnabled = data.notificationsEnabled
         shortcuts = data.shortcuts
         spendingLimits = data.spendingLimits
+        accounts = data.accounts
+        activeAccountId = data.activeAccountId
+        notificationPreferences = data.notificationPreferences
+        notificationLearning = data.notificationLearning
+        assistantModePreference = data.assistantModePreference
+        migrateLegacyAccountIds()
         refreshSubscriptions()
         refreshShortcuts()
         persist()
@@ -74,11 +91,16 @@ final class FinanceStore: ObservableObject {
                 label: "Aktueller Standort"
             )
         }
+        tx.accountId = activeAccountId ?? accounts.first(where: \.isDefault)?.id
         transactions.insert(tx, at: 0)
+        let hour = Calendar.current.component(.hour, from: Date())
+        NotificationBehaviorEngine.recordLoggingHour(hour, learning: &notificationLearning)
         recordDailyActivity()
         refreshSubscriptions()
         refreshShortcuts()
         persist()
+        NotificationService.shared.notifyTransactionAdded(tx, store: self)
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
     }
 
     func addTransactions(_ items: [Transaction]) {
@@ -90,12 +112,15 @@ final class FinanceStore: ObservableObject {
                     label: "Aktueller Standort"
                 )
             }
+            tx.accountId = activeAccountId ?? accounts.first(where: \.isDefault)?.id
             transactions.insert(tx, at: 0)
+            NotificationService.shared.notifyTransactionAdded(tx, store: self)
         }
         recordDailyActivity()
         refreshSubscriptions()
         refreshShortcuts()
         persist()
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
     }
 
     func deleteTransaction(_ transaction: Transaction) {
@@ -160,6 +185,34 @@ final class FinanceStore: ObservableObject {
         pendingConfirmation = nil
     }
 
+    func confirmWithOption(_ option: ConfirmationOption) {
+        guard let c = pendingConfirmation else { return }
+        saveDraft(option.draft, rawInput: c.rawInput)
+    }
+
+    func handleDeviceShake() {
+        guard let tx = accountFilteredTransactions.first else { return }
+        pendingShakeUndo = PendingShakeUndo(transaction: tx)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+
+    func confirmShakeUndo() {
+        guard let pending = pendingShakeUndo else { return }
+        deleteTransaction(pending.transaction)
+        lastFeedback = "Rückgängig: \(pending.transaction.merchant)"
+        pendingShakeUndo = nil
+        WidgetDataSync.writeSnapshot(from: self)
+    }
+
+    func cancelShakeUndo() {
+        pendingShakeUndo = nil
+    }
+
+    func ensureLocationForMap() {
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+    }
+
     func confirmSpendLimit() {
         guard let pending = pendingSpendLimit else { return }
         pendingSpendLimit = nil
@@ -189,7 +242,8 @@ final class FinanceStore: ObservableObject {
             category: resolved.category,
             merchant: resolved.merchant,
             date: resolved.date,
-            rawInput: rawInput
+            rawInput: rawInput,
+            accountId: activeAccountId
         )
         addTransaction(tx)
         let sign = resolved.type == .income ? "+" : "-"
@@ -218,17 +272,29 @@ final class FinanceStore: ObservableObject {
         if var draft = SmartInputParser.shared.parseSingle(trimmed),
            SmartInputParser.shared.looksLikeTransaction(trimmed) || SmartInputParser.shared.containsAmount(trimmed) {
             SmartInputParser.shared.applyPreferredType(inputMode, to: &draft, text: trimmed)
-            if LiveIntelligenceEngine.shared.isUncertainInput(trimmed, draft: draft, preferredType: inputMode) {
+            let engine = LiveIntelligenceEngine.shared
+            let confidence = engine.classifyInputConfidence(trimmed, draft: draft, preferredType: inputMode)
+            switch confidence {
+            case .safe:
+                saveDraft(draft, rawInput: trimmed)
+            case .uncertain:
                 pendingConfirmation = PendingConfirmation(
                     draft: draft,
                     rawInput: trimmed,
-                    message: "Ist das eine Ausgabe oder Einnahme?"
+                    message: engine.uncertainMessage(for: draft, text: trimmed),
+                    confidence: .uncertain
                 )
-                pendingIntent = nil
-                activeInsight = nil
-                return
+            case .highRisk:
+                pendingConfirmation = PendingConfirmation(
+                    draft: draft,
+                    rawInput: trimmed,
+                    message: "Mehrdeutig — was meinst du?",
+                    confidence: .highRisk,
+                    options: engine.highRiskOptions(for: draft, text: trimmed)
+                )
             }
-            saveDraft(draft, rawInput: trimmed)
+            pendingIntent = nil
+            activeInsight = nil
             return
         }
 
@@ -260,6 +326,13 @@ final class FinanceStore: ObservableObject {
     }
 
     func showInsight(for action: InsightAction) {
+        if case .openMap = action {
+            pendingTabSelection = 2
+            pendingIntent = nil
+            assistantHeadline = ""
+            assistantActions = []
+            return
+        }
         activeInsight = FinanceAssistant.shared.generateInsight(action: action, store: self)
         pendingIntent = nil
         assistantHeadline = ""
@@ -336,6 +409,22 @@ final class FinanceStore: ObservableObject {
     }
 
     func applyShortcut(_ shortcut: QuickShortcut) {
+        switch shortcut.actionType {
+        case .assistant:
+            focusInputOnAppear = true
+            currentAssistantMode = .suggestion
+            updateLiveIntelligence(for: "")
+            lastFeedback = "Smart Assistant"
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            return
+        case .overview:
+            showInsight(for: .monthlySummary)
+            lastFeedback = "Übersicht"
+            return
+        case .book:
+            break
+        }
+
         let draft = ParsedTransactionDraft(
             amount: shortcut.amount,
             type: shortcut.type,
@@ -375,12 +464,94 @@ final class FinanceStore: ObservableObject {
         persist()
     }
 
-    // MARK: - Analytics
-
     func transactions(inMonth date: Date) -> [Transaction] {
         let cal = Calendar.current
-        return transactions.filter { cal.isDate($0.date, equalTo: date, toGranularity: .month) }
+        return accountFilteredTransactions.filter { cal.isDate($0.date, equalTo: date, toGranularity: .month) }
     }
+
+    var accountFilteredTransactions: [Transaction] {
+        guard let id = activeAccountId else { return transactions }
+        return transactions.filter { $0.accountId == id }
+    }
+
+    var activeAccount: FinanceAccount? {
+        accounts.first { $0.id == activeAccountId } ?? accounts.first
+    }
+
+    func setActiveAccount(_ account: FinanceAccount) {
+        activeAccountId = account.id
+        persist()
+        WidgetDataSync.writeSnapshot(from: self)
+    }
+
+    func addAccount(name: String, icon: String = "folder.fill") {
+        let account = FinanceAccount(name: name, icon: icon, sortOrder: accounts.count)
+        accounts.append(account)
+        persist()
+    }
+
+    func deleteAccount(_ account: FinanceAccount) {
+        guard accounts.count > 1 else { return }
+        let fallback = accounts.first { $0.id != account.id }!
+        for i in transactions.indices where transactions[i].accountId == account.id {
+            transactions[i].accountId = fallback.id
+        }
+        accounts.removeAll { $0.id == account.id }
+        if activeAccountId == account.id {
+            activeAccountId = fallback.id
+        }
+        persist()
+    }
+
+    func setNotificationPreferences(_ prefs: NotificationPreferences) {
+        notificationPreferences = prefs
+        persist()
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    func setAssistantModePreference(_ mode: AssistantMode) {
+        assistantModePreference = mode
+        persist()
+        updateLiveIntelligence(for: "")
+    }
+
+    func resetAllData() {
+        persistence.resetAll()
+        let fresh = AppData.empty
+        transactions = []
+        goals = []
+        subscriptions = []
+        shortcuts = []
+        spendingLimits = .default
+        accounts = fresh.accounts
+        activeAccountId = fresh.activeAccountId
+        notificationPreferences = fresh.notificationPreferences
+        notificationLearning = fresh.notificationLearning
+        assistantModePreference = fresh.assistantModePreference
+        savingsStreakDays = 0
+        lastActiveDate = nil
+        pendingConfirmation = nil
+        pendingShakeUndo = nil
+        pendingSpendLimit = nil
+        activeInsight = nil
+        pendingIntent = nil
+        refreshShortcuts()
+        persist()
+        WidgetDataSync.writeSnapshot(from: self)
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    private func migrateLegacyAccountIds() {
+        guard let defaultId = accounts.first(where: \.isDefault)?.id ?? accounts.first?.id else { return }
+        var changed = false
+        for i in transactions.indices where transactions[i].accountId == nil {
+            transactions[i].accountId = defaultId
+            changed = true
+        }
+        if changed { persist() }
+    }
+
+    // MARK: - Analytics
 
     var currentMonthExpenses: Double {
         transactions(inMonth: Date()).filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
@@ -396,7 +567,7 @@ final class FinanceStore: ObservableObject {
 
     var todayExpenses: Double {
         let cal = Calendar.current
-        return transactions.filter { cal.isDateInToday($0.date) && $0.type == .expense }
+        return accountFilteredTransactions.filter { cal.isDateInToday($0.date) && $0.type == .expense }
             .reduce(0) { $0 + $1.amount }
     }
 
@@ -408,7 +579,7 @@ final class FinanceStore: ObservableObject {
     }
 
     var lastTransactionDate: Date? {
-        transactions.first?.date
+        accountFilteredTransactions.first?.date
     }
 
     var monthlySavingsRate: Double {
@@ -425,24 +596,24 @@ final class FinanceStore: ObservableObject {
     }
 
     var allTimeBalance: Double {
-        transactions.reduce(0) { $0 + $1.signedAmount }
+        accountFilteredTransactions.reduce(0) { $0 + $1.signedAmount }
     }
 
     var weeklyExpenses: Double {
         let start = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return transactions.filter { $0.date >= start && $0.type == .expense }.reduce(0) { $0 + $1.amount }
+        return accountFilteredTransactions.filter { $0.date >= start && $0.type == .expense }.reduce(0) { $0 + $1.amount }
     }
 
     var weeklyIncome: Double {
         let start = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return transactions.filter { $0.date >= start && $0.type == .income }.reduce(0) { $0 + $1.amount }
+        return accountFilteredTransactions.filter { $0.date >= start && $0.type == .income }.reduce(0) { $0 + $1.amount }
     }
 
     var weeklyNetCashflow: Double {
         weeklyIncome - weeklyExpenses
     }
 
-    private func spendLimitExceededMessage(adding amount: Double) -> String? {
+    func spendLimitExceededMessage(adding amount: Double) -> String? {
         guard spendingLimits.enabled else { return nil }
         if let daily = spendingLimits.dailyLimit {
             let total = todayExpenses + amount
@@ -499,7 +670,12 @@ final class FinanceStore: ObservableObject {
             lastActiveDate: lastActiveDate,
             notificationsEnabled: notificationsEnabled,
             shortcuts: shortcuts,
-            spendingLimits: spendingLimits
+            spendingLimits: spendingLimits,
+            accounts: accounts,
+            activeAccountId: activeAccountId,
+            notificationPreferences: notificationPreferences,
+            assistantModePreference: assistantModePreference,
+            notificationLearning: notificationLearning
         ))
         WidgetDataSync.writeSnapshot(from: self)
     }

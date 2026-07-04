@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct SmartShortcutsView: View {
     @EnvironmentObject private var store: FinanceStore
@@ -17,6 +18,13 @@ struct SmartShortcutsView: View {
                 Text("Schnellzugriff")
                     .font(LiveCashTheme.headlineFont)
                 Spacer()
+                Button {
+                    editingShortcut = QuickShortcut(merchant: "Neu", amount: 5, isUserDefined: true)
+                } label: {
+                    Image(systemName: "plus.circle")
+                        .foregroundStyle(LiveCashTheme.accent)
+                }
+                .buttonStyle(.plain)
                 if editMode {
                     Button("Fertig") {
                         withAnimation { editMode = false }
@@ -49,12 +57,23 @@ struct SmartShortcutsView: View {
             }
         } label: {
             VStack(spacing: 6) {
+                if shortcut.actionType == .assistant {
+                    Image(systemName: "sparkles")
+                        .font(.title3)
+                        .foregroundStyle(LiveCashTheme.accent)
+                } else if shortcut.actionType == .overview {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.title3)
+                        .foregroundStyle(LiveCashTheme.accent)
+                }
                 Text(shortcut.merchant)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .lineLimit(1)
-                Text(String(format: "%.0f€", shortcut.amount))
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(color)
+                if shortcut.actionType == .book {
+                    Text(String(format: "%.0f€", shortcut.amount))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(color)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -113,6 +132,11 @@ struct ShortcutEditView: View {
                         }) { cat in
                             Text(cat.rawValue).tag(cat)
                         }
+                    }
+                    Picker("Aktion", selection: $shortcut.actionType) {
+                        Text("Buchung").tag(ShortcutActionType.book)
+                        Text("Assistant").tag(ShortcutActionType.assistant)
+                        Text("Übersicht").tag(ShortcutActionType.overview)
                     }
                 }
                 Section("Standort") {
