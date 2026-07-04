@@ -26,6 +26,20 @@ struct SmartNotificationPayload {
 enum NotificationBehaviorEngine {
     private static let weekdayNames = ["", "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 
+    private static func calendarTrigger(
+        day: Int? = nil,
+        weekday: Int? = nil,
+        hour: Int,
+        minute: Int = 0
+    ) -> DateComponents {
+        var components = DateComponents()
+        if let day { components.day = day }
+        if let weekday { components.weekday = weekday }
+        components.hour = hour
+        components.minute = minute
+        return components
+    }
+
     /// Returns at most `limit` highly relevant notifications — quality over quantity.
     static func scheduledPayloads(for store: FinanceStore, limit: Int = 4) -> [SmartNotificationPayload] {
         let prefs = store.notificationPreferences
@@ -61,7 +75,7 @@ enum NotificationBehaviorEngine {
             kind: .monthStart,
             delay: 0,
             priority: 100,
-            calendar: DateComponents(day: 1, hour: 9, minute: 0),
+            calendar: calendarTrigger(day: 1, hour: 9),
             repeats: true
         )
     }
@@ -75,7 +89,7 @@ enum NotificationBehaviorEngine {
             kind: .weeklyReminder,
             delay: 0,
             priority: 80,
-            calendar: DateComponents(weekday: 2, hour: hour, minute: 0),
+            calendar: calendarTrigger(weekday: 2, hour: hour),
             repeats: true
         )
     }
@@ -185,9 +199,6 @@ enum NotificationBehaviorEngine {
         let cal = Calendar.current
         guard !cal.isDateInToday(store.lastTransactionDate ?? .distantPast) else { return nil }
         let hour = min(max(store.notificationLearning.typicalLogHour, 8), 21)
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = 0
         return SmartNotificationPayload(
             id: "adaptive-checkin",
             title: "Live Cash",
@@ -195,7 +206,7 @@ enum NotificationBehaviorEngine {
             kind: .softEngagement,
             delay: 0,
             priority: 50,
-            calendar: components,
+            calendar: calendarTrigger(hour: hour),
             repeats: false
         )
     }
