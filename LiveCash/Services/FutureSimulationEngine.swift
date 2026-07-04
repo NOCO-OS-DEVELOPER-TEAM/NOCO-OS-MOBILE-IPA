@@ -9,6 +9,7 @@ struct SimulationStep: Identifiable, Equatable {
 }
 
 enum FutureSimulationEngine {
+    @MainActor
     static func steps(store: FinanceStore) -> [SimulationStep] {
         let balance = store.allTimeBalance
         let weeklyNet = store.weeklyNetCashflow

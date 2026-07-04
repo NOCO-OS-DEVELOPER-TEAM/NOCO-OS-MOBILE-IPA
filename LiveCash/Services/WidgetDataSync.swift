@@ -2,6 +2,7 @@ import Foundation
 import WidgetKit
 
 enum WidgetDataSync {
+    @MainActor
     static func writeSnapshot(from store: FinanceStore) {
         let top = store.topCategoryThisMonth
         let primaryGoal = store.goals.max(by: { $0.progress < $1.progress })

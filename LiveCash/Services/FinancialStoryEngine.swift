@@ -28,6 +28,7 @@ struct StorySlide: Identifiable, Equatable {
 }
 
 enum FinancialStoryEngine {
+    @MainActor
     static func slides(for period: StoryPeriod, store: FinanceStore) -> [StorySlide] {
         let range = dateRange(for: period)
         let txs = store.transactions.filter { $0.date >= range.start && $0.date <= range.end }

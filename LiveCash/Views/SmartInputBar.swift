@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct SmartInputBar: View {
     @EnvironmentObject private var store: FinanceStore
@@ -42,7 +43,10 @@ struct SmartInputBar: View {
 
             HStack(spacing: 10) {
                 InputTypeToggle(isIncome: isIncome) {
-                    store.toggleInputMode()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+                        store.toggleInputMode()
+                    }
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     store.updateLiveIntelligence(for: text)
                 }
 

@@ -60,10 +60,7 @@ final class FinanceStore: ObservableObject {
     }
 
     func toggleInputMode() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
-            inputMode = inputMode == .expense ? .income : .expense
-        }
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        inputMode = inputMode == .expense ? .income : .expense
     }
 
     // MARK: - Transactions
@@ -339,7 +336,7 @@ final class FinanceStore: ObservableObject {
     }
 
     func applyShortcut(_ shortcut: QuickShortcut) {
-        var draft = ParsedTransactionDraft(
+        let draft = ParsedTransactionDraft(
             amount: shortcut.amount,
             type: shortcut.type,
             merchant: shortcut.merchant,
@@ -350,7 +347,7 @@ final class FinanceStore: ObservableObject {
             pendingSpendLimit = PendingSpendLimit(draft: draft, rawInput: nil, message: message)
             return
         }
-        var tx = Transaction(
+        let tx = Transaction(
             amount: draft.amount,
             type: draft.type,
             category: draft.category,

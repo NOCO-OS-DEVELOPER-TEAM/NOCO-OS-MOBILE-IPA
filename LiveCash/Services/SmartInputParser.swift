@@ -107,10 +107,6 @@ final class SmartInputParser {
         extractAmount(from: text) != nil
     }
 
-    func containsAmount(_ text: String) -> Bool {
-        extractAmount(from: text) != nil
-    }
-
     func hasExplicitType(in text: String) -> Bool {
         let lower = text.lowercased()
         if text.contains("+") { return true }
