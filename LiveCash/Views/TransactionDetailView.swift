@@ -18,6 +18,7 @@ struct TransactionDetailView: View {
     @State private var editLatitude: Double?
     @State private var editLongitude: Double?
     @State private var showDeleteConfirm = false
+    @State private var showMapPicker = false
 
     private var transaction: Transaction? {
         store.transactions.first { $0.id == transactionID }
@@ -57,6 +58,13 @@ struct TransactionDetailView: View {
             }
         }
         .onAppear { loadFromTransaction() }
+        .sheet(isPresented: $showMapPicker) {
+            LocationMapPickerView(
+                latitude: $editLatitude,
+                longitude: $editLongitude,
+                label: $locationLabel
+            )
+        }
         .alert("Buchung löschen?", isPresented: $showDeleteConfirm) {
             Button("Löschen", role: .destructive) {
                 if let tx = transaction {
@@ -102,6 +110,7 @@ struct TransactionDetailView: View {
                     TextField("Ortsbezeichnung", text: $locationLabel)
                     Toggle("Standort speichern", isOn: $hasLocation)
                     if hasLocation {
+                        Button("Auf Karte verschieben") { showMapPicker = true }
                         Button("Aktuellen Standort übernehmen") {
                             let manager = CLLocationManager()
                             manager.requestWhenInUseAuthorization()

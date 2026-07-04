@@ -10,7 +10,7 @@ struct SmartInputBar: View {
     private var modeColor: Color { isIncome ? LiveCashTheme.income : LiveCashTheme.expense }
 
     private var showLivePanel: Bool {
-        focused || !text.isEmpty || store.pendingConfirmation != nil
+        focused || !text.isEmpty || store.pendingConfirmation != nil || store.pendingSpendLimit != nil
     }
 
     var body: some View {
@@ -111,7 +111,18 @@ struct SmartInputBar: View {
     @ViewBuilder
     private var liveIntelligencePanel: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let confirmation = store.pendingConfirmation {
+            if let limit = store.pendingSpendLimit {
+                SpendLimitBanner(
+                    warning: limit,
+                    onConfirm: {
+                        store.confirmSpendLimit()
+                        text = ""
+                        focused = false
+                        store.clearLiveIntelligence()
+                    },
+                    onCancel: { store.cancelSpendLimit() }
+                )
+            } else if let confirmation = store.pendingConfirmation {
                 ConfirmationBanner(
                     confirmation: confirmation,
                     onExpense: {
@@ -173,7 +184,7 @@ struct SmartInputBar: View {
         withAnimation(.easeOut(duration: 0.2)) {
             store.processInput(input)
         }
-        if store.pendingConfirmation == nil {
+        if store.pendingConfirmation == nil && store.pendingSpendLimit == nil {
             text = ""
             focused = false
             store.clearLiveIntelligence()

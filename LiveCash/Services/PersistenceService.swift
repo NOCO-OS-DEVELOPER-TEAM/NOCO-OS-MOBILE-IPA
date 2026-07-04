@@ -8,6 +8,8 @@ struct AppData: Codable {
     var savingsStreakDays: Int
     var lastActiveDate: Date?
     var notificationsEnabled: Bool
+    var shortcuts: [QuickShortcut]
+    var spendingLimits: SpendingLimits
 
     static let empty = AppData(
         transactions: [],
@@ -16,12 +18,15 @@ struct AppData: Codable {
         locationEnabled: false,
         savingsStreakDays: 0,
         lastActiveDate: nil,
-        notificationsEnabled: true
+        notificationsEnabled: true,
+        shortcuts: [],
+        spendingLimits: .default
     )
 
     enum CodingKeys: String, CodingKey {
         case transactions, goals, subscriptions, locationEnabled
         case savingsStreakDays, lastActiveDate, notificationsEnabled
+        case shortcuts, spendingLimits
     }
 
     init(
@@ -31,7 +36,9 @@ struct AppData: Codable {
         locationEnabled: Bool,
         savingsStreakDays: Int = 0,
         lastActiveDate: Date? = nil,
-        notificationsEnabled: Bool = true
+        notificationsEnabled: Bool = true,
+        shortcuts: [QuickShortcut] = [],
+        spendingLimits: SpendingLimits = .default
     ) {
         self.transactions = transactions
         self.goals = goals
@@ -40,6 +47,8 @@ struct AppData: Codable {
         self.savingsStreakDays = savingsStreakDays
         self.lastActiveDate = lastActiveDate
         self.notificationsEnabled = notificationsEnabled
+        self.shortcuts = shortcuts
+        self.spendingLimits = spendingLimits
     }
 
     init(from decoder: Decoder) throws {
@@ -51,6 +60,8 @@ struct AppData: Codable {
         savingsStreakDays = try c.decodeIfPresent(Int.self, forKey: .savingsStreakDays) ?? 0
         lastActiveDate = try c.decodeIfPresent(Date.self, forKey: .lastActiveDate)
         notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+        shortcuts = try c.decodeIfPresent([QuickShortcut].self, forKey: .shortcuts) ?? []
+        spendingLimits = try c.decodeIfPresent(SpendingLimits.self, forKey: .spendingLimits) ?? .default
     }
 }
 

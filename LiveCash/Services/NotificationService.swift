@@ -21,7 +21,22 @@ final class NotificationService {
 
         scheduleGoalProgress(store: store, center: center)
         scheduleSpendingAlerts(store: store, center: center)
+        scheduleSoftLimitWarnings(store: store, center: center)
         scheduleInactivityReminder(store: store, center: center)
+    }
+
+    private func scheduleSoftLimitWarnings(store: FinanceStore, center: UNUserNotificationCenter) {
+        guard store.spendingLimits.enabled else { return }
+        if let daily = store.spendingLimits.dailyLimit {
+            let used = store.todayExpenses / daily
+            if used >= 0.85 && used < 1.0 {
+                let content = UNMutableNotificationContent()
+                content.title = "Tageslimit"
+                content.body = String(format: "Du hast %.0f%% deines Tageslimits erreicht.", used * 100)
+                content.sound = .default
+                center.add(UNNotificationRequest(identifier: "soft-daily", content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: 3600, repeats: false)))
+            }
+        }
     }
 
     private func scheduleGoalProgress(store: FinanceStore, center: UNUserNotificationCenter) {

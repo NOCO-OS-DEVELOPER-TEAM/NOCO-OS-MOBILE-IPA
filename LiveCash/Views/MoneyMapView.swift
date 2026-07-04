@@ -9,10 +9,14 @@ struct MoneyMapView: View {
 
     private var filteredTransactions: [Transaction] {
         store.transactions.filter { tx in
-            guard tx.location != nil, tx.type == .expense else { return false }
+            guard tx.location != nil else { return false }
             if let cat = selectedCategory { return tx.category == cat }
             return true
         }
+    }
+
+    private var heatZones: [MapHeatZone] {
+        MapHeatLayout.zones(from: filteredTransactions)
     }
 
     private var pinDisplays: [MapPinDisplay] {
@@ -54,7 +58,7 @@ struct MoneyMapView: View {
 
     private var mapSummaryBar: some View {
         HStack {
-            Label("\(filteredTransactions.count) Ausgaben", systemImage: "mappin.and.ellipse")
+            Label("\(filteredTransactions.count) mit Standort", systemImage: "mappin.and.ellipse")
             Spacer()
             if locationGroupCount > 0 {
                 Text("\(locationGroupCount) Orte")
@@ -69,6 +73,13 @@ struct MoneyMapView: View {
 
     private var mapContent: some View {
         Map(position: $cameraPosition) {
+            ForEach(heatZones) { zone in
+                MapCircle(center: zone.coordinate, radius: zone.radius)
+                    .foregroundStyle(
+                        (zone.isIncome ? LiveCashTheme.income : LiveCashTheme.expense)
+                            .opacity(min(0.35, 0.12 + zone.total / 500))
+                    )
+            }
             ForEach(pinDisplays) { pin in
                 Annotation(pin.transaction.merchant, coordinate: pin.coordinate) {
                     Button {
@@ -76,6 +87,7 @@ struct MoneyMapView: View {
                     } label: {
                         MapPinView(
                             amount: pin.transaction.amount,
+                            type: pin.transaction.type,
                             selected: selectedID == pin.transaction.id,
                             clusterSize: pin.clusterSize > 1 ? pin.clusterSize : nil,
                             clusterTotal: pin.clusterSize > 1 ? pin.clusterTotal : nil,
@@ -176,17 +188,22 @@ struct MoneyMapView: View {
 
 private struct MapPinView: View {
     let amount: Double
+    let type: TransactionType
     let selected: Bool
     var clusterSize: Int?
     var clusterTotal: Double?
     var dimmed: Bool = false
+
+    private var pinColor: Color {
+        type == .income ? LiveCashTheme.income : LiveCashTheme.expense
+    }
 
     var body: some View {
         VStack(spacing: 2) {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: clusterSize != nil ? "mappin.and.ellipse" : "mappin.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(selected ? LiveCashTheme.accent : LiveCashTheme.expense)
+                    .foregroundStyle(selected ? LiveCashTheme.accent : pinColor)
                 if let clusterSize, clusterSize > 1 {
                     Text("\(clusterSize)")
                         .font(.system(size: 9, weight: .bold))

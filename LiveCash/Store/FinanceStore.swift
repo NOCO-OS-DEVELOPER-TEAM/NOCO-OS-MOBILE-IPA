@@ -19,6 +19,9 @@ final class FinanceStore: ObservableObject {
     @Published var liveSuggestions: [LiveSuggestion] = []
     @Published var inputInterpretation: InputInterpretation = .empty
     @Published var pendingConfirmation: PendingConfirmation?
+    @Published var pendingSpendLimit: PendingSpendLimit?
+    @Published var shortcuts: [QuickShortcut] = []
+    @Published var spendingLimits: SpendingLimits = .default
     @Published var focusInputOnAppear = false
     @Published var pendingQuickAction: LiveCashQuickAction?
 
@@ -35,7 +38,11 @@ final class FinanceStore: ObservableObject {
         savingsStreakDays = data.savingsStreakDays
         lastActiveDate = data.lastActiveDate
         notificationsEnabled = data.notificationsEnabled
+        shortcuts = data.shortcuts
+        spendingLimits = data.spendingLimits
         refreshSubscriptions()
+        refreshShortcuts()
+        persist()
         WidgetDataSync.writeSnapshot(from: self)
         NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
     }
@@ -72,8 +79,9 @@ final class FinanceStore: ObservableObject {
         }
         transactions.insert(tx, at: 0)
         recordDailyActivity()
-        persist()
         refreshSubscriptions()
+        refreshShortcuts()
+        persist()
     }
 
     func addTransactions(_ items: [Transaction]) {
@@ -88,8 +96,9 @@ final class FinanceStore: ObservableObject {
             transactions.insert(tx, at: 0)
         }
         recordDailyActivity()
-        persist()
         refreshSubscriptions()
+        refreshShortcuts()
+        persist()
     }
 
     func deleteTransaction(_ transaction: Transaction) {
@@ -154,11 +163,29 @@ final class FinanceStore: ObservableObject {
         pendingConfirmation = nil
     }
 
+    func confirmSpendLimit() {
+        guard let pending = pendingSpendLimit else { return }
+        pendingSpendLimit = nil
+        commitDraft(pending.draft, rawInput: pending.rawInput)
+    }
+
+    func cancelSpendLimit() {
+        pendingSpendLimit = nil
+    }
+
     func saveDraft(_ draft: ParsedTransactionDraft, rawInput: String?) {
         var resolved = draft
         if let raw = rawInput {
             SmartInputParser.shared.applyPreferredType(inputMode, to: &resolved, text: raw)
         }
+        if resolved.type == .expense, let message = spendLimitExceededMessage(adding: resolved.amount) {
+            pendingSpendLimit = PendingSpendLimit(draft: resolved, rawInput: rawInput, message: message)
+            return
+        }
+        commitDraft(resolved, rawInput: rawInput)
+    }
+
+    private func commitDraft(_ resolved: ParsedTransactionDraft, rawInput: String?) {
         let tx = Transaction(
             amount: resolved.amount,
             type: resolved.type,
@@ -171,6 +198,7 @@ final class FinanceStore: ObservableObject {
         let sign = resolved.type == .income ? "+" : "-"
         lastFeedback = String(format: "Hinzugefügt: %@ %@%.2f€ (%@)", resolved.merchant, sign, resolved.amount, resolved.category.rawValue)
         pendingConfirmation = nil
+        pendingSpendLimit = nil
         activeInsight = nil
         pendingIntent = nil
     }
@@ -304,6 +332,52 @@ final class FinanceStore: ObservableObject {
         NotificationService.shared.refreshNotifications(for: self, enabled: enabled)
     }
 
+    // MARK: - Shortcuts
+
+    func refreshShortcuts() {
+        shortcuts = ShortcutGenerator.generate(from: transactions, existing: shortcuts)
+    }
+
+    func applyShortcut(_ shortcut: QuickShortcut) {
+        var draft = ParsedTransactionDraft(
+            amount: shortcut.amount,
+            type: shortcut.type,
+            merchant: shortcut.merchant,
+            category: shortcut.type == .income ? .income : shortcut.category,
+            date: Date()
+        )
+        if shortcut.type == .expense, let message = spendLimitExceededMessage(adding: shortcut.amount) {
+            pendingSpendLimit = PendingSpendLimit(draft: draft, rawInput: nil, message: message)
+            return
+        }
+        var tx = Transaction(
+            amount: draft.amount,
+            type: draft.type,
+            category: draft.category,
+            merchant: draft.merchant,
+            date: draft.date,
+            location: shortcut.location
+        )
+        addTransaction(tx)
+        lastFeedback = "Shortcut: \(shortcut.label)"
+    }
+
+    func updateShortcut(_ shortcut: QuickShortcut) {
+        guard let idx = shortcuts.firstIndex(where: { $0.id == shortcut.id }) else { return }
+        shortcuts[idx] = shortcut
+        shortcuts.sort { $0.sortOrder < $1.sortOrder }
+        persist()
+    }
+
+    func setSpendingLimitsEnabled(_ enabled: Bool) {
+        spendingLimits.enabled = enabled
+        persist()
+    }
+
+    func saveSpendingLimits() {
+        persist()
+    }
+
     // MARK: - Analytics
 
     func transactions(inMonth date: Date) -> [Transaction] {
@@ -353,6 +427,47 @@ final class FinanceStore: ObservableObject {
         subscriptions.reduce(0) { $0 + $1.monthlyCost }
     }
 
+    var allTimeBalance: Double {
+        transactions.reduce(0) { $0 + $1.signedAmount }
+    }
+
+    var weeklyExpenses: Double {
+        let start = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        return transactions.filter { $0.date >= start && $0.type == .expense }.reduce(0) { $0 + $1.amount }
+    }
+
+    var weeklyIncome: Double {
+        let start = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        return transactions.filter { $0.date >= start && $0.type == .income }.reduce(0) { $0 + $1.amount }
+    }
+
+    var weeklyNetCashflow: Double {
+        weeklyIncome - weeklyExpenses
+    }
+
+    private func spendLimitExceededMessage(adding amount: Double) -> String? {
+        guard spendingLimits.enabled else { return nil }
+        if let daily = spendingLimits.dailyLimit {
+            let total = todayExpenses + amount
+            if total > daily {
+                return String(format: "Tageslimit %.0f€ überschritten (%.0f€ mit dieser Buchung).", daily, total)
+            }
+        }
+        if let weekly = spendingLimits.weeklyLimit {
+            let total = weeklyExpenses + amount
+            if total > weekly {
+                return String(format: "Wochenlimit %.0f€ überschritten (%.0f€ gesamt).", weekly, total)
+            }
+        }
+        if let monthly = spendingLimits.monthlyLimit {
+            let total = currentMonthExpenses + amount
+            if total > monthly {
+                return String(format: "Monatslimit %.0f€ überschritten (%.0f€ gesamt).", monthly, total)
+            }
+        }
+        return nil
+    }
+
     func setLocationEnabled(_ enabled: Bool) {
         locationEnabled = enabled
         if enabled {
@@ -385,7 +500,9 @@ final class FinanceStore: ObservableObject {
             locationEnabled: locationEnabled,
             savingsStreakDays: savingsStreakDays,
             lastActiveDate: lastActiveDate,
-            notificationsEnabled: notificationsEnabled
+            notificationsEnabled: notificationsEnabled,
+            shortcuts: shortcuts,
+            spendingLimits: spendingLimits
         ))
         WidgetDataSync.writeSnapshot(from: self)
     }

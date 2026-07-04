@@ -51,6 +51,18 @@
 		LC0000010000000000000036 /* LiveCashWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000031 /* LiveCashWidgetBundle.swift */; };
 		LC0000010000000000000037 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000032 /* WidgetSnapshot.swift */; };
 		LC0000010000000000000038 /* LiveCashWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = LC0000030000000000000002 /* LiveCashWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		LC0000010000000000000039 /* QuickShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000041 /* QuickShortcut.swift */; };
+		LC000001000000000000003A /* SpendingLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000042 /* SpendingLimits.swift */; };
+		LC000001000000000000003B /* ShortcutGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000043 /* ShortcutGenerator.swift */; };
+		LC000001000000000000003C /* FinancialStoryEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000044 /* FinancialStoryEngine.swift */; };
+		LC000001000000000000003D /* FutureSimulationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000045 /* FutureSimulationEngine.swift */; };
+		LC000001000000000000003E /* MapHeatLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000046 /* MapHeatLayout.swift */; };
+		LC000001000000000000003F /* LocationMapPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000047 /* LocationMapPickerView.swift */; };
+		LC0000010000000000000040 /* SmartShortcutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000048 /* SmartShortcutsView.swift */; };
+		LC0000010000000000000041 /* FinancialStoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000049 /* FinancialStoryView.swift */; };
+		LC0000010000000000000042 /* FutureSimulationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004A /* FutureSimulationView.swift */; };
+		LC0000010000000000000043 /* SpendingLimitsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004B /* SpendingLimitsView.swift */; };
+		LC0000010000000000000044 /* SpendLimitBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000004C /* SpendLimitBanner.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -105,6 +117,18 @@
 		LC0000020000000000000033 /* LiveCashWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LiveCashWidget.entitlements; sourceTree = "<group>"; };
 		LC0000020000000000000034 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		LC0000030000000000000002 /* LiveCashWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LiveCashWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		LC0000020000000000000041 /* QuickShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickShortcut.swift; sourceTree = "<group>"; };
+		LC0000020000000000000042 /* SpendingLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingLimits.swift; sourceTree = "<group>"; };
+		LC0000020000000000000043 /* ShortcutGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutGenerator.swift; sourceTree = "<group>"; };
+		LC0000020000000000000044 /* FinancialStoryEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinancialStoryEngine.swift; sourceTree = "<group>"; };
+		LC0000020000000000000045 /* FutureSimulationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FutureSimulationEngine.swift; sourceTree = "<group>"; };
+		LC0000020000000000000046 /* MapHeatLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapHeatLayout.swift; sourceTree = "<group>"; };
+		LC0000020000000000000047 /* LocationMapPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationMapPickerView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000048 /* SmartShortcutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartShortcutsView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000049 /* FinancialStoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinancialStoryView.swift; sourceTree = "<group>"; };
+		LC000002000000000000004A /* FutureSimulationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FutureSimulationView.swift; sourceTree = "<group>"; };
+		LC000002000000000000004B /* SpendingLimitsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingLimitsView.swift; sourceTree = "<group>"; };
+		LC000002000000000000004C /* SpendLimitBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendLimitBanner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -205,6 +229,8 @@
 				LC0000020000000000000005 /* Subscription.swift */,
 				LC0000020000000000000022 /* LiveSuggestion.swift */,
 				LC0000020000000000000028 /* WidgetSnapshot.swift */,
+				LC0000020000000000000041 /* QuickShortcut.swift */,
+				LC0000020000000000000042 /* SpendingLimits.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -221,6 +247,10 @@
 				LC0000020000000000000023 /* LiveIntelligenceEngine.swift */,
 				LC0000020000000000000029 /* WidgetDataSync.swift */,
 				LC000002000000000000002A /* NotificationService.swift */,
+				LC0000020000000000000043 /* ShortcutGenerator.swift */,
+				LC0000020000000000000044 /* FinancialStoryEngine.swift */,
+				LC0000020000000000000045 /* FutureSimulationEngine.swift */,
+				LC0000020000000000000046 /* MapHeatLayout.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -259,6 +289,9 @@
 				LC000002000000000000001B /* ReceiptScanView.swift */,
 				LC0000020000000000000020 /* TransactionDetailView.swift */,
 				LC0000020000000000000025 /* AddTransactionView.swift */,
+				LC0000020000000000000049 /* FinancialStoryView.swift */,
+				LC000002000000000000004A /* FutureSimulationView.swift */,
+				LC000002000000000000004B /* SpendingLimitsView.swift */,
 				LC0000050000000000000009 /* Components */,
 			);
 			path = Views;
@@ -271,6 +304,9 @@
 				LC0000020000000000000014 /* GoalCard.swift */,
 				LC0000020000000000000021 /* CameraCaptureView.swift */,
 				LC0000020000000000000024 /* LiveSuggestionsView.swift */,
+				LC0000020000000000000047 /* LocationMapPickerView.swift */,
+				LC0000020000000000000048 /* SmartShortcutsView.swift */,
+				LC000002000000000000004C /* SpendLimitBanner.swift */,
 				LC0000020000000000000026 /* InputTypeToggle.swift */,
 				LC0000020000000000000027 /* QuickInsightPanel.swift */,
 			);
@@ -419,6 +455,18 @@
 				LC0000010000000000000027 /* WidgetDataSync.swift in Sources */,
 				LC0000010000000000000028 /* NotificationService.swift in Sources */,
 				LC0000010000000000000029 /* AppDelegate.swift in Sources */,
+				LC0000010000000000000039 /* QuickShortcut.swift in Sources */,
+				LC000001000000000000003A /* SpendingLimits.swift in Sources */,
+				LC000001000000000000003B /* ShortcutGenerator.swift in Sources */,
+				LC000001000000000000003C /* FinancialStoryEngine.swift in Sources */,
+				LC000001000000000000003D /* FutureSimulationEngine.swift in Sources */,
+				LC000001000000000000003E /* MapHeatLayout.swift in Sources */,
+				LC000001000000000000003F /* LocationMapPickerView.swift in Sources */,
+				LC0000010000000000000040 /* SmartShortcutsView.swift in Sources */,
+				LC0000010000000000000041 /* FinancialStoryView.swift in Sources */,
+				LC0000010000000000000042 /* FutureSimulationView.swift in Sources */,
+				LC0000010000000000000043 /* SpendingLimitsView.swift in Sources */,
+				LC0000010000000000000044 /* SpendLimitBanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -487,7 +535,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -523,7 +571,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -557,7 +605,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
@@ -584,7 +632,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";

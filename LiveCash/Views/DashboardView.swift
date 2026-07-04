@@ -4,6 +4,7 @@ struct DashboardView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var showReceiptScan = false
     @State private var showQuickInsight = false
+    @State private var showFinancialStory = false
     @State private var idleTask: Task<Void, Never>?
 
     var body: some View {
@@ -19,6 +20,7 @@ struct DashboardView: View {
                     }
                     headerSection
                     summaryCards
+                    SmartShortcutsView()
                     if let top = store.topCategoryThisMonth {
                         insightCard(title: "Top-Kategorie", value: top.0.rawValue, subtitle: LiveCashTheme.money(top.1))
                     }
@@ -33,11 +35,25 @@ struct DashboardView: View {
             .background(LiveCashTheme.screenBackground)
             .navigationTitle("Live Cash")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showFinancialStory = true
+                    } label: {
+                        Image(systemName: "sparkles.rectangle.stack")
+                            .foregroundStyle(LiveCashTheme.accent)
+                    }
+                    .accessibilityLabel("Financial Story")
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                 SmartInputBar(showReceiptScan: $showReceiptScan)
             }
             .sheet(isPresented: $showReceiptScan) {
                 ReceiptScanView()
+            }
+            .sheet(isPresented: $showFinancialStory) {
+                FinancialStoryView()
             }
             .onAppear { scheduleQuickInsight() }
             .onDisappear { idleTask?.cancel() }

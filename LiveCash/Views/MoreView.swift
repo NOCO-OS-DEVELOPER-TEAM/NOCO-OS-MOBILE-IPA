@@ -15,6 +15,24 @@ struct MoreView: View {
                     } label: {
                         Label("Abonnements", systemImage: "repeat.circle")
                     }
+                    NavigationLink {
+                        FutureSimulationView()
+                    } label: {
+                        Label("Zukunfts-Simulation", systemImage: "chart.line.uptrend.xyaxis")
+                    }
+                    NavigationLink {
+                        SpendingLimitsView()
+                    } label: {
+                        Label("Ausgaben-Limits", systemImage: "gauge.with.dots.needle.67percent")
+                    }
+                }
+
+                Section("Insights") {
+                    NavigationLink {
+                        FinancialStoryView()
+                    } label: {
+                        Label("Financial Story", systemImage: "sparkles.rectangle.stack")
+                    }
                 }
 
                 Section("App") {
@@ -29,7 +47,7 @@ struct MoreView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Live Cash")
                             .font(LiveCashTheme.headlineFont)
-                        Text("Lokale Finanzübersicht — keine Bankverbindung, keine Cloud.")
+                        Text("Lokale Finanzintelligenz — keine Bank, keine Cloud, kein Chatbot.")
                             .font(LiveCashTheme.captionFont)
                             .foregroundStyle(.secondary)
                     }
