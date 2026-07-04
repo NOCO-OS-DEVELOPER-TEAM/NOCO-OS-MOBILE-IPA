@@ -63,6 +63,15 @@ enum NotificationBehaviorEngine {
         if prefs.subscriptionReminders {
             candidates.append(contentsOf: subscriptionReminders(for: store))
         }
+        if prefs.goalProgressAlerts {
+            candidates.append(contentsOf: goalProgressReminders(for: store))
+        }
+        if prefs.savingsMonthReminder {
+            candidates.append(savingsMonthReminder())
+        }
+        if prefs.unusualActivityAlerts, let p = unusualActivityReminder(for: store) {
+            candidates.append(p)
+        }
         if prefs.softEngagement, let p = adaptiveCheckIn(for: store) {
             candidates.append(p)
         }
@@ -221,6 +230,49 @@ enum NotificationBehaviorEngine {
             priority: 50,
             calendar: calendarTrigger(hour: hour),
             repeats: false
+        )
+    }
+
+    static func savingsMonthReminder() -> SmartNotificationPayload {
+        SmartNotificationPayload(
+            id: "savings-month",
+            title: "Spar-Check",
+            body: "Monatsmitte — wie läuft dein Sparziel? Ein kurzer Blick reicht.",
+            kind: .softEngagement,
+            delay: 0,
+            priority: 55,
+            calendar: calendarTrigger(day: 15, hour: 10),
+            repeats: true
+        )
+    }
+
+    static func goalProgressReminders(for store: FinanceStore) -> [SmartNotificationPayload] {
+        guard store.appSettings.savings.progressAlerts else { return [] }
+        return store.goals.compactMap { goal -> SmartNotificationPayload? in
+            let pace = goal.paceStatus(referenceMonthlySavings: store.monthlySavingsRate)
+            guard pace == .slow, goal.notifySlowProgress else { return nil }
+            return SmartNotificationPayload(
+                id: "goal-slow-\(goal.id.uuidString)",
+                title: "Sparziel-Tempo",
+                body: "„\(goal.name)“ liegt bei \(goal.progressPercent)% — etwas mehr Schwung würde helfen.",
+                kind: .softEngagement,
+                delay: 60 * 60 * 24,
+                priority: 60
+            )
+        }
+    }
+
+    static func unusualActivityReminder(for store: FinanceStore) -> SmartNotificationPayload? {
+        let today = store.todayExpenses
+        let avg = store.currentMonthExpenses / Double(max(Calendar.current.component(.day, from: Date()), 1))
+        guard avg > 0, today > avg * 1.6 else { return nil }
+        return SmartNotificationPayload(
+            id: "unusual-today",
+            title: "Hohe Ausgaben heute",
+            body: String(format: "Du hast heute schon %.0f€ ausgegeben — deutlich über deinem Tagesdurchschnitt.", today),
+            kind: .highSpendingToday,
+            delay: 60 * 30,
+            priority: 70
         )
     }
 

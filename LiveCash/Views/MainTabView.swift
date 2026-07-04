@@ -3,7 +3,10 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var selectedTab = 0
+    @State private var showAddMenu = false
     @State private var showAddTransaction = false
+    @State private var showGoalContribution = false
+    @State private var showReceiptScan = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -29,7 +32,7 @@ struct MainTabView: View {
             switch action {
             case .addTransaction:
                 selectedTab = 0
-                showAddTransaction = true
+                showAddMenu = true
             case .openAssistant:
                 selectedTab = 0
                 store.focusInputOnAppear = true
@@ -45,8 +48,35 @@ struct MainTabView: View {
                 store.pendingTabSelection = nil
             }
         }
+        .onChange(of: store.showGoalContributionSheet) { _, show in
+            if show {
+                showGoalContribution = true
+            }
+        }
+        .sheet(isPresented: $showAddMenu) {
+            AddActionSheet { action in
+                switch action {
+                case .transaction:
+                    showAddTransaction = true
+                case .goalContribution:
+                    showGoalContribution = true
+                case .receipt:
+                    showReceiptScan = true
+                }
+            }
+        }
         .sheet(isPresented: $showAddTransaction) {
             AddTransactionView()
+        }
+        .sheet(isPresented: $showGoalContribution) {
+            GoalContributionView(prefilledAmount: store.pendingGoalContributionAmount)
+                .onDisappear {
+                    store.pendingGoalContributionAmount = nil
+                    store.showGoalContributionSheet = false
+                }
+        }
+        .sheet(isPresented: $showReceiptScan) {
+            ReceiptScanView()
         }
     }
 }

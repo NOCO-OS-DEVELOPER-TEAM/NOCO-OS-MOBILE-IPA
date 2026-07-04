@@ -1,5 +1,24 @@
 import SwiftUI
 
+extension ShortcutAccent {
+    func color(for type: TransactionType) -> Color {
+        switch self {
+        case .auto:
+            return type == .income ? LiveCashTheme.income : LiveCashTheme.expense
+        case .green: return LiveCashTheme.income
+        case .red: return LiveCashTheme.expense
+        case .blue: return Color(red: 0.2, green: 0.45, blue: 0.95)
+        case .orange: return Color(red: 0.98, green: 0.55, blue: 0.2)
+        case .purple: return Color(red: 0.55, green: 0.35, blue: 0.9)
+        case .teal: return LiveCashTheme.accent
+        }
+    }
+
+    func softColor(for type: TransactionType) -> Color {
+        color(for: type).opacity(0.16)
+    }
+}
+
 struct SmartShortcutsView: View {
     @EnvironmentObject private var store: FinanceStore
 
@@ -29,8 +48,8 @@ struct SmartShortcutsView: View {
     }
 
     private func shortcutButton(_ shortcut: QuickShortcut) -> some View {
-        let color = shortcut.type == .income ? LiveCashTheme.income : LiveCashTheme.expense
-        let soft = shortcut.type == .income ? LiveCashTheme.incomeSoft : LiveCashTheme.expenseSoft
+        let color = shortcut.accent.color(for: shortcut.type)
+        let soft = shortcut.accent.softColor(for: shortcut.type)
 
         return Button {
             HapticService.light(store: store)

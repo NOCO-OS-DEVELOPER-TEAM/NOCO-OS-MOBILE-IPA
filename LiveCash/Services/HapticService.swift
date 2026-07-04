@@ -16,4 +16,10 @@ enum HapticService {
     static func medium(store: FinanceStore) {
         impact(.medium, store: store)
     }
+
+    @MainActor
+    static func success(store: FinanceStore) {
+        guard store.appSettings.ui.hapticsEnabled else { return }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
 }

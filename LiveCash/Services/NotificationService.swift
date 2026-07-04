@@ -40,6 +40,23 @@ final class NotificationService {
         }
     }
 
+    func notifyGoalAlert(_ alert: GoalTrackingAlert, store: FinanceStore) {
+        guard store.notificationsEnabled else { return }
+        guard store.notificationPreferences.goalProgressAlerts || store.appSettings.savings.progressAlerts else { return }
+        let center = UNUserNotificationCenter.current()
+        let content = UNMutableNotificationContent()
+        content.title = alert.title
+        content.body = alert.body
+        content.sound = .default
+        content.userInfo = ["kind": "goalProgress"]
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        center.add(UNNotificationRequest(
+            identifier: "goal-\(UUID().uuidString)",
+            content: content,
+            trigger: trigger
+        ))
+    }
+
     private func schedule(_ payload: SmartNotificationPayload, center: UNUserNotificationCenter) {
         let content = UNMutableNotificationContent()
         content.title = payload.title

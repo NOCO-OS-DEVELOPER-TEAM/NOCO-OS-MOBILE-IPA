@@ -38,6 +38,8 @@ final class FinanceStore: ObservableObject {
     @Published var pendingTabSelection: Int?
     @Published var pendingScanImage: UIImage?
     @Published var showInputSourceSheet = false
+    @Published var showGoalContributionSheet = false
+    @Published var pendingGoalContributionAmount: Double?
 
     private let persistence = PersistenceService.shared
     private let locationManager = CLLocationManager()
@@ -73,6 +75,9 @@ final class FinanceStore: ObservableObject {
     }
 
     func onAppBecameActive() {
+        if appSettings.cloud.iCloudSyncEnabled {
+            CloudSyncService.shared.pull(into: self)
+        }
         let data = persistence.load()
         if data.transactions.count > transactions.count {
             transactions = data.transactions.sorted { $0.date > $1.date }
@@ -289,35 +294,42 @@ final class FinanceStore: ObservableObject {
             }
         }
 
+        switch InputIntentDetector.detect(trimmed, store: self) {
+        case .advisory:
+            applyAssistant(FinanceAssistant.shared.respond(to: trimmed, store: self))
+            return
+        case .subscription:
+            if let draft = InputIntentDetector.subscriptionDraft(from: trimmed) {
+                routeTransactionDraft(draft, rawInput: trimmed)
+            } else {
+                showInsight(for: .allSubscriptions)
+                lastFeedback = "Abo-Intent erkannt — hier sind deine Abos"
+            }
+            return
+        case .goalContribution:
+            if let amount = SmartInputParser.shared.parseSingle(trimmed)?.amount {
+                pendingGoalContributionAmount = amount
+                showGoalContributionSheet = true
+                lastFeedback = String(format: "%.0f€ zum Sparziel hinzufügen — Ziel wählen", amount)
+            } else {
+                pendingTabSelection = 3
+                pendingMoreDestination = .goals
+                lastFeedback = "Sparziele geöffnet"
+            }
+            return
+        case .unclear:
+            if SmartInputParser.shared.containsAmount(trimmed) == false {
+                lastFeedback = "Nicht ganz klar — bitte genauer eingeben oder eine Option wählen"
+                liveSuggestions = LiveIntelligenceEngine.shared.highRiskTextOptions(for: trimmed)
+                return
+            }
+        case .transaction:
+            break
+        }
+
         if var draft = SmartInputParser.shared.parseSingle(trimmed),
            SmartInputParser.shared.looksLikeTransaction(trimmed) || SmartInputParser.shared.containsAmount(trimmed) {
-            SmartInputParser.shared.applyPreferredType(inputMode, to: &draft, text: trimmed)
-            let engine = LiveIntelligenceEngine.shared
-            let confidence = engine.effectiveConfidence(
-                engine.classifyInputConfidence(trimmed, draft: draft, preferredType: inputMode, store: self),
-                store: self
-            )
-            switch confidence {
-            case .safe:
-                saveDraft(draft, rawInput: trimmed)
-            case .uncertain:
-                pendingConfirmation = PendingConfirmation(
-                    draft: draft,
-                    rawInput: trimmed,
-                    message: engine.uncertainMessage(for: draft, text: trimmed),
-                    confidence: .uncertain
-                )
-            case .highRisk:
-                pendingConfirmation = PendingConfirmation(
-                    draft: draft,
-                    rawInput: trimmed,
-                    message: "Mehrdeutig — was meinst du?",
-                    confidence: .highRisk,
-                    options: engine.highRiskOptions(for: draft, text: trimmed)
-                )
-            }
-            pendingIntent = nil
-            activeInsight = nil
+            routeTransactionDraft(draft, rawInput: trimmed, applyPreferredType: true)
             return
         }
 
@@ -332,6 +344,39 @@ final class FinanceStore: ObservableObject {
         }
 
         applyAssistant(FinanceAssistant.shared.respond(to: trimmed, store: self))
+    }
+
+    private func routeTransactionDraft(_ draft: ParsedTransactionDraft, rawInput: String, applyPreferredType: Bool = false) {
+        var draft = draft
+        if applyPreferredType {
+            SmartInputParser.shared.applyPreferredType(inputMode, to: &draft, text: rawInput)
+        }
+        let engine = LiveIntelligenceEngine.shared
+        let confidence = engine.effectiveConfidence(
+            engine.classifyInputConfidence(rawInput, draft: draft, preferredType: inputMode, store: self),
+            store: self
+        )
+        switch confidence {
+        case .safe:
+            saveDraft(draft, rawInput: rawInput)
+        case .uncertain:
+            pendingConfirmation = PendingConfirmation(
+                draft: draft,
+                rawInput: rawInput,
+                message: engine.uncertainMessage(for: draft, text: rawInput),
+                confidence: .uncertain
+            )
+        case .highRisk:
+            pendingConfirmation = PendingConfirmation(
+                draft: draft,
+                rawInput: rawInput,
+                message: "Mehrdeutig — was meinst du?",
+                confidence: .highRisk,
+                options: engine.highRiskOptions(for: draft, text: rawInput)
+            )
+        }
+        pendingIntent = nil
+        activeInsight = nil
     }
 
     private func applyAssistant(_ response: AssistantResponse) {
@@ -364,14 +409,32 @@ final class FinanceStore: ObservableObject {
 
     // MARK: - Goals
 
-    func addGoal(name: String, target: Double) {
+    func addGoal(
+        name: String,
+        target: Double,
+        targetDate: Date? = nil,
+        notifySlowProgress: Bool = true,
+        notifyFastProgress: Bool = false,
+        notifyAt50Percent: Bool = true
+    ) {
         guard goals.count < appSettings.savings.maxGoals else {
             lastFeedback = "Max. \(appSettings.savings.maxGoals) Sparziele"
             return
         }
-        goals.append(SavingsGoal(name: name, targetAmount: target))
+        let goal = SavingsGoal(
+            name: name,
+            targetAmount: target,
+            targetDate: targetDate,
+            notifySlowProgress: notifySlowProgress,
+            notifyFastProgress: notifyFastProgress,
+            notifyAt50Percent: notifyAt50Percent
+        )
+        goals.append(goal)
         recordDailyActivity()
         persist()
+        if appSettings.savings.liveActivityEnabled {
+            SavingsLiveActivityService.updateOrStart(goal: goal)
+        }
     }
 
     func updateGoal(_ goal: SavingsGoal) {
@@ -386,10 +449,48 @@ final class FinanceStore: ObservableObject {
     }
 
     func addToGoal(_ goal: SavingsGoal, amount: Double) {
-        guard let idx = goals.firstIndex(where: { $0.id == goal.id }) else { return }
+        guard amount > 0, let idx = goals.firstIndex(where: { $0.id == goal.id }) else { return }
         goals[idx].currentAmount += amount
+        let updated = goals[idx]
         recordDailyActivity()
         persist()
+
+        let contributionAlert = GoalTrackingAlert.contributed(
+            amount: amount,
+            goalName: updated.name,
+            percent: updated.progressPercent
+        )
+        NotificationService.shared.notifyGoalAlert(contributionAlert, store: self)
+
+        let trackingAlerts = SavingsGoalTrackingEngine.evaluate(
+            goal: updated,
+            monthlySavingsRate: monthlySavingsRate,
+            settings: appSettings.savings
+        )
+        for alert in trackingAlerts {
+            NotificationService.shared.notifyGoalAlert(alert, store: self)
+            for milestone in SavingsGoalTrackingEngine.milestonesToRecord(for: [alert]) {
+                if let i = goals.firstIndex(where: { $0.id == updated.id }),
+                   !goals[i].notifiedMilestones.contains(milestone) {
+                    goals[i].notifiedMilestones.append(milestone)
+                }
+            }
+        }
+        persist()
+
+        if appSettings.savings.liveActivityEnabled {
+            let warning = trackingAlerts.first.map { $0.body }
+            SavingsLiveActivityService.updateOrStart(goal: goals[idx], warning: warning)
+        }
+
+        lastFeedback = String(format: "%.0f€ zu „%@“ — jetzt %d%%", amount, updated.name, updated.progressPercent)
+    }
+
+    func contributeToGoal(id: UUID, amount: Double) {
+        guard let goal = goals.first(where: { $0.id == id }) else { return }
+        addToGoal(goal, amount: amount)
+        pendingGoalContributionAmount = nil
+        showGoalContributionSheet = false
     }
 
     // MARK: - Subscriptions
@@ -791,7 +892,15 @@ final class FinanceStore: ObservableObject {
     }
 
     private func persist() {
-        persistence.save(AppData(
+        persistence.save(snapshotAppData())
+        WidgetDataSync.writeSnapshot(from: self)
+        if appSettings.cloud.iCloudSyncEnabled {
+            CloudSyncService.shared.push(store: self)
+        }
+    }
+
+    func snapshotAppData() -> AppData {
+        AppData(
             transactions: transactions,
             goals: goals,
             subscriptions: subscriptions,
@@ -808,7 +917,57 @@ final class FinanceStore: ObservableObject {
             notificationLearning: notificationLearning,
             widgetPreferences: widgetPreferences,
             appSettings: appSettings
-        ))
+        )
+    }
+
+    func replaceAppData(_ data: AppData) {
+        transactions = data.transactions.sorted { $0.date > $1.date }
+        goals = data.goals
+        subscriptions = data.subscriptions
+        locationEnabled = data.locationEnabled
+        savingsStreakDays = data.savingsStreakDays
+        lastActiveDate = data.lastActiveDate
+        notificationsEnabled = data.notificationsEnabled
+        shortcuts = data.shortcuts
+        spendingLimits = data.spendingLimits
+        accounts = data.accounts
+        activeAccountId = data.activeAccountId
+        notificationPreferences = data.notificationPreferences
+        assistantModePreference = data.assistantModePreference
+        notificationLearning = data.notificationLearning
+        widgetPreferences = data.widgetPreferences
+        appSettings = data.appSettings
+        refreshSubscriptions()
+        refreshShortcuts()
+        WidgetDataSync.writeSnapshot(from: self)
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    func mergeAppData(_ data: AppData) {
+        var txIds = Set(transactions.map(\.id))
+        for tx in data.transactions where !txIds.contains(tx.id) {
+            transactions.append(tx)
+            txIds.insert(tx.id)
+        }
+        transactions.sort { $0.date > $1.date }
+
+        var goalIds = Set(goals.map(\.id))
+        for goal in data.goals where !goalIds.contains(goal.id) {
+            goals.append(goal)
+        }
+
+        var subNames = Set(subscriptions.map { $0.name.lowercased() })
+        for sub in data.subscriptions where !subNames.contains(sub.name.lowercased()) {
+            subscriptions.append(sub)
+        }
+
+        if data.shortcuts.count > shortcuts.count {
+            shortcuts = data.shortcuts
+        }
+        appSettings = data.appSettings
+        widgetPreferences = data.widgetPreferences
+        refreshSubscriptions()
+        refreshShortcuts()
         WidgetDataSync.writeSnapshot(from: self)
     }
 }

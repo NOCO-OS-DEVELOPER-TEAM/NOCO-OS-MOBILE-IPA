@@ -80,6 +80,11 @@ struct SettingsView: View {
             }
 
             Section("Daten") {
+                NavigationLink {
+                    DataManagementSettingsView()
+                } label: {
+                    Label("Daten verwalten", systemImage: "externaldrive")
+                }
                 LabeledContent("Buchungen", value: "\(store.accountFilteredTransactions.count)")
                 LabeledContent("Sparziele", value: "\(store.goals.count)")
                 LabeledContent("Abos", value: "\(store.subscriptions.count)")

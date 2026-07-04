@@ -77,6 +77,16 @@
 		LC0000010000000000000050 /* SecurityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000058 /* SecurityService.swift */; };
 		LC0000010000000000000051 /* SensitiveBalanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000059 /* SensitiveBalanceView.swift */; };
 		LC0000010000000000000052 /* SettingsDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000005A /* SettingsDetailViews.swift */; };
+		LC0000010000000000000060 /* InputIntentDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000065 /* InputIntentDetector.swift */; };
+		LC0000010000000000000061 /* SavingsGoalTrackingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000066 /* SavingsGoalTrackingEngine.swift */; };
+		LC0000010000000000000062 /* DataBackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000067 /* DataBackupService.swift */; };
+		LC0000010000000000000063 /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000068 /* CloudSyncService.swift */; };
+		LC0000010000000000000064 /* AppleSignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000069 /* AppleSignInService.swift */; };
+		LC0000010000000000000065 /* SavingsLiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006A /* SavingsLiveActivityService.swift */; };
+		LC0000010000000000000066 /* GoalFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006B /* GoalFormView.swift */; };
+		LC0000010000000000000067 /* GoalContributionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006C /* GoalContributionView.swift */; };
+		LC0000010000000000000068 /* AddActionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006D /* AddActionSheet.swift */; };
+		LC0000010000000000000069 /* DataManagementSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000006E /* DataManagementSettingsView.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -157,6 +167,16 @@
 		LC0000020000000000000058 /* SecurityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityService.swift; sourceTree = "<group>"; };
 		LC0000020000000000000059 /* SensitiveBalanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensitiveBalanceView.swift; sourceTree = "<group>"; };
 		LC000002000000000000005A /* SettingsDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailViews.swift; sourceTree = "<group>"; };
+		LC0000020000000000000065 /* InputIntentDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputIntentDetector.swift; sourceTree = "<group>"; };
+		LC0000020000000000000066 /* SavingsGoalTrackingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsGoalTrackingEngine.swift; sourceTree = "<group>"; };
+		LC0000020000000000000067 /* DataBackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBackupService.swift; sourceTree = "<group>"; };
+		LC0000020000000000000068 /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
+		LC0000020000000000000069 /* AppleSignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInService.swift; sourceTree = "<group>"; };
+		LC000002000000000000006A /* SavingsLiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsLiveActivityService.swift; sourceTree = "<group>"; };
+		LC000002000000000000006B /* GoalFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalFormView.swift; sourceTree = "<group>"; };
+		LC000002000000000000006C /* GoalContributionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalContributionView.swift; sourceTree = "<group>"; };
+		LC000002000000000000006D /* AddActionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddActionSheet.swift; sourceTree = "<group>"; };
+		LC000002000000000000006E /* DataManagementSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -290,6 +310,12 @@
 				LC0000020000000000000053 /* ShakeDetector.swift */,
 				LC0000020000000000000057 /* HapticService.swift */,
 				LC0000020000000000000058 /* SecurityService.swift */,
+				LC0000020000000000000065 /* InputIntentDetector.swift */,
+				LC0000020000000000000066 /* SavingsGoalTrackingEngine.swift */,
+				LC0000020000000000000067 /* DataBackupService.swift */,
+				LC0000020000000000000068 /* CloudSyncService.swift */,
+				LC0000020000000000000069 /* AppleSignInService.swift */,
+				LC000002000000000000006A /* SavingsLiveActivityService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -341,6 +367,7 @@
 			isa = PBXGroup;
 			children = (
 				LC000002000000000000005A /* SettingsDetailViews.swift */,
+				LC000002000000000000006E /* DataManagementSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -359,6 +386,9 @@
 				LC0000020000000000000027 /* QuickInsightPanel.swift */,
 				LC0000020000000000000052 /* InputSourceSheet.swift */,
 				LC0000020000000000000059 /* SensitiveBalanceView.swift */,
+				LC000002000000000000006B /* GoalFormView.swift */,
+				LC000002000000000000006C /* GoalContributionView.swift */,
+				LC000002000000000000006D /* AddActionSheet.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -531,6 +561,16 @@
 				LC0000010000000000000050 /* SecurityService.swift in Sources */,
 				LC0000010000000000000051 /* SensitiveBalanceView.swift in Sources */,
 				LC0000010000000000000052 /* SettingsDetailViews.swift in Sources */,
+				LC0000010000000000000060 /* InputIntentDetector.swift in Sources */,
+				LC0000010000000000000061 /* SavingsGoalTrackingEngine.swift in Sources */,
+				LC0000010000000000000062 /* DataBackupService.swift in Sources */,
+				LC0000010000000000000063 /* CloudSyncService.swift in Sources */,
+				LC0000010000000000000064 /* AppleSignInService.swift in Sources */,
+				LC0000010000000000000065 /* SavingsLiveActivityService.swift in Sources */,
+				LC0000010000000000000066 /* GoalFormView.swift in Sources */,
+				LC0000010000000000000067 /* GoalContributionView.swift in Sources */,
+				LC0000010000000000000068 /* AddActionSheet.swift in Sources */,
+				LC0000010000000000000069 /* DataManagementSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -599,7 +639,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -635,7 +675,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -669,7 +709,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
@@ -696,7 +736,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";

@@ -4,7 +4,9 @@ import UIKit
 struct TransactionsListView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var showReceiptScan = false
+    @State private var showAddMenu = false
     @State private var showAddTransaction = false
+    @State private var showGoalContribution = false
 
     var body: some View {
         NavigationStack {
@@ -46,7 +48,7 @@ struct TransactionsListView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {
                         Button {
-                            showAddTransaction = true
+                            showAddMenu = true
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title3)
@@ -63,8 +65,23 @@ struct TransactionsListView: View {
             .sheet(isPresented: $showReceiptScan) {
                 ReceiptScanView()
             }
+            .sheet(isPresented: $showAddMenu) {
+                AddActionSheet { action in
+                    switch action {
+                    case .transaction:
+                        showAddTransaction = true
+                    case .goalContribution:
+                        showGoalContribution = true
+                    case .receipt:
+                        showReceiptScan = true
+                    }
+                }
+            }
             .sheet(isPresented: $showAddTransaction) {
                 AddTransactionView()
+            }
+            .sheet(isPresented: $showGoalContribution) {
+                GoalContributionView(prefilledAmount: nil)
             }
         }
     }

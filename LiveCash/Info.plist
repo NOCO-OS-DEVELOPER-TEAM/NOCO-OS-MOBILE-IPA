@@ -10,6 +10,8 @@
 	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Live Cash nutzt Face ID zum Schutz deiner Finanzdaten.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Live Cash nutzt die Kamera zum Scannen von Belegen.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

@@ -5,6 +5,7 @@ final class LiveIntelligenceEngine {
     static let shared = LiveIntelligenceEngine()
 
     private let merchantHints = ["netflix", "spotify", "lidl", "aldi", "rewe", "amazon", "dm", "apple", "disney", "prime", "uber"]
+    private let foodHints = ["döner", "doner", "kaffee", "coffee", "pizza", "burger", "bäcker", "baecker", "mcd", "kebab", "sushi", "tank", "tankstelle"]
     private let subscriptionHints = ["netflix", "spotify", "disney", "prime", "apple", "cursor", "chatgpt", "icloud", "abo", "subscription"]
     private let vagueTokens = ["irgendwas", "etwas", "unklar", "diverses", "sonstiges", "xyz", "test", "irgendwo", "keine ahnung"]
 
@@ -25,6 +26,14 @@ final class LiveIntelligenceEngine {
     ) -> InputConfidence {
         let settings = store.appSettings.assistant
         let lower = text.lowercased()
+
+        if foodHints.contains(where: { lower.contains($0) }), draft.amount > 0, draft.merchant.lowercased() != "unbekannt" {
+            return .safe
+        }
+
+        if lower.contains("eingeben") || lower.contains("eintragen"), draft.merchant.lowercased() == "unbekannt" || lower.contains("eingeben") {
+            return .uncertain
+        }
 
         if vagueTokens.contains(where: { lower.contains($0) }) { return .highRisk }
         if draft.merchant.lowercased() == "unbekannt",
@@ -271,6 +280,14 @@ final class LiveIntelligenceEngine {
                 LiveSuggestion(id: option.id, title: option.title, action: .saveDraft(option.draft))
             }
         }
+    }
+
+    func highRiskTextOptions(for text: String) -> [LiveSuggestion] {
+        [
+            LiveSuggestion(title: "Ausgabe buchen", action: .submitText(text + " Ausgabe")),
+            LiveSuggestion(title: "Finanz-Tipp anzeigen", action: .insight(.savingsTips)),
+            LiveSuggestion(title: "Monatsübersicht", action: .insight(.monthlySummary))
+        ]
     }
 
     func isUncertainInput(_ text: String, draft: ParsedTransactionDraft, preferredType: TransactionType? = nil, store: FinanceStore) -> Bool {

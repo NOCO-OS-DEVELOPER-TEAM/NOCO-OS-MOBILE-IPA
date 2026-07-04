@@ -9,10 +9,13 @@ struct WidgetSnapshot: Codable {
     var savingsProgressPercent: Int
     var primaryGoalName: String?
     var monthlySubscriptionCost: Double
+    var lastExpenseMerchant: String?
+    var lastExpenseAmount: Double
     var showBalance: Bool
     var showExpenses: Bool
     var showSavings: Bool
     var showSubscriptions: Bool
+    var showRecentExpense: Bool
     var updatedAt: Date
 
     init(
@@ -24,10 +27,13 @@ struct WidgetSnapshot: Codable {
         savingsProgressPercent: Int,
         primaryGoalName: String?,
         monthlySubscriptionCost: Double = 0,
+        lastExpenseMerchant: String? = nil,
+        lastExpenseAmount: Double = 0,
         showBalance: Bool = true,
         showExpenses: Bool = true,
         showSavings: Bool = true,
         showSubscriptions: Bool = true,
+        showRecentExpense: Bool = true,
         updatedAt: Date
     ) {
         self.balance = balance
@@ -38,10 +44,13 @@ struct WidgetSnapshot: Codable {
         self.savingsProgressPercent = savingsProgressPercent
         self.primaryGoalName = primaryGoalName
         self.monthlySubscriptionCost = monthlySubscriptionCost
+        self.lastExpenseMerchant = lastExpenseMerchant
+        self.lastExpenseAmount = lastExpenseAmount
         self.showBalance = showBalance
         self.showExpenses = showExpenses
         self.showSavings = showSavings
         self.showSubscriptions = showSubscriptions
+        self.showRecentExpense = showRecentExpense
         self.updatedAt = updatedAt
     }
 
@@ -55,10 +64,13 @@ struct WidgetSnapshot: Codable {
         savingsProgressPercent = try c.decodeIfPresent(Int.self, forKey: .savingsProgressPercent) ?? 0
         primaryGoalName = try c.decodeIfPresent(String.self, forKey: .primaryGoalName)
         monthlySubscriptionCost = try c.decodeIfPresent(Double.self, forKey: .monthlySubscriptionCost) ?? 0
+        lastExpenseMerchant = try c.decodeIfPresent(String.self, forKey: .lastExpenseMerchant)
+        lastExpenseAmount = try c.decodeIfPresent(Double.self, forKey: .lastExpenseAmount) ?? 0
         showBalance = try c.decodeIfPresent(Bool.self, forKey: .showBalance) ?? true
         showExpenses = try c.decodeIfPresent(Bool.self, forKey: .showExpenses) ?? true
         showSavings = try c.decodeIfPresent(Bool.self, forKey: .showSavings) ?? true
         showSubscriptions = try c.decodeIfPresent(Bool.self, forKey: .showSubscriptions) ?? true
+        showRecentExpense = try c.decodeIfPresent(Bool.self, forKey: .showRecentExpense) ?? true
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
     }
 }

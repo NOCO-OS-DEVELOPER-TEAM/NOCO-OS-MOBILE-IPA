@@ -363,6 +363,12 @@ struct MoneyCardSettingsView: View {
                 Toggle("Ausgaben", isOn: store.widgetBinding(\.showExpenses))
                 Toggle("Sparziel", isOn: store.widgetBinding(\.showSavings))
                 Toggle("Abo-Kosten", isOn: store.widgetBinding(\.showSubscriptions))
+                Toggle("Letzte Ausgabe", isOn: store.widgetBinding(\.showRecentExpense))
+                Picker("Update-Intervall", selection: store.widgetBinding(\.refreshIntervalMinutes)) {
+                    Text("15 Min").tag(15)
+                    Text("30 Min").tag(30)
+                    Text("60 Min").tag(60)
+                }
             }
         }
         .navigationTitle("Money Card")
@@ -390,6 +396,14 @@ struct SavingsSettingsView: View {
                 Toggle("Fortschritt erreicht", isOn: store.savingsBinding(\.progressAlerts))
                 Toggle("Ziel fast erreicht", isOn: store.savingsBinding(\.nearGoalAlerts))
                 Toggle("Zu langsamer Fortschritt", isOn: store.savingsBinding(\.slowProgressAlerts))
+                Toggle("Schnelles Tempo", isOn: store.savingsBinding(\.fastProgressAlerts))
+            }
+
+            Section("Live Features") {
+                Toggle("Lock Screen Live Activity", isOn: store.savingsBinding(\.liveActivityEnabled))
+                Text("Zeigt Sparziel-Fortschritt auf dem Sperrbildschirm.")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("Sparziele")
@@ -501,6 +515,11 @@ struct ShortcutEditView: View {
                         }
                     }
                     Toggle("Festpinnen", isOn: $shortcut.isPinned)
+                    Picker("Farbe", selection: $shortcut.accent) {
+                        ForEach(ShortcutAccent.allCases) { accent in
+                            Text(accent.rawValue).tag(accent)
+                        }
+                    }
                 }
                 if shortcut.actionType == .book {
                     Section("Standort") {

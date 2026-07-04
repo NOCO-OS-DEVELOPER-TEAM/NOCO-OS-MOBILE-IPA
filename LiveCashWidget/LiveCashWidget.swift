@@ -13,7 +13,9 @@ struct LiveCashWidgetProvider: TimelineProvider {
             topCategoryName: "Lebensmittel", topCategoryAmount: 210,
             savingsProgressPercent: 35, primaryGoalName: "iPhone",
             monthlySubscriptionCost: 42,
-            showBalance: true, showExpenses: true, showSavings: true, showSubscriptions: true,
+            lastExpenseMerchant: "Döner", lastExpenseAmount: 6,
+            showBalance: true, showExpenses: true, showSavings: true,
+            showSubscriptions: true, showRecentExpense: true,
             updatedAt: Date()
         ))
     }
@@ -24,7 +26,8 @@ struct LiveCashWidgetProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<LiveCashWidgetEntry>) -> Void) {
         let entry = LiveCashWidgetEntry(date: Date(), snapshot: WidgetSnapshotLoader.load())
-        let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date().addingTimeInterval(900)
+        let minutes = 15
+        let next = Calendar.current.date(byAdding: .minute, value: minutes, to: Date()) ?? Date().addingTimeInterval(900)
         completion(Timeline(entries: [entry], policy: .after(next)))
     }
 }
@@ -76,6 +79,11 @@ struct LiveCashWidgetView: View {
                 Text(String(format: "Abos: %.0f€/M", s.monthlySubscriptionCost))
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
+            } else if s.showRecentExpense, let merchant = s.lastExpenseMerchant, s.lastExpenseAmount > 0 {
+                Text("Letzte: \(merchant) · \(String(format: "%.0f€", s.lastExpenseAmount))")
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(expense)
+                    .lineLimit(1)
             } else if let cat = s.topCategoryName, s.showExpenses {
                 Text("Top: \(cat)")
                     .font(.system(size: 10, design: .rounded))

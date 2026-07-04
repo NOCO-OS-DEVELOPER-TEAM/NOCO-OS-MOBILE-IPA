@@ -7,6 +7,7 @@ enum WidgetDataSync {
         let top = store.topCategoryThisMonth
         let primaryGoal = store.goals.max(by: { $0.progress < $1.progress })
         let prefs = store.widgetPreferences
+        let lastExpense = store.accountFilteredTransactions.first { $0.type == .expense }
         let snapshot = WidgetSnapshot(
             balance: store.currentBalance,
             monthExpenses: store.currentMonthExpenses,
@@ -16,14 +17,19 @@ enum WidgetDataSync {
             savingsProgressPercent: primaryGoal?.progressPercent ?? 0,
             primaryGoalName: primaryGoal?.name,
             monthlySubscriptionCost: store.monthlySubscriptionCost,
+            lastExpenseMerchant: lastExpense?.merchant,
+            lastExpenseAmount: lastExpense?.amount ?? 0,
             showBalance: prefs.showBalance,
             showExpenses: prefs.showExpenses,
             showSavings: prefs.showSavings,
             showSubscriptions: prefs.showSubscriptions,
+            showRecentExpense: prefs.showRecentExpense,
             updatedAt: Date()
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        UserDefaults(suiteName: LiveCashAppGroup.identifier)?.set(data, forKey: LiveCashAppGroup.widgetSnapshotKey)
+        let defaults = UserDefaults(suiteName: LiveCashAppGroup.identifier)
+        defaults?.set(data, forKey: LiveCashAppGroup.widgetSnapshotKey)
+        defaults?.synchronize()
         WidgetCenter.shared.reloadAllTimelines()
     }
 

@@ -8,7 +8,8 @@ enum LiveCashTheme {
     static let expense = Color(red: 0.94, green: 0.32, blue: 0.36)
     static let expenseSoft = Color(red: 0.94, green: 0.32, blue: 0.36).opacity(0.14)
 
-    static let glassBorder = Color.white.opacity(0.22)
+    static let glassBorder = Color.white.opacity(0.28)
+    static let glassHighlight = Color.white.opacity(0.12)
     static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
     static let screenBackground = Color(uiColor: .systemGroupedBackground)
 
@@ -39,13 +40,37 @@ struct LiveCashGlassCard<Content: View>: View {
         content
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [LiveCashTheme.glassHighlight, .clear],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(LiveCashTheme.glassBorder, lineWidth: 0.6)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(LiveCashTheme.glassBorder, lineWidth: 0.8)
             )
-            .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+            .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+    }
+}
+
+struct MoneyCardGlassView<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        LiveCashGlassCard {
+            content
+        }
+        .padding(.vertical, 4)
     }
 }
 

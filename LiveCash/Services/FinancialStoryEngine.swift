@@ -39,6 +39,25 @@ enum FinancialStoryEngine {
 
         var slides: [StorySlide] = []
 
+        if period == .day {
+            let todayExp = store.todayExpenses
+            let avgDaily = store.currentMonthExpenses / Double(max(Calendar.current.component(.day, from: Date()), 1))
+            let detail: String
+            if todayExp > avgDaily * 1.4 && avgDaily > 0 {
+                detail = "Du hast heute viel ausgegeben — über deinem üblichen Tagesniveau."
+            } else if todayExp == 0 {
+                detail = "Noch keine Ausgaben heute — stark!"
+            } else {
+                detail = "Dein Tages-Tempo sieht normal aus."
+            }
+            slides.append(StorySlide(
+                title: "Heute",
+                headline: String(format: "%.0f€ ausgegeben", todayExp),
+                detail: detail,
+                value: String(format: "%.0f€", todayExp)
+            ))
+        }
+
         if period == .month {
             let prevRange = previousMonthRange(endingBefore: range.start)
             let prevExp = store.accountFilteredTransactions
@@ -86,13 +105,24 @@ enum FinancialStoryEngine {
 
             if let unusual = unusualCategory(expenses: expenses, store: store) {
                 slides.append(StorySlide(
-                    title: "Auffällig",
+                    title: "Warnung",
                     headline: unusual.name,
                     detail: unusual.detail,
                     value: String(format: "%.0f€", unusual.amount)
                 ))
             }
-        } else {
+
+            let savedThisMonth = store.goals.reduce(0) { $0 + $1.currentAmount }
+            if savedThisMonth > 0 {
+                slides.append(StorySlide(
+                    title: "Sparverhalten",
+                    headline: String(format: "%.0f€ gespart", savedThisMonth),
+                    detail: totalInc > totalExp ? "Du sparst mehr als du ausgibst — starkes Signal." : "Jeder Euro Richtung Ziel zählt.",
+                    value: String(format: "%.0f€", savedThisMonth),
+                    isIncome: true
+                ))
+            }
+        } else if period != .day {
             slides.append(StorySlide(
                 title: "Ausgaben",
                 headline: String(format: "%.0f€ ausgegeben", totalExp),
@@ -133,7 +163,7 @@ enum FinancialStoryEngine {
             ))
         }
 
-        return Array(slides.prefix(period == .month ? 4 : 3))
+        return Array(slides.prefix(period == .month ? 6 : (period == .day ? 4 : 3)))
     }
 
     @MainActor

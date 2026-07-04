@@ -46,7 +46,7 @@ struct DashboardView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 120)
+                .padding(.bottom, 100)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(LiveCashTheme.screenBackground)
@@ -79,39 +79,37 @@ struct DashboardView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let account = store.activeAccount, store.accounts.count > 1 {
-                Label(account.name, systemImage: account.icon)
+        MoneyCardGlassView {
+            VStack(alignment: .leading, spacing: 12) {
+                if let account = store.activeAccount, store.accounts.count > 1 {
+                    Label(account.name, systemImage: account.icon)
+                        .font(LiveCashTheme.captionFont)
+                        .foregroundStyle(LiveCashTheme.accent)
+                }
+                Text(monthTitle)
                     .font(LiveCashTheme.captionFont)
-                    .foregroundStyle(LiveCashTheme.accent)
-            }
-            Text(monthTitle)
-                .font(LiveCashTheme.captionFont)
-                .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondary)
 
-            SensitiveBalanceView(scope: .home) {
-                Text(balanceText)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundStyle(store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
-            }
+                SensitiveBalanceView(scope: .home) {
+                    Text(balanceText)
+                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                        .foregroundStyle(store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+                }
 
-            Text("Saldo diesen Monat")
-                .font(LiveCashTheme.bodyFont.weight(.medium))
-                .foregroundStyle(.secondary)
+                Text("Saldo diesen Monat")
+                    .font(LiveCashTheme.bodyFont.weight(.medium))
+                    .foregroundStyle(.secondary)
 
-            HStack(spacing: 16) {
-                Label(LiveCashTheme.money(store.currentMonthExpenses), systemImage: "arrow.down.circle.fill")
-                    .font(LiveCashTheme.captionFont)
-                    .foregroundStyle(LiveCashTheme.expense)
-                Label(LiveCashTheme.money(store.currentMonthIncome), systemImage: "arrow.up.circle.fill")
-                    .font(LiveCashTheme.captionFont)
-                    .foregroundStyle(LiveCashTheme.income)
+                HStack(spacing: 16) {
+                    Label(LiveCashTheme.money(store.currentMonthExpenses), systemImage: "arrow.down.circle.fill")
+                        .font(LiveCashTheme.captionFont)
+                        .foregroundStyle(LiveCashTheme.expense)
+                    Label(LiveCashTheme.money(store.currentMonthIncome), systemImage: "arrow.up.circle.fill")
+                        .font(LiveCashTheme.captionFont)
+                        .foregroundStyle(LiveCashTheme.income)
+                }
             }
-            .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
     }
 
     private var summaryCards: some View {

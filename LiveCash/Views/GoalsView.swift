@@ -3,8 +3,7 @@ import SwiftUI
 struct GoalsView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var showAdd = false
-    @State private var name = ""
-    @State private var target = ""
+    @State private var editingGoal: SavingsGoal?
 
     private var totalSaved: Double {
         store.goals.reduce(0) { $0 + $1.currentAmount }
@@ -32,20 +31,25 @@ struct GoalsView: View {
                 .listRowBackground(Color.clear)
             } else {
                 ForEach(store.goals) { goal in
-                    GoalCard(
-                        goal: goal,
-                        monthlySavingsRate: store.monthlySavingsRate,
-                        showProgress: store.appSettings.savings.showProgress
-                    )
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .swipeActions {
-                            Button("+\(50)€") {
-                                store.addToGoal(goal, amount: 50)
-                            }
-                            .tint(LiveCashTheme.income)
+                    Button {
+                        editingGoal = goal
+                    } label: {
+                        GoalCard(
+                            goal: goal,
+                            monthlySavingsRate: store.monthlySavingsRate,
+                            showProgress: store.appSettings.savings.showProgress
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .swipeActions {
+                        Button("+\(50)€") {
+                            store.addToGoal(goal, amount: 50)
                         }
+                        .tint(LiveCashTheme.income)
+                    }
                 }
                 .onDelete { idx in
                     idx.forEach { store.deleteGoal(store.goals[$0]) }
@@ -65,21 +69,11 @@ struct GoalsView: View {
                 }
             }
         }
-        .alert("Neues Sparziel", isPresented: $showAdd) {
-            TextField("Name", text: $name)
-            TextField("Zielbetrag", text: $target)
-                .keyboardType(.decimalPad)
-            Button("Abbrechen", role: .cancel) {
-                resetForm()
-            }
-            Button("Anlegen") {
-                if let amount = Double(target.replacingOccurrences(of: ",", with: ".")), !name.isEmpty {
-                    store.addGoal(name: name, target: amount)
-                }
-                resetForm()
-            }
-        } message: {
-            Text("Wie viel möchtest du sparen?")
+        .sheet(isPresented: $showAdd) {
+            GoalFormView()
+        }
+        .sheet(item: $editingGoal) { goal in
+            GoalFormView(editingGoal: goal)
         }
     }
 
@@ -112,10 +106,5 @@ struct GoalsView: View {
                 }
             }
         }
-    }
-
-    private func resetForm() {
-        name = ""
-        target = ""
     }
 }

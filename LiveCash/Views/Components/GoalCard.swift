@@ -50,15 +50,20 @@ struct GoalCard: View {
 
                 if !compact {
                     HStack(spacing: 12) {
-                        if let months = etaMonths {
+                        if let targetDate = goal.targetDate {
+                            Label(targetDate.formatted(date: .abbreviated, time: .omitted), systemImage: "flag.checkered")
+                                .font(LiveCashTheme.captionFont)
+                                .foregroundStyle(.secondary)
+                        } else if let months = etaMonths {
                             Label("ETA: \(months) Monat\(months == 1 ? "" : "e")", systemImage: "calendar")
                                 .font(LiveCashTheme.captionFont)
                                 .foregroundStyle(LiveCashTheme.accent)
                         }
-                        if let date = goal.estimatedCompletionDate(monthlySavings: monthlySavingsRate > 0 ? monthlySavingsRate : goal.monthlyRequired()) {
-                            Text(date.formatted(date: .abbreviated, time: .omitted))
+                        let pace = goal.paceStatus(referenceMonthlySavings: monthlySavingsRate)
+                        if pace != .noDeadline {
+                            Text(pace.rawValue)
                                 .font(LiveCashTheme.captionFont)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(pace == .slow ? LiveCashTheme.expense : LiveCashTheme.income)
                         }
                     }
                 }

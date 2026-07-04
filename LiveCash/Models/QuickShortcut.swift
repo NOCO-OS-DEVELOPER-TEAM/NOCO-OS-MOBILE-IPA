@@ -20,6 +20,18 @@ enum ShortcutActionType: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum ShortcutAccent: String, Codable, CaseIterable, Identifiable {
+    case auto = "Auto"
+    case green = "Grün"
+    case red = "Rot"
+    case blue = "Blau"
+    case orange = "Orange"
+    case purple = "Lila"
+    case teal = "Türkis"
+
+    var id: String { rawValue }
+}
+
 struct QuickShortcut: Identifiable, Codable, Equatable {
     var id: UUID
     var merchant: String
@@ -31,6 +43,7 @@ struct QuickShortcut: Identifiable, Codable, Equatable {
     var isUserDefined: Bool
     var isPinned: Bool
     var actionType: ShortcutActionType
+    var accent: ShortcutAccent
 
     init(
         id: UUID = UUID(),
@@ -42,7 +55,8 @@ struct QuickShortcut: Identifiable, Codable, Equatable {
         sortOrder: Int = 0,
         isUserDefined: Bool = false,
         isPinned: Bool = false,
-        actionType: ShortcutActionType = .book
+        actionType: ShortcutActionType = .book,
+        accent: ShortcutAccent = .auto
     ) {
         self.id = id
         self.merchant = merchant
@@ -54,6 +68,7 @@ struct QuickShortcut: Identifiable, Codable, Equatable {
         self.isUserDefined = isUserDefined
         self.isPinned = isPinned
         self.actionType = actionType
+        self.accent = accent
     }
 
     var label: String {
@@ -72,7 +87,7 @@ struct QuickShortcut: Identifiable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, merchant, amount, type, category, location, sortOrder, isUserDefined, isPinned, actionType
+        case id, merchant, amount, type, category, location, sortOrder, isUserDefined, isPinned, actionType, accent
     }
 
     init(from decoder: Decoder) throws {
@@ -87,5 +102,21 @@ struct QuickShortcut: Identifiable, Codable, Equatable {
         isUserDefined = try c.decodeIfPresent(Bool.self, forKey: .isUserDefined) ?? false
         isPinned = try c.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
         actionType = try c.decodeIfPresent(ShortcutActionType.self, forKey: .actionType) ?? .book
+        accent = try c.decodeIfPresent(ShortcutAccent.self, forKey: .accent) ?? .auto
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(merchant, forKey: .merchant)
+        try c.encode(amount, forKey: .amount)
+        try c.encode(type, forKey: .type)
+        try c.encode(category, forKey: .category)
+        try c.encodeIfPresent(location, forKey: .location)
+        try c.encode(sortOrder, forKey: .sortOrder)
+        try c.encode(isUserDefined, forKey: .isUserDefined)
+        try c.encode(isPinned, forKey: .isPinned)
+        try c.encode(actionType, forKey: .actionType)
+        try c.encode(accent, forKey: .accent)
     }
 }
