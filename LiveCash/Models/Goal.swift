@@ -75,7 +75,6 @@ struct SavingsGoal: Identifiable, Codable, Equatable {
         try c.encode(notifyAt50Percent, forKey: .notifyAt50Percent)
         try c.encode(notifiedMilestones, forKey: .notifiedMilestones)
     }
-}
 
     var progress: Double {
         guard targetAmount > 0 else { return 0 }
