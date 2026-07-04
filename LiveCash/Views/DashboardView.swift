@@ -7,25 +7,35 @@ struct DashboardView: View {
     @State private var showFinancialStory = false
     @State private var idleTask: Task<Void, Never>?
 
+    private var contentSpacing: CGFloat {
+        store.appSettings.ui.compactMode ? 16 : 28
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: contentSpacing) {
                     headerSection
 
-                    summaryCards
+                    if store.appSettings.moneyCard.displayLevel != .simple {
+                        summaryCards
+                    }
 
                     SmartShortcutsView()
 
-                    recentSection
+                    if store.appSettings.moneyCard.displayLevel != .simple {
+                        recentSection
+                    }
 
-                    if let top = store.topCategoryThisMonth {
+                    if store.appSettings.moneyCard.displayLevel == .advanced,
+                       let top = store.topCategoryThisMonth {
                         detailInsightCard(title: "Top-Kategorie", value: top.0.rawValue, subtitle: LiveCashTheme.money(top.1))
                     }
 
-                    goalsPreview
-
-                    subscriptionsPreview
+                    if store.appSettings.moneyCard.displayLevel == .advanced {
+                        goalsPreview
+                        subscriptionsPreview
+                    }
 
                     if showQuickInsight {
                         QuickInsightPanel {
@@ -79,9 +89,11 @@ struct DashboardView: View {
                 .font(LiveCashTheme.captionFont)
                 .foregroundStyle(.secondary)
 
-            Text(balanceText)
-                .font(.system(size: 48, weight: .bold, design: .rounded))
-                .foregroundStyle(store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+            SensitiveBalanceView(scope: .home) {
+                Text(balanceText)
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundStyle(store.currentBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+            }
 
             Text("Saldo diesen Monat")
                 .font(LiveCashTheme.bodyFont.weight(.medium))
@@ -150,7 +162,12 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     SectionHeader(title: "Sparziele")
                     ForEach(store.goals.prefix(2)) { goal in
-                        GoalCard(goal: goal, monthlySavingsRate: store.monthlySavingsRate, compact: true)
+                        GoalCard(
+                            goal: goal,
+                            monthlySavingsRate: store.monthlySavingsRate,
+                            compact: true,
+                            showProgress: store.appSettings.savings.showProgress
+                        )
                     }
                 }
             }

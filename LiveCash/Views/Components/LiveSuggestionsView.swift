@@ -5,7 +5,7 @@ struct LiveSuggestionsView: View {
     var mode: AssistantMode = .suggestion
     let onSelect: (LiveSuggestion) -> Void
 
-    private var limit: Int { mode == .suggestion ? 5 : 3 }
+    private var limit: Int { 3 }
 
     private var header: String {
         switch mode {

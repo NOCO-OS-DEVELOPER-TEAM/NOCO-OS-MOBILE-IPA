@@ -8,6 +8,8 @@
 	<array>
 		<string>de</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Live Cash nutzt Face ID zum Schutz deiner Finanzdaten.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Live Cash nutzt die Kamera zum Scannen von Belegen.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

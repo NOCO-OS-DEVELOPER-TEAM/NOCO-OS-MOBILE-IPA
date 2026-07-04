@@ -1,9 +1,19 @@
 import Foundation
 
 enum ShortcutGenerator {
-    static func generate(from transactions: [Transaction], existing: [QuickShortcut]) -> [QuickShortcut] {
-        let manual = existing.filter(\.isUserDefined).sorted { $0.sortOrder < $1.sortOrder }
-        if manual.count >= 6 { return Array(manual.prefix(6)) }
+    static func generate(
+        from transactions: [Transaction],
+        existing: [QuickShortcut],
+        settings: ShortcutSettings
+    ) -> [QuickShortcut] {
+        let protected = existing
+            .filter { $0.isUserDefined || $0.isPinned }
+            .sorted { $0.sortOrder < $1.sortOrder }
+        let cap = min(max(settings.maxActiveShortcuts, 1), 6)
+        if protected.count >= cap { return Array(protected.prefix(cap)) }
+        if !settings.autoShortcutsEnabled {
+            return reindex(Array(protected.prefix(cap)))
+        }
 
         let expenses = transactions.filter { $0.type == .expense }
         let grouped = Dictionary(grouping: expenses, by: { $0.merchant.lowercased() })
@@ -23,24 +33,24 @@ enum ShortcutGenerator {
         }
         .sorted { $0.sortOrder > $1.sortOrder }
 
-        var result = manual
+        var result = protected
         for candidate in autoCandidates {
-            guard result.count < 6 else { break }
+            guard result.count < cap else { break }
             if result.contains(where: { $0.merchant.lowercased() == candidate.merchant.lowercased() }) { continue }
             var c = candidate
             c.sortOrder = result.count
             result.append(c)
         }
 
-        if result.count < 6 {
+        if result.count < cap {
             let defaults: [QuickShortcut] = [
-                QuickShortcut(merchant: "Kaffee", amount: 3.5, category: .food, sortOrder: result.count),
-                QuickShortcut(merchant: "Mittagessen", amount: 12, category: .food, sortOrder: result.count + 1),
-                QuickShortcut(merchant: "Tanken", amount: 50, category: .transport, sortOrder: result.count + 2),
-                QuickShortcut(merchant: "Assistant", amount: 0, sortOrder: result.count + 3, actionType: .assistant),
-                QuickShortcut(merchant: "Übersicht", amount: 0, sortOrder: result.count + 4, actionType: .overview)
+                QuickShortcut(merchant: "Kaffee", amount: 3.5, category: .food),
+                QuickShortcut(merchant: "Mittagessen", amount: 12, category: .food),
+                QuickShortcut(merchant: "Tanken", amount: 50, category: .transport),
+                QuickShortcut(merchant: "Assistant", amount: 0, actionType: .assistant),
+                QuickShortcut(merchant: "Übersicht", amount: 0, actionType: .overview)
             ]
-            for d in defaults where result.count < 6 {
+            for d in defaults where result.count < cap {
                 if d.actionType != .book || !result.contains(where: { $0.merchant.lowercased() == d.merchant.lowercased() }) {
                     var item = d
                     item.sortOrder = result.count
@@ -49,7 +59,11 @@ enum ShortcutGenerator {
             }
         }
 
-        return Array(result.prefix(6)).enumerated().map { idx, s in
+        return reindex(Array(result.prefix(cap)))
+    }
+
+    private static func reindex(_ shortcuts: [QuickShortcut]) -> [QuickShortcut] {
+        shortcuts.enumerated().map { idx, s in
             var copy = s
             copy.sortOrder = idx
             return copy

@@ -11,7 +11,10 @@ struct LiveCashWidgetProvider: TimelineProvider {
         LiveCashWidgetEntry(date: Date(), snapshot: WidgetSnapshot(
             balance: 240, monthExpenses: 820, monthIncome: 1200,
             topCategoryName: "Lebensmittel", topCategoryAmount: 210,
-            savingsProgressPercent: 35, primaryGoalName: "iPhone", updatedAt: Date()
+            savingsProgressPercent: 35, primaryGoalName: "iPhone",
+            monthlySubscriptionCost: 42,
+            showBalance: true, showExpenses: true, showSavings: true, showSubscriptions: true,
+            updatedAt: Date()
         ))
     }
 
@@ -52,18 +55,28 @@ struct LiveCashWidgetView: View {
     private func smallLayout(_ s: WidgetSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             header(s)
-            Text(String(format: "%.0f€", s.balance))
-                .font(.system(.title2, design: .rounded).weight(.bold))
-                .foregroundStyle(s.balance >= 0 ? income : expense)
-            Text("Saldo · Monat")
-                .font(.system(size: 10, design: .rounded))
-                .foregroundStyle(.secondary)
-            HStack {
-                statCol("Ausgaben", value: s.monthExpenses, color: expense)
-                Spacer()
-                statCol("Sparen", valueText: "\(s.savingsProgressPercent)%", color: income)
+            if s.showBalance {
+                Text(String(format: "%.0f€", s.balance))
+                    .font(.system(.title2, design: .rounded).weight(.bold))
+                    .foregroundStyle(s.balance >= 0 ? income : expense)
+                Text("Saldo · Monat")
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
             }
-            if let cat = s.topCategoryName {
+            HStack {
+                if s.showExpenses {
+                    statCol("Ausgaben", value: s.monthExpenses, color: expense)
+                }
+                Spacer()
+                if s.showSavings {
+                    statCol("Sparen", valueText: "\(s.savingsProgressPercent)%", color: income)
+                }
+            }
+            if s.showSubscriptions, s.monthlySubscriptionCost > 0 {
+                Text(String(format: "Abos: %.0f€/M", s.monthlySubscriptionCost))
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
+            } else if let cat = s.topCategoryName, s.showExpenses {
                 Text("Top: \(cat)")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
@@ -77,22 +90,28 @@ struct LiveCashWidgetView: View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 header(s)
-                Text(String(format: "%.0f€", s.balance))
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(s.balance >= 0 ? income : expense)
-                Text("Monatssaldo")
-                    .font(.system(size: 10, design: .rounded))
-                    .foregroundStyle(.secondary)
+                if s.showBalance {
+                    Text(String(format: "%.0f€", s.balance))
+                        .font(.system(.title, design: .rounded).weight(.bold))
+                        .foregroundStyle(s.balance >= 0 ? income : expense)
+                    Text("Monatssaldo")
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 10) {
-                statCol("Einnahmen", value: s.monthIncome, color: income)
-                statCol("Ausgaben", value: s.monthExpenses, color: expense)
-                if let goal = s.primaryGoalName {
+                if s.showExpenses {
+                    statCol("Ausgaben", value: s.monthExpenses, color: expense)
+                }
+                if s.showSavings, let goal = s.primaryGoalName {
                     Text("\(goal) · \(s.savingsProgressPercent)%")
                         .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                }
+                if s.showSubscriptions, s.monthlySubscriptionCost > 0 {
+                    statCol("Abos/M", value: s.monthlySubscriptionCost, color: accent)
                 }
             }
         }
@@ -147,7 +166,7 @@ struct LiveCashWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Live Cash")
-        .description("Echter Kontostand, Ausgaben und Sparfortschritt.")
+        .description("Kontostand, Ausgaben, Sparfortschritt und Abo-Kosten.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

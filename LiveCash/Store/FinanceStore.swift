@@ -30,6 +30,9 @@ final class FinanceStore: ObservableObject {
     @Published var activeAccountId: UUID?
     @Published var notificationPreferences = NotificationPreferences()
     @Published var notificationLearning = NotificationLearning()
+    @Published var widgetPreferences = WidgetPreferences()
+    @Published var appSettings = AppSettings()
+    @Published var pendingMoreDestination: MoreDestination?
     @Published var assistantModePreference: AssistantMode = .suggestion
     @Published var currentAssistantMode: AssistantMode = .suggestion
     @Published var pendingTabSelection: Int?
@@ -55,6 +58,11 @@ final class FinanceStore: ObservableObject {
         activeAccountId = data.activeAccountId
         notificationPreferences = data.notificationPreferences
         notificationLearning = data.notificationLearning
+        widgetPreferences = data.widgetPreferences
+        appSettings = data.appSettings
+        if !data.notificationPreferences.assistantSuggestionsOnIdle {
+            appSettings.assistant.suggestionsEnabled = false
+        }
         assistantModePreference = data.assistantModePreference
         migrateLegacyAccountIds()
         refreshSubscriptions()
@@ -138,8 +146,20 @@ final class FinanceStore: ObservableObject {
     }
 
     func updateLiveIntelligence(for partial: String) {
-        liveSuggestions = LiveIntelligenceEngine.shared.liveSuggestions(for: partial, store: self)
-        inputInterpretation = LiveIntelligenceEngine.shared.interpret(partial, preferredType: inputMode)
+        let trimmed = partial.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            liveSuggestions = []
+            inputInterpretation = .empty
+            return
+        }
+        guard notificationPreferences.assistantSuggestionsOnIdle,
+              appSettings.assistant.suggestionsEnabled else {
+            liveSuggestions = []
+            inputInterpretation = LiveIntelligenceEngine.shared.interpret(trimmed, preferredType: inputMode, store: self)
+            return
+        }
+        liveSuggestions = LiveIntelligenceEngine.shared.liveSuggestions(for: trimmed, store: self)
+        inputInterpretation = LiveIntelligenceEngine.shared.interpret(trimmed, preferredType: inputMode, store: self)
     }
 
     func clearLiveIntelligence() {
@@ -273,7 +293,10 @@ final class FinanceStore: ObservableObject {
            SmartInputParser.shared.looksLikeTransaction(trimmed) || SmartInputParser.shared.containsAmount(trimmed) {
             SmartInputParser.shared.applyPreferredType(inputMode, to: &draft, text: trimmed)
             let engine = LiveIntelligenceEngine.shared
-            let confidence = engine.classifyInputConfidence(trimmed, draft: draft, preferredType: inputMode)
+            let confidence = engine.effectiveConfidence(
+                engine.classifyInputConfidence(trimmed, draft: draft, preferredType: inputMode, store: self),
+                store: self
+            )
             switch confidence {
             case .safe:
                 saveDraft(draft, rawInput: trimmed)
@@ -342,6 +365,10 @@ final class FinanceStore: ObservableObject {
     // MARK: - Goals
 
     func addGoal(name: String, target: Double) {
+        guard goals.count < appSettings.savings.maxGoals else {
+            lastFeedback = "Max. \(appSettings.savings.maxGoals) Sparziele"
+            return
+        }
         goals.append(SavingsGoal(name: name, targetAmount: target))
         recordDailyActivity()
         persist()
@@ -375,19 +402,51 @@ final class FinanceStore: ObservableObject {
             if !merged.contains(where: { $0.name.lowercased() == d.name.lowercased() }) {
                 merged.append(d)
             } else if let idx = merged.firstIndex(where: { $0.name.lowercased() == d.name.lowercased() }) {
+                let preserveManual = !merged[idx].detectedFromTransactions
                 merged[idx].amount = d.amount
                 merged[idx].frequency = d.frequency
-                merged[idx].detectedFromTransactions = true
                 merged[idx].lastSeen = d.lastSeen
+                if !preserveManual {
+                    merged[idx].detectedFromTransactions = true
+                    merged[idx].startDate = d.startDate
+                    merged[idx].billingPeriodDays = d.billingPeriodDays
+                    if merged[idx].category == .subscription {
+                        merged[idx].category = d.category
+                    }
+                }
             }
         }
         subscriptions = merged.sorted { $0.monthlyCost > $1.monthlyCost }
         persist()
     }
 
-    func addSubscription(name: String, amount: Double, frequency: SubscriptionFrequency) {
-        subscriptions.append(Subscription(name: name, amount: amount, frequency: frequency, detectedFromTransactions: false))
+    func addSubscription(
+        name: String,
+        amount: Double,
+        frequency: SubscriptionFrequency = .monthly,
+        startDate: Date = Date(),
+        billingPeriodDays: Int? = nil,
+        category: FinanceCategory = .subscription
+    ) {
+        subscriptions.append(Subscription(
+            name: name,
+            amount: amount,
+            frequency: frequency,
+            detectedFromTransactions: false,
+            startDate: startDate,
+            billingPeriodDays: billingPeriodDays,
+            category: category
+        ))
         persist()
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    func updateSubscription(_ subscription: Subscription) {
+        guard let idx = subscriptions.firstIndex(where: { $0.id == subscription.id }) else { return }
+        subscriptions[idx] = subscription
+        subscriptions.sort { $0.monthlyCost > $1.monthlyCost }
+        persist()
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
     }
 
     func deleteSubscription(_ sub: Subscription) {
@@ -405,7 +464,11 @@ final class FinanceStore: ObservableObject {
     // MARK: - Shortcuts
 
     func refreshShortcuts() {
-        shortcuts = ShortcutGenerator.generate(from: transactions, existing: shortcuts)
+        shortcuts = ShortcutGenerator.generate(
+            from: transactions,
+            existing: shortcuts,
+            settings: appSettings.shortcuts
+        )
     }
 
     func applyShortcut(_ shortcut: QuickShortcut) {
@@ -413,13 +476,23 @@ final class FinanceStore: ObservableObject {
         case .assistant:
             focusInputOnAppear = true
             currentAssistantMode = .suggestion
-            updateLiveIntelligence(for: "")
+            clearLiveIntelligence()
             lastFeedback = "Smart Assistant"
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            HapticService.light(store: self)
             return
         case .overview:
             showInsight(for: .monthlySummary)
             lastFeedback = "Übersicht"
+            HapticService.light(store: self)
+            return
+        case .map:
+            pendingTabSelection = 2
+            HapticService.light(store: self)
+            return
+        case .goals:
+            pendingTabSelection = 3
+            pendingMoreDestination = .goals
+            HapticService.light(store: self)
             return
         case .book:
             break
@@ -449,9 +522,63 @@ final class FinanceStore: ObservableObject {
     }
 
     func updateShortcut(_ shortcut: QuickShortcut) {
-        guard let idx = shortcuts.firstIndex(where: { $0.id == shortcut.id }) else { return }
-        shortcuts[idx] = shortcut
+        var updated = shortcut
+        updated.isUserDefined = true
+        if let idx = shortcuts.firstIndex(where: { $0.id == shortcut.id }) {
+            shortcuts[idx] = updated
+        } else {
+            updated.sortOrder = shortcuts.count
+            shortcuts.append(updated)
+        }
         shortcuts.sort { $0.sortOrder < $1.sortOrder }
+        persist()
+    }
+
+    func addShortcut(_ shortcut: QuickShortcut) {
+        var s = shortcut
+        s.isUserDefined = true
+        s.sortOrder = shortcuts.count
+        shortcuts.append(s)
+        shortcuts = Array(shortcuts.prefix(appSettings.shortcuts.maxActiveShortcuts))
+        reindexShortcuts()
+        persist()
+    }
+
+    func deleteShortcut(_ shortcut: QuickShortcut) {
+        shortcuts.removeAll { $0.id == shortcut.id }
+        reindexShortcuts()
+        refreshShortcuts()
+    }
+
+    func reorderShortcuts(from source: IndexSet, to destination: Int) {
+        shortcuts.move(fromOffsets: source, toOffset: destination)
+        reindexShortcuts()
+        persist()
+    }
+
+    func toggleShortcutPin(_ shortcut: QuickShortcut) {
+        guard let idx = shortcuts.firstIndex(where: { $0.id == shortcut.id }) else { return }
+        shortcuts[idx].isPinned.toggle()
+        shortcuts[idx].isUserDefined = true
+        persist()
+    }
+
+    private func reindexShortcuts() {
+        for i in shortcuts.indices {
+            shortcuts[i].sortOrder = i
+        }
+    }
+
+    func setAppSettings(_ settings: AppSettings) {
+        appSettings = settings
+        notificationPreferences.assistantSuggestionsOnIdle = settings.assistant.suggestionsEnabled
+        persist()
+        refreshShortcuts()
+        NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+    }
+
+    func setWidgetPreferences(_ prefs: WidgetPreferences) {
+        widgetPreferences = prefs
         persist()
     }
 
@@ -505,6 +632,7 @@ final class FinanceStore: ObservableObject {
 
     func setNotificationPreferences(_ prefs: NotificationPreferences) {
         notificationPreferences = prefs
+        appSettings.assistant.suggestionsEnabled = prefs.assistantSuggestionsOnIdle
         persist()
         NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
     }
@@ -512,7 +640,7 @@ final class FinanceStore: ObservableObject {
     func setAssistantModePreference(_ mode: AssistantMode) {
         assistantModePreference = mode
         persist()
-        updateLiveIntelligence(for: "")
+        clearLiveIntelligence()
     }
 
     func resetAllData() {
@@ -527,6 +655,8 @@ final class FinanceStore: ObservableObject {
         activeAccountId = fresh.activeAccountId
         notificationPreferences = fresh.notificationPreferences
         notificationLearning = fresh.notificationLearning
+        widgetPreferences = fresh.widgetPreferences
+        appSettings = fresh.appSettings
         assistantModePreference = fresh.assistantModePreference
         savingsStreakDays = 0
         lastActiveDate = nil
@@ -675,7 +805,9 @@ final class FinanceStore: ObservableObject {
             activeAccountId: activeAccountId,
             notificationPreferences: notificationPreferences,
             assistantModePreference: assistantModePreference,
-            notificationLearning: notificationLearning
+            notificationLearning: notificationLearning,
+            widgetPreferences: widgetPreferences,
+            appSettings: appSettings
         ))
         WidgetDataSync.writeSnapshot(from: self)
     }

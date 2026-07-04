@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct TransactionsListView: View {
     @EnvironmentObject private var store: FinanceStore
@@ -21,6 +22,14 @@ struct TransactionsListView: View {
                                 TransactionDetailView(transactionID: tx.id)
                             } label: {
                                 TransactionRow(transaction: tx)
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    store.deleteTransaction(tx)
+                                } label: {
+                                    Label("Löschen", systemImage: "trash")
+                                }
                             }
                             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                             .listRowSeparator(.hidden)

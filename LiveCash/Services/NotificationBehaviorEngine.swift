@@ -51,10 +51,13 @@ enum NotificationBehaviorEngine {
         if prefs.weeklyReminder {
             candidates.append(weeklyLoggingReminder(learning: store.notificationLearning))
         }
-        if prefs.weekdayPatterns, let p = todayWeekdayWarning(for: store) {
+        if prefs.financeCheckWeekly {
+            candidates.append(financeCheckReminder(learning: store.notificationLearning))
+        }
+        if prefs.weekdayPatterns, store.appSettings.assistant.patternDetection, let p = todayWeekdayWarning(for: store) {
             candidates.append(p)
         }
-        if prefs.weekdayPatterns, let p = highSpendingToday(for: store) {
+        if prefs.highSpendingAlerts, let p = highSpendingToday(for: store) {
             candidates.append(p)
         }
         if prefs.subscriptionReminders {
@@ -90,6 +93,20 @@ enum NotificationBehaviorEngine {
             delay: 0,
             priority: 80,
             calendar: calendarTrigger(weekday: 2, hour: hour),
+            repeats: true
+        )
+    }
+
+    static func financeCheckReminder(learning: NotificationLearning) -> SmartNotificationPayload {
+        let hour = min(max(learning.typicalLogHour + 2, 10), 21)
+        return SmartNotificationPayload(
+            id: "weekly-finance-check",
+            title: "Finanz-Check",
+            body: "Kurzer Check: Wie läuft dein Budget diese Woche?",
+            kind: .weeklyReminder,
+            delay: 0,
+            priority: 75,
+            calendar: calendarTrigger(weekday: 5, hour: hour),
             repeats: true
         )
     }
@@ -164,33 +181,29 @@ enum NotificationBehaviorEngine {
     }
 
     static func subscriptionReminders(for store: FinanceStore) -> [SmartNotificationPayload] {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        return store.subscriptions.compactMap { sub -> SmartNotificationPayload? in
-            guard let last = sub.lastSeen ?? store.transactions.first(where: {
-                $0.merchant.lowercased().contains(sub.name.lowercased())
-            })?.date else { return nil }
+        store.subscriptions.compactMap { sub -> SmartNotificationPayload? in
+            let days = sub.daysUntilRenewal
 
-            let daysUntil: Int
-            switch sub.frequency {
-            case .weekly:
-                daysUntil = max(7 - ((cal.dateComponents([.day], from: cal.startOfDay(for: last), to: today).day ?? 0) % 7), 0)
-            case .monthly:
-                let next = cal.date(byAdding: .month, value: 1, to: last) ?? last
-                daysUntil = max(cal.dateComponents([.day], from: today, to: cal.startOfDay(for: next)).day ?? 99, 0)
-            case .yearly:
-                let next = cal.date(byAdding: .year, value: 1, to: last) ?? last
-                daysUntil = max(cal.dateComponents([.day], from: today, to: cal.startOfDay(for: next)).day ?? 99, 0)
+            if days == 7 {
+                return SmartNotificationPayload(
+                    id: "sub-7d-\(sub.id.uuidString)",
+                    title: "Abo-Erinnerung",
+                    body: "Dein Abo ‚\(sub.name)‘ läuft in 7 Tagen erneut ab. Willst du prüfen, ob du es noch brauchst?",
+                    kind: .subscriptionRenewal,
+                    delay: 60 * 60 * 10,
+                    priority: 72
+                )
             }
 
-            guard daysUntil <= 2 else { return nil }
+            guard days <= 2 else { return nil }
+            let when = days == 0 ? "heute" : "in \(days) Tag\(days == 1 ? "" : "en")"
             return SmartNotificationPayload(
-                id: "sub-\(sub.id.uuidString)",
+                id: "sub-soon-\(sub.id.uuidString)",
                 title: "Abo-Erinnerung",
-                body: "\(sub.name) wird in \(daysUntil == 0 ? "heute" : "\(daysUntil) Tag\(daysUntil == 1 ? "" : "en")") erneut abgebucht.",
+                body: "\(sub.name) wird \(when) erneut abgebucht (\(String(format: "%.2f€", sub.amount))).",
                 kind: .subscriptionRenewal,
                 delay: 60 * 60 * 12,
-                priority: 55
+                priority: 58
             )
         }
     }

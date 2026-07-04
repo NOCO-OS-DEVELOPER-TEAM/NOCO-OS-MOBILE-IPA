@@ -71,6 +71,12 @@
 		LC000001000000000000004A /* InputSourceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000052 /* InputSourceSheet.swift */; };
 		LC000001000000000000004B /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000053 /* ShakeDetector.swift */; };
 		LC000001000000000000004C /* NotificationLearning.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000054 /* NotificationLearning.swift */; };
+		LC000001000000000000004D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000055 /* AppSettings.swift */; };
+		LC000001000000000000004E /* MoreDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000056 /* MoreDestination.swift */; };
+		LC000001000000000000004F /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000057 /* HapticService.swift */; };
+		LC0000010000000000000050 /* SecurityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000058 /* SecurityService.swift */; };
+		LC0000010000000000000051 /* SensitiveBalanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000059 /* SensitiveBalanceView.swift */; };
+		LC0000010000000000000052 /* SettingsDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000005A /* SettingsDetailViews.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -145,6 +151,12 @@
 		LC0000020000000000000052 /* InputSourceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSourceSheet.swift; sourceTree = "<group>"; };
 		LC0000020000000000000053 /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
 		LC0000020000000000000054 /* NotificationLearning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationLearning.swift; sourceTree = "<group>"; };
+		LC0000020000000000000055 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		LC0000020000000000000056 /* MoreDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreDestination.swift; sourceTree = "<group>"; };
+		LC0000020000000000000057 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
+		LC0000020000000000000058 /* SecurityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityService.swift; sourceTree = "<group>"; };
+		LC0000020000000000000059 /* SensitiveBalanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensitiveBalanceView.swift; sourceTree = "<group>"; };
+		LC000002000000000000005A /* SettingsDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -251,6 +263,8 @@
 				LC000002000000000000004E /* NotificationPreferences.swift */,
 				LC0000020000000000000050 /* AssistantMode.swift */,
 				LC0000020000000000000054 /* NotificationLearning.swift */,
+				LC0000020000000000000055 /* AppSettings.swift */,
+				LC0000020000000000000056 /* MoreDestination.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -274,6 +288,8 @@
 				LC000002000000000000004F /* NotificationBehaviorEngine.swift */,
 				LC0000020000000000000051 /* DocumentImportService.swift */,
 				LC0000020000000000000053 /* ShakeDetector.swift */,
+				LC0000020000000000000057 /* HapticService.swift */,
+				LC0000020000000000000058 /* SecurityService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -315,9 +331,18 @@
 				LC0000020000000000000049 /* FinancialStoryView.swift */,
 				LC000002000000000000004A /* FutureSimulationView.swift */,
 				LC000002000000000000004B /* SpendingLimitsView.swift */,
+				LC000005000000000000000A /* Settings */,
 				LC0000050000000000000009 /* Components */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		LC000005000000000000000A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				LC000002000000000000005A /* SettingsDetailViews.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		LC0000050000000000000009 /* Components */ = {
@@ -333,6 +358,7 @@
 				LC0000020000000000000026 /* InputTypeToggle.swift */,
 				LC0000020000000000000027 /* QuickInsightPanel.swift */,
 				LC0000020000000000000052 /* InputSourceSheet.swift */,
+				LC0000020000000000000059 /* SensitiveBalanceView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -499,6 +525,12 @@
 				LC000001000000000000004A /* InputSourceSheet.swift in Sources */,
 				LC000001000000000000004B /* ShakeDetector.swift in Sources */,
 				LC000001000000000000004C /* NotificationLearning.swift in Sources */,
+				LC000001000000000000004D /* AppSettings.swift in Sources */,
+				LC000001000000000000004E /* MoreDestination.swift in Sources */,
+				LC000001000000000000004F /* HapticService.swift in Sources */,
+				LC0000010000000000000050 /* SecurityService.swift in Sources */,
+				LC0000010000000000000051 /* SensitiveBalanceView.swift in Sources */,
+				LC0000010000000000000052 /* SettingsDetailViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -567,7 +599,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 16;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -603,7 +635,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 16;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -637,7 +669,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 16;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
@@ -664,7 +696,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 16;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";

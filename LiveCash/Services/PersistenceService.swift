@@ -15,6 +15,8 @@ struct AppData: Codable {
     var notificationPreferences: NotificationPreferences
     var assistantModePreference: AssistantMode
     var notificationLearning: NotificationLearning
+    var widgetPreferences: WidgetPreferences
+    var appSettings: AppSettings
 
     static let empty = AppData(
         transactions: [],
@@ -30,7 +32,9 @@ struct AppData: Codable {
         activeAccountId: nil,
         notificationPreferences: NotificationPreferences(),
         assistantModePreference: .suggestion,
-        notificationLearning: NotificationLearning()
+        notificationLearning: NotificationLearning(),
+        widgetPreferences: WidgetPreferences(),
+        appSettings: AppSettings()
     )
 
     enum CodingKeys: String, CodingKey {
@@ -38,6 +42,7 @@ struct AppData: Codable {
         case savingsStreakDays, lastActiveDate, notificationsEnabled
         case shortcuts, spendingLimits, accounts, activeAccountId
         case notificationPreferences, assistantModePreference, notificationLearning
+        case widgetPreferences, appSettings
     }
 
     init(
@@ -54,7 +59,9 @@ struct AppData: Codable {
         activeAccountId: UUID? = nil,
         notificationPreferences: NotificationPreferences = NotificationPreferences(),
         assistantModePreference: AssistantMode = .suggestion,
-        notificationLearning: NotificationLearning = NotificationLearning()
+        notificationLearning: NotificationLearning = NotificationLearning(),
+        widgetPreferences: WidgetPreferences = WidgetPreferences(),
+        appSettings: AppSettings = AppSettings()
     ) {
         self.transactions = transactions
         self.goals = goals
@@ -70,6 +77,8 @@ struct AppData: Codable {
         self.notificationPreferences = notificationPreferences
         self.assistantModePreference = assistantModePreference
         self.notificationLearning = notificationLearning
+        self.widgetPreferences = widgetPreferences
+        self.appSettings = appSettings
     }
 
     init(from decoder: Decoder) throws {
@@ -94,6 +103,8 @@ struct AppData: Codable {
             assistantModePreference = .suggestion
         }
         notificationLearning = try c.decodeIfPresent(NotificationLearning.self, forKey: .notificationLearning) ?? NotificationLearning()
+        widgetPreferences = try c.decodeIfPresent(WidgetPreferences.self, forKey: .widgetPreferences) ?? WidgetPreferences()
+        appSettings = try c.decodeIfPresent(AppSettings.self, forKey: .appSettings) ?? AppSettings()
     }
 
     func encode(to encoder: Encoder) throws {
@@ -112,6 +123,8 @@ struct AppData: Codable {
         try c.encode(notificationPreferences, forKey: .notificationPreferences)
         try c.encode(assistantModePreference.rawValue, forKey: .assistantModePreference)
         try c.encode(notificationLearning, forKey: .notificationLearning)
+        try c.encode(widgetPreferences, forKey: .widgetPreferences)
+        try c.encode(appSettings, forKey: .appSettings)
     }
 }
 

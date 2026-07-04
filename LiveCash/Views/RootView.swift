@@ -2,28 +2,64 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var store: FinanceStore
+    @ObservedObject private var security = SecurityService.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        MainTabView()
-            .preferredColorScheme(nil)
-            .onShake()
-            .onAppear(perform: handleQuickAction)
-            .onReceive(NotificationCenter.default.publisher(for: .liveCashQuickAction)) { _ in
-                handleQuickAction()
+        ZStack {
+            MainTabView()
+                .preferredColorScheme(nil)
+                .blur(radius: needsLockOverlay ? 12 : 0)
+                .disabled(needsLockOverlay)
+
+            if needsLockOverlay {
+                AppLockOverlay()
             }
-            .onReceive(NotificationCenter.default.publisher(for: .liveCashDeviceDidShake)) { _ in
-                store.handleDeviceShake()
-            }
-            .alert("Letzte Buchung rückgängig machen?", isPresented: shakeUndoPresented) {
-                Button("Rückgängig", role: .destructive) { store.confirmShakeUndo() }
-                Button("Abbrechen", role: .cancel) { store.cancelShakeUndo() }
-            } message: {
-                if let undo = store.pendingShakeUndo {
-                    let tx = undo.transaction
-                    let sign = tx.type == .income ? "+" : "-"
-                    Text("\(tx.merchant)\n\(sign)\(String(format: "%.2f€", tx.amount)) · \(tx.category.rawValue)\n\(tx.date.formatted(date: .abbreviated, time: .shortened))")
+        }
+        .onShake()
+        .onAppear {
+            security.resetLockState(for: store.appSettings.security)
+            handleQuickAction()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background, .inactive:
+                security.lockBalanceIfNeeded(settings: store.appSettings.security)
+                if store.appSettings.security.faceIDEnabled,
+                   store.appSettings.security.faceIDLockMode == .onLaunch {
+                    security.isUnlocked = false
                 }
+            case .active:
+                security.recordActivity()
+                if security.shouldLockForInactivity(settings: store.appSettings.security) {
+                    security.isUnlocked = false
+                }
+            @unknown default:
+                break
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .liveCashQuickAction)) { _ in
+            handleQuickAction()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .liveCashDeviceDidShake)) { _ in
+            store.handleDeviceShake()
+        }
+        .alert("Letzte Buchung rückgängig machen?", isPresented: shakeUndoPresented) {
+            Button("Rückgängig", role: .destructive) { store.confirmShakeUndo() }
+            Button("Abbrechen", role: .cancel) { store.cancelShakeUndo() }
+        } message: {
+            if let undo = store.pendingShakeUndo {
+                let tx = undo.transaction
+                let sign = tx.type == .income ? "+" : "-"
+                Text("\(tx.merchant)\n\(sign)\(String(format: "%.2f€", tx.amount)) · \(tx.category.rawValue)\n\(tx.date.formatted(date: .abbreviated, time: .shortened))")
+            }
+        }
+    }
+
+    private var needsLockOverlay: Bool {
+        store.appSettings.security.faceIDEnabled
+            && store.appSettings.security.faceIDLockMode != .off
+            && !security.isUnlocked
     }
 
     private var shakeUndoPresented: Binding<Bool> {
@@ -44,6 +80,31 @@ struct RootView: View {
             store.focusInputOnAppear = true
         case .openOverview:
             store.pendingQuickAction = .openOverview
+        }
+    }
+}
+
+private struct AppLockOverlay: View {
+    @ObservedObject private var security = SecurityService.shared
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.55).ignoresSafeArea()
+            VStack(spacing: 16) {
+                Image(systemName: "lock.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(.white)
+                Text("Live Cash gesperrt")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Button("Entsperren") {
+                    Task {
+                        await security.authenticate(reason: "Live Cash entsperren")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding()
         }
     }
 }

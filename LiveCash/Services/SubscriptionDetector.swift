@@ -27,14 +27,19 @@ final class SubscriptionDetector {
             guard amountVariance < max(avgAmount * 0.15, 1) else { continue }
 
             let frequency: SubscriptionFrequency?
+            let billingDays: Int
             if avgInterval >= 25 && avgInterval <= 35 {
                 frequency = .monthly
+                billingDays = 30
             } else if avgInterval >= 350 && avgInterval <= 380 {
                 frequency = .yearly
+                billingDays = 365
             } else if avgInterval >= 5 && avgInterval <= 9 {
                 frequency = .weekly
+                billingDays = 7
             } else {
                 frequency = nil
+                billingDays = 30
             }
 
             guard let freq = frequency else { continue }
@@ -43,12 +48,19 @@ final class SubscriptionDetector {
             let isKnownSub = FinanceCategory.detect(from: merchant) == .subscription
             guard isSubCategory || isKnownSub || txs.count >= 3 else { continue }
 
+            let category = txs.first(where: { $0.category == .subscription })?.category
+                ?? txs.map(\.category).mostCommon
+                ?? .subscription
+
             results.append(Subscription(
                 name: sorted.last?.merchant ?? merchant,
                 amount: avgAmount,
                 frequency: freq,
                 detectedFromTransactions: true,
-                lastSeen: sorted.last?.date
+                lastSeen: sorted.last?.date,
+                startDate: sorted.first?.date ?? Date(),
+                billingPeriodDays: billingDays,
+                category: category
             ))
         }
 
@@ -59,5 +71,12 @@ final class SubscriptionDetector {
         name.lowercased()
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+    }
+}
+
+private extension Array where Element == FinanceCategory {
+    var mostCommon: FinanceCategory? {
+        let counts = Dictionary(grouping: self, by: { $0 }).mapValues(\.count)
+        return counts.max(by: { $0.value < $1.value })?.key
     }
 }

@@ -9,4 +9,9 @@ struct NotificationPreferences: Codable, Equatable {
     var assistantSuggestionsOnIdle: Bool = true
     var monthStartReminder: Bool = true
     var weeklyReminder: Bool = true
+    var savingsMonthReminder: Bool = true
+    var financeCheckWeekly: Bool = true
+    var highSpendingAlerts: Bool = true
+    var unusualActivityAlerts: Bool = true
+    var goalProgressAlerts: Bool = true
 }

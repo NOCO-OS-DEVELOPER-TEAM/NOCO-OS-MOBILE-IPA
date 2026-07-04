@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct SmartInputBar: View {
     @EnvironmentObject private var store: FinanceStore
@@ -12,7 +11,10 @@ struct SmartInputBar: View {
     private var modeColor: Color { isIncome ? LiveCashTheme.income : LiveCashTheme.expense }
 
     private var showLivePanel: Bool {
-        focused || !text.isEmpty || store.pendingConfirmation != nil || store.pendingSpendLimit != nil
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return store.pendingConfirmation != nil
+            || store.pendingSpendLimit != nil
+            || !trimmed.isEmpty
     }
 
     var body: some View {
@@ -20,6 +22,18 @@ struct SmartInputBar: View {
             if showLivePanel {
                 liveIntelligencePanel
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .gesture(
+                        DragGesture(minimumDistance: 24)
+                            .onEnded { value in
+                                if value.translation.height > 48 {
+                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                        focused = false
+                                        store.clearLiveIntelligence()
+                                    }
+                                    HapticService.light(store: store)
+                                }
+                            }
+                    )
             }
 
             if let intent = store.pendingIntent, store.pendingConfirmation == nil {
@@ -47,7 +61,7 @@ struct SmartInputBar: View {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
                         store.toggleInputMode()
                     }
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    HapticService.medium(store: store)
                     store.updateLiveIntelligence(for: text)
                 }
 
@@ -103,7 +117,7 @@ struct SmartInputBar: View {
             }
         }
         .onAppear {
-            store.updateLiveIntelligence(for: "")
+            store.clearLiveIntelligence()
             if store.focusInputOnAppear {
                 focused = true
                 store.focusInputOnAppear = false
@@ -164,49 +178,56 @@ struct SmartInputBar: View {
                     }
                 )
             } else {
-                InterpretationChip(interpretation: store.inputInterpretation)
-                LiveSuggestionsView(
-                    suggestions: store.liveSuggestions,
-                    mode: store.currentAssistantMode
-                ) { suggestion in
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    withAnimation(.easeOut(duration: 0.15)) {
-                        switch suggestion.action {
-                        case .submitText(let s):
-                            text = s
-                            store.updateLiveIntelligence(for: s)
-                            submit()
-                        case .saveDraft(var draft):
-                            SmartInputParser.shared.applyPreferredType(store.inputMode, to: &draft, text: text)
-                            let engine = LiveIntelligenceEngine.shared
-                            let confidence = engine.classifyInputConfidence(text, draft: draft, preferredType: store.inputMode)
-                            switch confidence {
-                            case .safe:
-                                store.saveDraft(draft, rawInput: text)
+                if store.inputInterpretation.hint != nil {
+                    InterpretationChip(interpretation: store.inputInterpretation)
+                }
+                if !store.liveSuggestions.isEmpty {
+                    LiveSuggestionsView(
+                        suggestions: store.liveSuggestions,
+                        mode: store.currentAssistantMode
+                    ) { suggestion in
+                        HapticService.light(store: store)
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            switch suggestion.action {
+                            case .submitText(let s):
+                                text = s
+                                store.updateLiveIntelligence(for: s)
+                                submit()
+                            case .saveDraft(var draft):
+                                SmartInputParser.shared.applyPreferredType(store.inputMode, to: &draft, text: text)
+                                let engine = LiveIntelligenceEngine.shared
+                                let confidence = engine.effectiveConfidence(
+                                    engine.classifyInputConfidence(text, draft: draft, preferredType: store.inputMode, store: store),
+                                    store: store
+                                )
+                                switch confidence {
+                                case .safe:
+                                    store.saveDraft(draft, rawInput: text)
+                                    text = ""
+                                    focused = false
+                                    store.clearLiveIntelligence()
+                                case .uncertain:
+                                    store.pendingConfirmation = PendingConfirmation(
+                                        draft: draft,
+                                        rawInput: text,
+                                        message: engine.uncertainMessage(for: draft, text: text),
+                                        confidence: .uncertain
+                                    )
+                                case .highRisk:
+                                    store.pendingConfirmation = PendingConfirmation(
+                                        draft: draft,
+                                        rawInput: text,
+                                        message: "Mehrdeutig — was meinst du?",
+                                        confidence: .highRisk,
+                                        options: engine.highRiskOptions(for: draft, text: text)
+                                    )
+                                }
+                            default:
+                                store.applyLiveSuggestion(suggestion)
                                 text = ""
                                 focused = false
                                 store.clearLiveIntelligence()
-                            case .uncertain:
-                                store.pendingConfirmation = PendingConfirmation(
-                                    draft: draft,
-                                    rawInput: text,
-                                    message: engine.uncertainMessage(for: draft, text: text),
-                                    confidence: .uncertain
-                                )
-                            case .highRisk:
-                                store.pendingConfirmation = PendingConfirmation(
-                                    draft: draft,
-                                    rawInput: text,
-                                    message: "Mehrdeutig — was meinst du?",
-                                    confidence: .highRisk,
-                                    options: engine.highRiskOptions(for: draft, text: text)
-                                )
                             }
-                        default:
-                            store.applyLiveSuggestion(suggestion)
-                            text = ""
-                            focused = false
-                            store.clearLiveIntelligence()
                         }
                     }
                 }
@@ -225,6 +246,6 @@ struct SmartInputBar: View {
             focused = false
             store.clearLiveIntelligence()
         }
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        HapticService.light(store: store)
     }
 }

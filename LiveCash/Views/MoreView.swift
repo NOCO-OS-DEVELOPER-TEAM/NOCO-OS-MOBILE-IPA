@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct MoreView: View {
+    @EnvironmentObject private var store: FinanceStore
+    @State private var navigateToGoals = false
+    @State private var navigateToSubscriptions = false
+
     var body: some View {
         NavigationStack {
             List {
@@ -47,7 +51,7 @@ struct MoreView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Live Cash")
                             .font(LiveCashTheme.headlineFont)
-                        Text("Lokale Finanzintelligenz — keine Bank, keine Cloud, kein Chatbot.")
+                        Text("Adaptives Finanz-Verhaltenssystem — lokal, privat, unter deiner Kontrolle.")
                             .font(LiveCashTheme.captionFont)
                             .foregroundStyle(.secondary)
                     }
@@ -55,6 +59,20 @@ struct MoreView: View {
                 }
             }
             .navigationTitle("Mehr")
+            .onChange(of: store.pendingMoreDestination) { _, destination in
+                guard let destination else { return }
+                switch destination {
+                case .goals: navigateToGoals = true
+                case .subscriptions: navigateToSubscriptions = true
+                }
+                store.pendingMoreDestination = nil
+            }
+            .navigationDestination(isPresented: $navigateToGoals) {
+                GoalsView()
+            }
+            .navigationDestination(isPresented: $navigateToSubscriptions) {
+                SubscriptionsView()
+            }
         }
     }
 }

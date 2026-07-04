@@ -4,6 +4,7 @@ struct GoalCard: View {
     let goal: SavingsGoal
     var monthlySavingsRate: Double = 0
     var compact: Bool = false
+    var showProgress: Bool = true
 
     private var etaMonths: Int? {
         goal.estimatedMonthsToComplete(monthlySavings: monthlySavingsRate > 0 ? monthlySavingsRate : goal.monthlyRequired())
@@ -35,6 +36,7 @@ struct GoalCard: View {
                     }
                 }
                 .frame(height: 8)
+                .opacity(showProgress ? 1 : 0)
 
                 HStack {
                     Text(String(format: "%.0f€ von %.0f€", goal.currentAmount, goal.targetAmount))

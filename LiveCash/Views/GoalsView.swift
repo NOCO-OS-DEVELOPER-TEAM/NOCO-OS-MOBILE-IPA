@@ -32,7 +32,11 @@ struct GoalsView: View {
                 .listRowBackground(Color.clear)
             } else {
                 ForEach(store.goals) { goal in
-                    GoalCard(goal: goal, monthlySavingsRate: store.monthlySavingsRate)
+                    GoalCard(
+                        goal: goal,
+                        monthlySavingsRate: store.monthlySavingsRate,
+                        showProgress: store.appSettings.savings.showProgress
+                    )
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)

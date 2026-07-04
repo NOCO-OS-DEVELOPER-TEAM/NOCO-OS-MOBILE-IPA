@@ -8,6 +8,58 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            Section {
+                Text("Control Center — hier wird alles konfiguriert. Der Start-Tab bleibt zum Nutzen.")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("System") {
+                NavigationLink {
+                    AssistantSettingsView()
+                } label: {
+                    Label("Smart System", systemImage: "brain.head.profile")
+                }
+                NavigationLink {
+                    SecuritySettingsView()
+                } label: {
+                    Label("Sicherheit & Privatsphäre", systemImage: "faceid")
+                }
+                NavigationLink {
+                    ShortcutSettingsView()
+                } label: {
+                    Label("Shortcuts", systemImage: "square.grid.2x2.fill")
+                }
+                NavigationLink {
+                    NotificationSettingsView()
+                } label: {
+                    Label("Benachrichtigungen", systemImage: "bell.badge")
+                }
+            }
+
+            Section("Bereiche") {
+                NavigationLink {
+                    MoneyCardSettingsView()
+                } label: {
+                    Label("Money Card & Widget", systemImage: "creditcard.fill")
+                }
+                NavigationLink {
+                    SavingsSettingsView()
+                } label: {
+                    Label("Sparziele", systemImage: "target")
+                }
+                NavigationLink {
+                    MapSettingsView()
+                } label: {
+                    Label("Geldkarte", systemImage: "map.fill")
+                }
+                NavigationLink {
+                    UISettingsView()
+                } label: {
+                    Label("UI & Design", systemImage: "paintbrush")
+                }
+            }
+
             Section("Profil") {
                 if let account = store.activeAccount {
                     LabeledContent("Aktives Konto", value: account.name)
@@ -25,41 +77,6 @@ struct SettingsView: View {
                     }
                 }
                 Button("Neues Konto") { showAddAccount = true }
-            }
-
-            Section("Standort") {
-                Toggle("Standort bei Buchungen speichern", isOn: Binding(
-                    get: { store.locationEnabled },
-                    set: { store.setLocationEnabled($0) }
-                ))
-            }
-
-            Section("Benachrichtigungen") {
-                Toggle("Smarte Hinweise", isOn: Binding(
-                    get: { store.notificationsEnabled },
-                    set: { store.setNotificationsEnabled($0) }
-                ))
-                if store.notificationsEnabled {
-                    Toggle("Monatsstart (Gehalt)", isOn: binding(\.monthStartReminder))
-                    Toggle("Wöchentliche Erinnerung", isOn: binding(\.weeklyReminder))
-                    Toggle("Wochentags-Muster", isOn: binding(\.weekdayPatterns))
-                    Toggle("Spontan-Ausgaben", isOn: binding(\.spontaneousSpending))
-                    Toggle("Einnahmen-Reaktion", isOn: binding(\.incomeReactions))
-                    Toggle("Abo-Erinnerungen", isOn: binding(\.subscriptionReminders))
-                    Toggle("Freundliche Reminder", isOn: binding(\.softEngagement))
-                }
-            }
-
-            Section("Smart Assistant") {
-                Picker("Standard-Modus", selection: Binding(
-                    get: { store.assistantModePreference },
-                    set: { store.setAssistantModePreference($0) }
-                )) {
-                    ForEach(AssistantMode.allCases) { mode in
-                        Label(mode.rawValue, systemImage: mode.icon).tag(mode)
-                    }
-                }
-                Toggle("Vorschläge bei leerem Feld", isOn: binding(\.assistantSuggestionsOnIdle))
             }
 
             Section("Daten") {
@@ -96,16 +113,5 @@ struct SettingsView: View {
             }
             Button("Abbrechen", role: .cancel) { newAccountName = "" }
         }
-    }
-
-    private func binding(_ keyPath: WritableKeyPath<NotificationPreferences, Bool>) -> Binding<Bool> {
-        Binding(
-            get: { store.notificationPreferences[keyPath: keyPath] },
-            set: {
-                var prefs = store.notificationPreferences
-                prefs[keyPath: keyPath] = $0
-                store.setNotificationPreferences(prefs)
-            }
-        )
     }
 }

@@ -6,6 +6,7 @@ enum WidgetDataSync {
     static func writeSnapshot(from store: FinanceStore) {
         let top = store.topCategoryThisMonth
         let primaryGoal = store.goals.max(by: { $0.progress < $1.progress })
+        let prefs = store.widgetPreferences
         let snapshot = WidgetSnapshot(
             balance: store.currentBalance,
             monthExpenses: store.currentMonthExpenses,
@@ -14,6 +15,11 @@ enum WidgetDataSync {
             topCategoryAmount: top?.1 ?? 0,
             savingsProgressPercent: primaryGoal?.progressPercent ?? 0,
             primaryGoalName: primaryGoal?.name,
+            monthlySubscriptionCost: store.monthlySubscriptionCost,
+            showBalance: prefs.showBalance,
+            showExpenses: prefs.showExpenses,
+            showSavings: prefs.showSavings,
+            showSubscriptions: prefs.showSubscriptions,
             updatedAt: Date()
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
