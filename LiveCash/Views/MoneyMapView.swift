@@ -7,6 +7,7 @@ struct MoneyMapView: View {
     @State private var selectedID: UUID?
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var mapSelectedDate = Date()
+    @State private var placeDetail: MapPlaceDetail?
 
     private var mapEndDate: Date {
         Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: mapSelectedDate) ?? mapSelectedDate
@@ -31,14 +32,9 @@ struct MoneyMapView: View {
         )
     }
 
-    private var selectedTransaction: Transaction? {
-        guard let selectedID else { return nil }
-        return filteredTransactions.first { $0.id == selectedID }
-    }
-
     private var selectedPin: MapPinDisplay? {
         guard let selectedID else { return nil }
-        return pinDisplays.first { $0.transaction.id == selectedID }
+        return pinDisplays.first { $0.id == selectedID }
     }
 
     private var earliestMapDate: Date {
@@ -60,7 +56,7 @@ struct MoneyMapView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("\(filteredTransactions.count) Standorte")
+                    Text("\(pinDisplays.count) Orte · \(filteredTransactions.count) Buchungen")
                         .font(LiveCashTheme.captionFont)
                         .foregroundStyle(.secondary)
                 }
@@ -84,6 +80,9 @@ struct MoneyMapView: View {
             }
             .onChange(of: mapSelectedDate) { _, _ in
                 if selectedID == nil { adjustCamera() }
+            }
+            .sheet(item: $placeDetail) { detail in
+                MapPlaceDetailSheet(detail: detail)
             }
         }
     }
@@ -126,25 +125,23 @@ struct MoneyMapView: View {
                 }
             }
             ForEach(pinDisplays) { pin in
-                Annotation(pin.transaction.merchant, coordinate: pin.coordinate) {
+                Annotation(pin.placeTitle, coordinate: pin.coordinate) {
                     Button {
                         HapticService.light(store: store)
-                        if selectedID == pin.transaction.id {
+                        if selectedID == pin.id {
                             selectedID = nil
                         } else {
-                            selectedID = pin.transaction.id
+                            selectedID = pin.id
                             if store.appSettings.map.pinZoomEnabled {
                                 zoomToPin(pin.coordinate)
                             }
                         }
                     } label: {
                         MapPinView(
-                            amount: pin.transaction.amount,
-                            type: pin.transaction.type,
-                            selected: selectedID == pin.transaction.id,
+                            amount: pin.displayAmount,
+                            type: pin.dominantType,
+                            selected: selectedID == pin.id,
                             clusterSize: pin.clusterSize > 1 ? pin.clusterSize : nil,
-                            clusterTotal: pin.clusterSize > 1 ? pin.clusterTotal : nil,
-                            dimmed: pin.clusterSize > 1 && !pin.isClusterRepresentative,
                             opacity: pinOpacity(for: pin.transaction)
                         )
                     }
@@ -168,25 +165,41 @@ struct MoneyMapView: View {
 
     @ViewBuilder
     private var transactionDetail: some View {
-        if let tx = selectedTransaction {
-            VStack(spacing: 8) {
-                if let pin = selectedPin, pin.clusterSize > 1 {
-                    HStack {
-                        Image(systemName: "circle.grid.2x2.fill")
-                            .foregroundStyle(LiveCashTheme.accent)
-                        Text("\(pin.clusterSize) Buchungen · \(String(format: "%.2f€", pin.clusterTotal)) gesamt")
+        if let pin = selectedPin {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(pin.placeTitle)
+                            .font(LiveCashTheme.headlineFont)
+                        Text("\(pin.clusterSize) Besuch\(pin.clusterSize == 1 ? "" : "e") · zuletzt \(pin.placeDetail.lastVisitLabel)")
                             .font(LiveCashTheme.captionFont)
                             .foregroundStyle(.secondary)
-                        Spacer()
                     }
-                    .padding(.horizontal, 4)
+                    Spacer()
+                    Button("Details") {
+                        placeDetail = pin.placeDetail
+                    }
+                    .font(LiveCashTheme.captionFont.weight(.semibold))
                 }
-                NavigationLink {
-                    TransactionDetailView(transactionID: tx.id)
-                } label: {
-                    TransactionRow(transaction: tx)
+
+                HStack(spacing: 12) {
+                    Label(String(format: "%.0f€", pin.expenseTotal), systemImage: "arrow.down.circle.fill")
+                        .font(LiveCashTheme.captionFont.weight(.semibold))
+                        .foregroundStyle(LiveCashTheme.expense)
+                    Label(String(format: "%.0f€", pin.incomeTotal), systemImage: "arrow.up.circle.fill")
+                        .font(LiveCashTheme.captionFont.weight(.semibold))
+                        .foregroundStyle(LiveCashTheme.income)
+                    Spacer()
                 }
-                .buttonStyle(.plain)
+
+                if let first = pin.clusteredTransactions.first {
+                    NavigationLink {
+                        TransactionDetailView(transactionID: first.id)
+                    } label: {
+                        TransactionRow(transaction: first)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -266,8 +279,6 @@ private struct MapPinView: View {
     let type: TransactionType
     let selected: Bool
     var clusterSize: Int?
-    var clusterTotal: Double?
-    var dimmed: Bool = false
     var opacity: Double = 1
 
     private var pinColor: Color {
@@ -280,31 +291,24 @@ private struct MapPinView: View {
                 Image(systemName: clusterSize != nil ? "mappin.and.ellipse" : "mappin.circle.fill")
                     .font(.title2)
                     .foregroundStyle(selected ? LiveCashTheme.accent : pinColor)
+                    .shadow(color: pinColor.opacity(0.35), radius: selected ? 8 : 3, y: 2)
                 if let clusterSize, clusterSize > 1 {
                     Text("\(clusterSize)")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(4)
-                        .background(LiveCashTheme.accent)
+                        .background(pinColor)
                         .clipShape(Circle())
                         .offset(x: 8, y: -6)
                 }
             }
-            if let clusterTotal, let clusterSize, clusterSize > 1 {
-                Text(String(format: "%.0f€", clusterTotal))
-                    .font(.system(size: 10, weight: .bold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-            } else if !dimmed {
-                Text(String(format: "%.0f€", amount))
-                    .font(.system(size: 10, weight: .bold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-            }
+            Text(String(format: "%.0f€", amount))
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(pinColor)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
         }
         .opacity(opacity)
         .scaleEffect(selected ? 1.08 : 1)

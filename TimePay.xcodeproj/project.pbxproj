@@ -93,6 +93,10 @@
 		LC0000010000000000000074 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000073 /* OnboardingView.swift */; };
 		LC0000010000000000000076 /* CategoriesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000075 /* CategoriesSettingsView.swift */; };
 		LC0000010000000000000078 /* LiveCashAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000077 /* LiveCashAppIntents.swift */; };
+		LC000001000000000000007A /* LoginRewardState.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000079 /* LoginRewardState.swift */; };
+		LC000001000000000000007C /* DailyLoginRewardOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000007B /* DailyLoginRewardOverlay.swift */; };
+		LC000001000000000000007E /* MapPlaceDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000007D /* MapPlaceDetailSheet.swift */; };
+		LC0000010000000000000080 /* PersonalFinanceInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000007F /* PersonalFinanceInsights.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -189,6 +193,10 @@
 		LC0000020000000000000073 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		LC0000020000000000000075 /* CategoriesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoriesSettingsView.swift; sourceTree = "<group>"; };
 		LC0000020000000000000077 /* LiveCashAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCashAppIntents.swift; sourceTree = "<group>"; };
+		LC0000020000000000000079 /* LoginRewardState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginRewardState.swift; sourceTree = "<group>"; };
+		LC000002000000000000007B /* DailyLoginRewardOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginRewardOverlay.swift; sourceTree = "<group>"; };
+		LC000002000000000000007D /* MapPlaceDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPlaceDetailSheet.swift; sourceTree = "<group>"; };
+		LC000002000000000000007F /* PersonalFinanceInsights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalFinanceInsights.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -299,6 +307,7 @@
 				LC0000020000000000000055 /* AppSettings.swift */,
 				LC0000020000000000000056 /* MoreDestination.swift */,
 				LC0000020000000000000071 /* UserCategory.swift */,
+				LC0000020000000000000079 /* LoginRewardState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -331,6 +340,7 @@
 				LC0000020000000000000069 /* AppleSignInService.swift */,
 				LC000002000000000000006A /* SavingsLiveActivityService.swift */,
 				LC0000020000000000000077 /* LiveCashAppIntents.swift */,
+				LC000002000000000000007F /* PersonalFinanceInsights.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -407,6 +417,8 @@
 				LC000002000000000000006C /* GoalContributionView.swift */,
 				LC000002000000000000006F /* GoalDetailView.swift */,
 				LC000002000000000000006D /* AddActionSheet.swift */,
+				LC000002000000000000007B /* DailyLoginRewardOverlay.swift */,
+				LC000002000000000000007D /* MapPlaceDetailSheet.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -594,6 +606,10 @@
 				LC0000010000000000000074 /* OnboardingView.swift in Sources */,
 				LC0000010000000000000076 /* CategoriesSettingsView.swift in Sources */,
 				LC0000010000000000000078 /* LiveCashAppIntents.swift in Sources */,
+				LC000001000000000000007A /* LoginRewardState.swift in Sources */,
+				LC000001000000000000007C /* DailyLoginRewardOverlay.swift in Sources */,
+				LC000001000000000000007E /* MapPlaceDetailSheet.swift in Sources */,
+				LC0000010000000000000080 /* PersonalFinanceInsights.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -663,7 +679,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -699,7 +715,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -733,7 +749,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
@@ -760,7 +776,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";

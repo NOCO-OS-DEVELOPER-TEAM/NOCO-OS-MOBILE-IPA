@@ -20,6 +20,7 @@ struct AppData: Codable {
     var hasCompletedOnboarding: Bool
     var userCategories: [UserCategory]
     var onboardingProfile: OnboardingProfile?
+    var loginReward: LoginRewardState
 
     static let empty = AppData(
         transactions: [],
@@ -40,7 +41,8 @@ struct AppData: Codable {
         appSettings: AppSettings(),
         hasCompletedOnboarding: false,
         userCategories: [],
-        onboardingProfile: nil
+        onboardingProfile: nil,
+        loginReward: .empty
     )
 
     enum CodingKeys: String, CodingKey {
@@ -49,6 +51,7 @@ struct AppData: Codable {
         case shortcuts, spendingLimits, accounts, activeAccountId
         case notificationPreferences, assistantModePreference, notificationLearning
         case widgetPreferences, appSettings, hasCompletedOnboarding, userCategories, onboardingProfile
+        case loginReward
     }
 
     init(
@@ -70,7 +73,8 @@ struct AppData: Codable {
         appSettings: AppSettings = AppSettings(),
         hasCompletedOnboarding: Bool = false,
         userCategories: [UserCategory] = [],
-        onboardingProfile: OnboardingProfile? = nil
+        onboardingProfile: OnboardingProfile? = nil,
+        loginReward: LoginRewardState = .empty
     ) {
         self.transactions = transactions
         self.goals = goals
@@ -91,6 +95,7 @@ struct AppData: Codable {
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.userCategories = userCategories
         self.onboardingProfile = onboardingProfile
+        self.loginReward = loginReward
     }
 
     init(from decoder: Decoder) throws {
@@ -121,6 +126,7 @@ struct AppData: Codable {
             ?? (!transactions.isEmpty || !goals.isEmpty)
         userCategories = try c.decodeIfPresent([UserCategory].self, forKey: .userCategories) ?? []
         onboardingProfile = try c.decodeIfPresent(OnboardingProfile.self, forKey: .onboardingProfile)
+        loginReward = try c.decodeIfPresent(LoginRewardState.self, forKey: .loginReward) ?? .empty
     }
 
     func encode(to encoder: Encoder) throws {
@@ -144,6 +150,7 @@ struct AppData: Codable {
         try c.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
         try c.encode(userCategories, forKey: .userCategories)
         try c.encodeIfPresent(onboardingProfile, forKey: .onboardingProfile)
+        try c.encode(loginReward, forKey: .loginReward)
     }
 }
 

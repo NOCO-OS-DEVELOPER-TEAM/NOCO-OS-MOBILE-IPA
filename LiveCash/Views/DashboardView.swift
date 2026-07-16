@@ -102,6 +102,18 @@ struct DashboardView: View {
 
                 wealthOverviewRow
 
+                if store.loginReward.loginStreakDays > 0 || store.loginReward.coins > 0 {
+                    HStack(spacing: 14) {
+                        Label("\(store.loginReward.loginStreakDays) Tage", systemImage: "flame.fill")
+                            .font(LiveCashTheme.captionFont.weight(.semibold))
+                            .foregroundStyle(.orange)
+                        Label("\(store.loginReward.coins) Coins", systemImage: "circle.circle.fill")
+                            .font(LiveCashTheme.captionFont.weight(.semibold))
+                            .foregroundStyle(.yellow)
+                        Spacer()
+                    }
+                }
+
                 HStack(spacing: 16) {
                     Label(LiveCashTheme.money(store.currentMonthExpenses), systemImage: "arrow.down.circle.fill")
                         .font(LiveCashTheme.captionFont)
@@ -116,8 +128,8 @@ struct DashboardView: View {
 
     private var wealthOverviewRow: some View {
         HStack(spacing: 12) {
-            wealthChip(title: "Gebunden im Sparziel", value: store.blockedInGoals, color: LiveCashTheme.accent)
-            wealthChip(title: "Gesamt Vermögen", value: store.totalWealth, color: store.totalWealth >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+            wealthChip(title: "Geld in Sparzielen", value: store.blockedInGoals, color: LiveCashTheme.accent)
+            wealthChip(title: "Gesamtvermögen", value: store.totalWealth, color: store.totalWealth >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
         }
     }
 

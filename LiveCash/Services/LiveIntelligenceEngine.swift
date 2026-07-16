@@ -209,15 +209,22 @@ final class LiveIntelligenceEngine {
             ]
         }
 
-        if lower.contains("spar") || !store.goals.isEmpty {
-            let topGoal = store.activeGoals.first
-            if let goal = topGoal {
+        if lower.contains("spar") || lower.contains("ziel") {
+            if let tip = PersonalFinanceInsights.goalAccelerationTip(store: store) {
                 return [
-                    LiveSuggestion(title: "+\(max(Int(goal.remaining / 10), 10))€ zu \(goal.name)", action: .submitText("\(goal.name) \(max(Int(goal.remaining / 10), 10))")),
+                    LiveSuggestion(title: tip.shortTitle, action: .insight(.goalsProgress)),
                     LiveSuggestion(title: "Spar-Tipps", action: .insight(.savingsTips)),
                     LiveSuggestion(title: "Ausgaben-Tempo", action: .insight(.spendingPace))
                 ]
             }
+        }
+
+        if let personal = PersonalFinanceInsights.topSuggestion(store: store) {
+            return [
+                LiveSuggestion(title: personal.shortTitle, action: .insight(personal.action)),
+                LiveSuggestion(title: "Monatsvergleich", action: .insight(.monthCompare)),
+                LiveSuggestion(title: hour < 12 ? "Heute planen" : "Wochenbilanz", action: .insight(hour < 12 ? .savingsTips : .incomeVsExpense))
+            ]
         }
 
         if store.todayExpenses > store.dailyAverageExpenses * 1.3 && store.dailyAverageExpenses > 0 {
@@ -290,18 +297,38 @@ final class LiveIntelligenceEngine {
         switch confidence {
         case .safe:
             let sign = draft.type == .income ? "+" : "-"
-            return [
+            var chips = [
                 LiveSuggestion(
                     title: "Speichern: \(draft.merchant) \(sign)\(String(format: "%.2f", draft.amount))€",
                     action: .saveDraft(draft)
                 )
             ]
+            if preferredType == .expense,
+               let goal = store.activeGoals.first,
+               draft.amount <= store.availableBalance {
+                chips.append(
+                    LiveSuggestion(
+                        title: "Oder \(String(format: "%.0f", draft.amount))€ zu \(goal.name)",
+                        action: .insight(.goalsProgress)
+                    )
+                )
+            }
+            return Array(chips.prefix(2))
         case .uncertain:
             var options = [
                 LiveSuggestion(title: "Als Ausgabe speichern", action: .saveDraft(uncertainDraft(draft, type: .expense))),
                 LiveSuggestion(title: "Als Einnahme speichern", action: .saveDraft(uncertainDraft(draft, type: .income)))
             ]
-            if subscriptionHints.contains(where: { partial.lowercased().contains($0) }) || draft.category == .subscription {
+            if let goal = store.activeGoals.first,
+               draft.amount > 0,
+               draft.amount <= store.availableBalance {
+                options.append(
+                    LiveSuggestion(
+                        title: "Als Sparbewegung · \(goal.name)",
+                        action: .submitText("\(goal.name) \(String(format: "%.0f", draft.amount))")
+                    )
+                )
+            } else if subscriptionHints.contains(where: { partial.lowercased().contains($0) }) || draft.category == .subscription {
                 var sub = uncertainDraft(draft, type: .expense)
                 sub.category = .subscription
                 options.append(LiveSuggestion(title: "Als Abo buchen", action: .saveDraft(sub)))

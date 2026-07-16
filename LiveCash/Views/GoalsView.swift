@@ -144,17 +144,17 @@ struct GoalsView: View {
                             Text(String(format: "%.0f€", store.blockedInGoals))
                                 .font(LiveCashTheme.captionFont.weight(.semibold))
                                 .foregroundStyle(LiveCashTheme.accent)
-                            Text("Geblockt")
+                            Text("In Sparzielen")
                                 .font(.system(size: 10, design: .rounded))
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    if store.savingsStreakDays > 0 {
+                    if store.loginReward.loginStreakDays > 0 {
                         VStack(alignment: .trailing, spacing: 4) {
-                            Label("\(store.savingsStreakDays) Tage", systemImage: "flame.fill")
+                            Label("\(store.loginReward.loginStreakDays) Tage", systemImage: "flame.fill")
                                 .font(LiveCashTheme.captionFont.weight(.semibold))
-                                .foregroundStyle(LiveCashTheme.expense)
-                            Text("Spar-Streak")
+                                .foregroundStyle(.orange)
+                            Text("Login-Serie")
                                 .font(.system(size: 10, design: .rounded))
                                 .foregroundStyle(.secondary)
                         }

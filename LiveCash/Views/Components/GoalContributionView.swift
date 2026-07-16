@@ -15,6 +15,9 @@ struct GoalContributionView: View {
                 Section("Betrag") {
                     TextField("Betrag", text: $amountText)
                         .keyboardType(.decimalPad)
+                    Text(String(format: "Verfügbar: %.0f€ — wird beim Sparen abgezogen", max(store.availableBalance, 0)))
+                        .font(LiveCashTheme.captionFont)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Sparziel") {
@@ -55,8 +58,8 @@ struct GoalContributionView: View {
     }
 
     private var canSave: Bool {
-        Double(amountText.replacingOccurrences(of: ",", with: ".")) != nil &&
-        !(store.goals.isEmpty)
+        guard let amount = Double(amountText.replacingOccurrences(of: ",", with: ".")), amount > 0 else { return false }
+        return !store.goals.isEmpty && amount <= max(store.availableBalance, 0)
     }
 
     private func save() {

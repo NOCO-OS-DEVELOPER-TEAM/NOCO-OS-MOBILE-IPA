@@ -92,7 +92,11 @@ struct SettingsView: View {
                 LabeledContent("Buchungen", value: "\(store.accountFilteredTransactions.count)")
                 LabeledContent("Sparziele", value: "\(store.goals.count)")
                 LabeledContent("Abos", value: "\(store.subscriptions.count)")
-                LabeledContent("Spar-Streak", value: "\(store.savingsStreakDays) Tage")
+                LabeledContent("Login-Serie", value: "\(store.loginReward.loginStreakDays) Tage")
+                LabeledContent("Coins", value: "\(store.loginReward.coins)")
+                if store.loginReward.longestStreakDays > 0 {
+                    LabeledContent("Längste Serie", value: "\(store.loginReward.longestStreakDays) Tage")
+                }
             }
 
             Section {

@@ -294,13 +294,20 @@ final class FinanceAssistant {
             let rows = store.goals.map {
                 ($0.name, "\($0.progressPercent)% · \(String(format: "%.0f€", $0.currentAmount))/\(String(format: "%.0f€", $0.targetAmount))")
             }
-            let insight: String? = {
-                guard let next = store.goals.min(by: { $0.remaining < $1.remaining }) else {
-                    return "Lege ein Sparziel unter „Mehr“ an."
+            var insightLines = PersonalFinanceInsights.personalInsightLines(store: store)
+            if insightLines.isEmpty {
+                if let next = store.activeGoals.min(by: { $0.remaining < $1.remaining }) {
+                    insightLines = ["Nächstes Ziel: \(next.name) — noch \(String(format: "%.0f€", next.remaining))."]
+                } else {
+                    insightLines = ["Lege ein Sparziel unter „Mehr“ an."]
                 }
-                return "Nächstes Ziel: \(next.name) — noch \(String(format: "%.0f€", next.remaining))."
-            }()
-            return FinanceInsight(title: "Sparziele", rows: rows, insight: insight)
+            }
+            return FinanceInsight(
+                title: "Sparziele",
+                rows: rows.isEmpty ? [("—", "Noch keine Ziele")] : rows,
+                insight: insightLines.joined(separator: " "),
+                followUpActions: [.savingsTips, .monthCompare]
+            )
 
         case .byMerchant, .merchantBreakdown:
             let grouped = Dictionary(grouping: txs.filter { $0.type == .expense }, by: \.merchant)
@@ -544,10 +551,13 @@ final class FinanceAssistant {
         let cal = Calendar.current
         let now = Date()
         let prev = cal.date(byAdding: .month, value: -1, to: now)!
-        let cur = store.transactions(inMonth: now).filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-        let prevTotal = store.transactions(inMonth: prev).filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
+        let cur = store.transactions(inMonth: now).filter { $0.type == .expense && !FinanceStore.isGoalContribution($0) }.reduce(0) { $0 + $1.amount }
+        let prevTotal = store.transactions(inMonth: prev).filter { $0.type == .expense && !FinanceStore.isGoalContribution($0) }.reduce(0) { $0 + $1.amount }
         let diff = cur - prevTotal
         let pct = prevTotal > 0 ? diff / prevTotal * 100 : 0
+        let personal = PersonalFinanceInsights.categoryMonthOverMonth(store: store)?.message
+        let fallback = diff > 0 ? "Du gibst \(String(format: "%.0f%%", abs(pct))) mehr aus als im Vormonat." :
+            (diff < 0 ? "Du gibst weniger aus — gut gemacht!" : "Gleich wie im Vormonat.")
         return FinanceInsight(
             title: "Monatsvergleich",
             rows: [
@@ -555,9 +565,8 @@ final class FinanceAssistant {
                 ("Vormonat", String(format: "%.2f€", prevTotal)),
                 ("Differenz", String(format: "%+.2f€ (%.0f%%)", diff, pct))
             ],
-            insight: diff > 0 ? "Du gibst \(String(format: "%.0f%%", abs(pct))) mehr aus als im Vormonat." :
-                (diff < 0 ? "Du gibst weniger aus — gut gemacht!" : "Gleich wie im Vormonat."),
-            followUpActions: [.byCategory, .spendingPace]
+            insight: personal ?? fallback,
+            followUpActions: [.byCategory, .spendingPace, .unusualSpending]
         )
     }
 
@@ -598,17 +607,20 @@ final class FinanceAssistant {
 
     private func savingsInsight(store: FinanceStore) -> FinanceInsight {
         var tips: [(String, String)] = []
+        for line in PersonalFinanceInsights.personalInsightLines(store: store) {
+            tips.append(("Persönlich", line))
+        }
         if let top = store.topCategoryThisMonth {
             tips.append(("Größte Kategorie", "\(top.0.rawValue): \(String(format: "%.0f€", top.1))"))
         }
         let subTotal = store.monthlySubscriptionCost
         if subTotal > 0 {
-            tips.append(("Abos", String(format: "%.0f€/Monat einsparbar?", subTotal * 0.3)))
+            tips.append(("Abos", String(format: "%.0f€/Monat — prüfe was du noch brauchst", subTotal)))
         }
         if store.currentMonthExpenses > store.currentMonthIncome, store.currentMonthIncome > 0 {
             tips.append(("Warnung", "Ausgaben > Einnahmen"))
         }
-        let topMerchant = Dictionary(grouping: store.transactions(inMonth: Date()).filter { $0.type == .expense }, by: \.merchant)
+        let topMerchant = Dictionary(grouping: store.transactions(inMonth: Date()).filter { $0.type == .expense && !FinanceStore.isGoalContribution($0) }, by: \.merchant)
             .map { ($0.key, $0.value.reduce(0) { $0 + $1.amount }) }
             .max(by: { $0.1 < $1.1 })
         if let m = topMerchant {
@@ -617,11 +629,12 @@ final class FinanceAssistant {
         if tips.isEmpty {
             tips.append(("Tipp", "Erfasse mehr Buchungen für personalisierte Tipps"))
         }
+        let insight = tips.first?.1 ?? "Je mehr du nutzt, desto besser versteht dich Live Cash."
         return FinanceInsight(
-            title: "Spar-Tipps",
-            rows: tips,
-            insight: "Fokussiere dich auf deine größte Kategorie und prüfe ungenutzte Abos.",
-            followUpActions: [.potentialSavings, .byCategory]
+            title: "Persönliche Tipps",
+            rows: Array(tips.prefix(5)),
+            insight: insight,
+            followUpActions: [.monthCompare, .goalsProgress, .byCategory]
         )
     }
 

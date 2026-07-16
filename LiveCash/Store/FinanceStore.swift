@@ -43,6 +43,8 @@ final class FinanceStore: ObservableObject {
     @Published var hasCompletedOnboarding = true
     @Published private(set) var userCategories: [UserCategory] = []
     @Published var onboardingProfile: OnboardingProfile?
+    @Published var loginReward = LoginRewardState.empty
+    @Published var pendingDailyLoginClaim: DailyLoginClaimResult?
 
     private let persistence = PersistenceService.shared
     private let locationManager = CLLocationManager()
@@ -68,6 +70,7 @@ final class FinanceStore: ObservableObject {
         hasCompletedOnboarding = data.hasCompletedOnboarding
         userCategories = data.userCategories
         onboardingProfile = data.onboardingProfile
+        loginReward = data.loginReward
         if !data.notificationPreferences.assistantSuggestionsOnIdle {
             appSettings.assistant.suggestionsEnabled = false
         }
@@ -78,6 +81,7 @@ final class FinanceStore: ObservableObject {
         persist()
         WidgetDataSync.writeSnapshot(from: self)
         NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+        claimDailyLoginIfNeeded()
     }
 
     func onAppBecameActive() {
@@ -93,6 +97,53 @@ final class FinanceStore: ObservableObject {
         }
         WidgetDataSync.writeSnapshot(from: self)
         NotificationService.shared.refreshNotifications(for: self, enabled: notificationsEnabled)
+        claimDailyLoginIfNeeded()
+    }
+
+    /// Awards 1 coin + flame streak only for the first app open of the day.
+    @discardableResult
+    func claimDailyLoginIfNeeded() -> DailyLoginClaimResult? {
+        guard hasCompletedOnboarding else { return nil }
+        guard !loginReward.hasClaimedToday else { return nil }
+
+        let today = Calendar.current.startOfDay(for: Date())
+        var next = loginReward
+        var isContinuation = false
+
+        if let last = loginReward.lastLoginClaimDate {
+            let lastDay = Calendar.current.startOfDay(for: last)
+            let diff = Calendar.current.dateComponents([.day], from: lastDay, to: today).day ?? 0
+            if diff == 1 {
+                next.loginStreakDays += 1
+                isContinuation = true
+            } else if diff > 1 {
+                next.loginStreakDays = 1
+            } else {
+                return nil
+            }
+        } else {
+            next.loginStreakDays = max(loginReward.loginStreakDays, 1)
+        }
+
+        next.coins += 1
+        next.lastLoginClaimDate = today
+        next.longestStreakDays = max(next.longestStreakDays, next.loginStreakDays)
+        loginReward = next
+
+        let result = DailyLoginClaimResult(
+            coinsAwarded: 1,
+            totalCoins: next.coins,
+            streakDays: next.loginStreakDays,
+            isNewStreak: !isContinuation
+        )
+        pendingDailyLoginClaim = result
+        persist()
+        HapticService.success(store: self)
+        return result
+    }
+
+    func dismissDailyLoginClaim() {
+        pendingDailyLoginClaim = nil
     }
 
     func toggleInputMode() {
@@ -460,11 +511,16 @@ final class FinanceStore: ObservableObject {
 
     func addToGoal(_ goal: SavingsGoal, amount: Double) {
         guard amount > 0, let idx = goals.firstIndex(where: { $0.id == goal.id }) else { return }
-        goals[idx].currentAmount += amount
+        let capped = min(amount, max(availableBalance, 0))
+        guard capped > 0 else {
+            lastFeedback = "Nicht genug verfügbares Geld für dieses Sparziel"
+            return
+        }
+        goals[idx].currentAmount += capped
         let updated = goals[idx]
 
         let contribution = Transaction(
-            amount: amount,
+            amount: capped,
             type: .expense,
             category: .other,
             merchant: "Sparziel: \(updated.name)",
@@ -479,7 +535,7 @@ final class FinanceStore: ObservableObject {
         HapticService.success(store: self)
 
         let contributionAlert = GoalTrackingAlert.contributed(
-            amount: amount,
+            amount: capped,
             goalName: updated.name,
             percent: updated.progressPercent
         )
@@ -508,7 +564,12 @@ final class FinanceStore: ObservableObject {
 
         HapticService.progressStep(store: self, percent: updated.progressPercent)
 
-        lastFeedback = String(format: "%.0f€ zu „%@“ — jetzt %d%%", amount, updated.name, updated.progressPercent)
+        lastFeedback = String(
+            format: "%.0f€ zu „%@“ · Verfügbar jetzt %.0f€",
+            capped,
+            updated.name,
+            availableBalance
+        )
     }
 
     func contributeToGoal(id: UUID, amount: Double) {
@@ -791,6 +852,8 @@ final class FinanceStore: ObservableObject {
         userCategories = []
         onboardingProfile = nil
         hasCompletedOnboarding = false
+        loginReward = .empty
+        pendingDailyLoginClaim = nil
         locationEnabled = false
         notificationsEnabled = true
         savingsStreakDays = 0
@@ -821,6 +884,7 @@ final class FinanceStore: ObservableObject {
             addGoal(name: goalName, target: goalAmount)
         }
         persist()
+        claimDailyLoginIfNeeded()
     }
 
     func refreshWidgets() {
@@ -1078,7 +1142,8 @@ final class FinanceStore: ObservableObject {
             appSettings: appSettings,
             hasCompletedOnboarding: hasCompletedOnboarding,
             userCategories: userCategories,
-            onboardingProfile: onboardingProfile
+            onboardingProfile: onboardingProfile,
+            loginReward: loginReward
         )
     }
 
@@ -1102,6 +1167,7 @@ final class FinanceStore: ObservableObject {
         hasCompletedOnboarding = data.hasCompletedOnboarding
         userCategories = data.userCategories
         onboardingProfile = data.onboardingProfile
+        loginReward = data.loginReward
         refreshSubscriptions()
         refreshShortcuts()
         WidgetDataSync.writeSnapshot(from: self)

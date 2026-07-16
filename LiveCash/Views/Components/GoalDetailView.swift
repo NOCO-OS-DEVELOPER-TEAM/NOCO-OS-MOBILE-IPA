@@ -6,8 +6,17 @@ struct GoalDetailView: View {
 
     let goal: SavingsGoal
 
+    private var liveGoal: SavingsGoal {
+        store.goals.first(where: { $0.id == goal.id }) ?? goal
+    }
+
     private var pace: GoalPaceStatus {
-        goal.paceStatus(referenceMonthlySavings: store.monthlySavingsRate)
+        liveGoal.paceStatus(referenceMonthlySavings: store.monthlySavingsRate)
+    }
+
+    private var estimatedWeeksAt10: Int {
+        guard liveGoal.remaining > 0 else { return 0 }
+        return max(Int(ceil(liveGoal.remaining / 10)), 1)
     }
 
     var body: some View {
@@ -17,58 +26,78 @@ struct GoalDetailView: View {
                     LiveCashCard {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Text(goal.name)
+                                Text(liveGoal.name)
                                     .font(LiveCashTheme.titleFont)
                                 Spacer()
-                                Text("\(goal.progressPercent)%")
+                                Text("\(liveGoal.progressPercent)%")
                                     .font(.system(.title3, design: .rounded).weight(.bold))
-                                    .foregroundStyle(goal.isCompleted ? LiveCashTheme.income : LiveCashTheme.accent)
+                                    .foregroundStyle(liveGoal.isCompleted ? LiveCashTheme.income : LiveCashTheme.accent)
                             }
 
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
                                     Capsule().fill(LiveCashTheme.incomeSoft)
                                     Capsule()
-                                        .fill(goal.isCompleted ? LiveCashTheme.income : LiveCashTheme.accent)
-                                        .frame(width: geo.size.width * goal.progress)
+                                        .fill(liveGoal.isCompleted ? LiveCashTheme.income : LiveCashTheme.accent)
+                                        .frame(width: geo.size.width * liveGoal.progress)
                                 }
                             }
                             .frame(height: 12)
 
                             HStack {
-                                statBlock(title: "Gespart", value: String(format: "%.0f€", goal.currentAmount), color: LiveCashTheme.income)
+                                statBlock(title: "Gespart", value: String(format: "%.0f€", liveGoal.currentAmount), color: LiveCashTheme.income)
                                 Spacer()
-                                statBlock(title: "Ziel", value: String(format: "%.0f€", goal.targetAmount), color: .primary)
+                                statBlock(title: "Ziel", value: String(format: "%.0f€", liveGoal.targetAmount), color: .primary)
                                 Spacer()
-                                statBlock(title: "Übrig", value: String(format: "%.0f€", goal.remaining), color: .secondary)
+                                statBlock(title: "Übrig", value: String(format: "%.0f€", liveGoal.remaining), color: .secondary)
                             }
                         }
                     }
 
                     LiveCashCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Status")
+                            Text("Vermögen")
+                                .font(LiveCashTheme.headlineFont)
+                            LabeledContent("Verfügbares Geld", value: String(format: "%.0f€", store.availableBalance))
+                            LabeledContent("In diesem Sparziel", value: String(format: "%.0f€", liveGoal.currentAmount))
+                            LabeledContent("Gesamtvermögen", value: String(format: "%.0f€", store.totalWealth))
+                            Text("Einzahlungen reduzieren dein verfügbares Geld — das Gesamtvermögen bleibt gleich.")
+                                .font(LiveCashTheme.captionFont)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    LiveCashCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Smart Tracking")
                                 .font(LiveCashTheme.headlineFont)
 
-                            if let days = goal.daysRemaining, goal.goalTimeTrackingEnabled {
+                            if let days = liveGoal.daysRemaining, liveGoal.goalTimeTrackingEnabled {
                                 LabeledContent("Verbleibende Zeit", value: "\(days) Tag\(days == 1 ? "" : "e")")
                             }
-                            if let targetDate = goal.targetDate {
+                            if let targetDate = liveGoal.targetDate {
                                 LabeledContent("Zieldatum", value: targetDate.formatted(date: .long, time: .omitted))
                             }
-                            if let required = goal.requiredDailyPace, goal.goalTimeTrackingEnabled {
+                            if let required = liveGoal.requiredDailyPace, liveGoal.goalTimeTrackingEnabled {
                                 LabeledContent("Nötiges Tages-Tempo", value: String(format: "%.2f€", required))
                             }
-                            if let actual = goal.actualDailyPace {
+                            if let actual = liveGoal.actualDailyPace {
                                 LabeledContent("Aktuelles Tages-Tempo", value: String(format: "%.2f€", actual))
                             }
                             if pace != .noDeadline {
                                 LabeledContent("Tempo", value: pace.rawValue)
                             }
-                            if goal.isCompleted {
+                            if !liveGoal.isCompleted {
+                                LabeledContent("Bei 10€/Woche", value: "~\(estimatedWeeksAt10) Wochen")
+                            }
+                            if liveGoal.isCompleted {
                                 Label("Ziel erreicht", systemImage: "checkmark.seal.fill")
                                     .font(LiveCashTheme.bodyFont)
                                     .foregroundStyle(LiveCashTheme.income)
+                            } else if pace == .slow {
+                                Label("Du liegst hinter dem Plan — kleiner Beitrag hilft.", systemImage: "exclamationmark.triangle.fill")
+                                    .font(LiveCashTheme.captionFont)
+                                    .foregroundStyle(.orange)
                             }
                         }
                     }
@@ -86,7 +115,7 @@ struct GoalDetailView: View {
                             .foregroundStyle(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .disabled(goal.isCompleted)
+                    .disabled(liveGoal.isCompleted || store.availableBalance <= 0)
                 }
                 .padding(20)
             }

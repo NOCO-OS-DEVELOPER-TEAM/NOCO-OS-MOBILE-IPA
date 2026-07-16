@@ -12,7 +12,16 @@ struct RootView: View {
             } else {
                 mainContent
             }
+
+            if let claim = store.pendingDailyLoginClaim {
+                DailyLoginRewardOverlay(result: claim) {
+                    store.dismissDailyLoginClaim()
+                }
+                .transition(.opacity)
+                .zIndex(100)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: store.pendingDailyLoginClaim != nil)
         .onShake()
         .onAppear {
             security.resetLockState(for: store.appSettings.security)

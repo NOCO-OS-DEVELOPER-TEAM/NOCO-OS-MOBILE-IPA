@@ -68,48 +68,94 @@ struct SmartInputBar: View {
                 Button {
                     focused = false
                     store.showInputSourceSheet = true
+                    HapticService.light(store: store)
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: 30))
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(LiveCashTheme.accent)
+                        .shadow(color: LiveCashTheme.accent.opacity(0.25), radius: 6, y: 2)
                 }
                 .buttonStyle(.plain)
 
-                TextField(isIncome ? "Einnahme eingeben" : "Ausgabe eingeben", text: $text)
-                    .focused($focused)
-                    .submitLabel(.send)
-                    .onSubmit(submit)
-                    .onChange(of: text) { _, newValue in
-                        store.updateLiveIntelligence(for: newValue)
+                ZStack(alignment: .leading) {
+                    if text.isEmpty {
+                        Text("Ausgabe, Einnahme oder Frage eingeben…")
+                            .font(LiveCashTheme.bodyFont)
+                            .foregroundStyle(.secondary.opacity(0.85))
+                            .padding(.horizontal, 16)
+                            .allowsHitTesting(false)
                     }
-                    .onChange(of: store.focusInputOnAppear) { _, shouldFocus in
-                        if shouldFocus {
-                            focused = true
-                            store.focusInputOnAppear = false
+                    TextField("", text: $text)
+                        .focused($focused)
+                        .submitLabel(.send)
+                        .onSubmit(submit)
+                        .onChange(of: text) { _, newValue in
+                            store.updateLiveIntelligence(for: newValue)
                         }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(focused ? modeColor.opacity(0.45) : LiveCashTheme.glassBorder, lineWidth: 0.8)
-                    )
+                        .onChange(of: store.focusInputOnAppear) { _, shouldFocus in
+                            if shouldFocus {
+                                focused = true
+                                store.focusInputOnAppear = false
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
+                }
+                .background {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(focused ? 0.18 : 0.08),
+                                            Color.white.opacity(0.02)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .strokeBorder(
+                                    focused ? modeColor.opacity(0.5) : LiveCashTheme.glassBorder,
+                                    lineWidth: focused ? 1.2 : 0.8
+                                )
+                        )
+                        .shadow(color: focused ? modeColor.opacity(0.18) : .black.opacity(0.06), radius: focused ? 10 : 4, y: 3)
+                }
+                .animation(.spring(response: 0.32, dampingFraction: 0.78), value: focused)
+                .animation(.easeInOut(duration: 0.2), value: isIncome)
 
                 Button(action: submit) {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(text.trimmingCharacters(in: .whitespaces).isEmpty ? .secondary : modeColor)
+                        .font(.system(size: 30))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(text.trimmingCharacters(in: .whitespaces).isEmpty ? Color.secondary.opacity(0.5) : modeColor)
+                        .scaleEffect(text.trimmingCharacters(in: .whitespaces).isEmpty ? 1 : 1.05)
                 }
                 .buttonStyle(.plain)
                 .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: text.isEmpty)
+            }
+            .padding(10)
+            .background {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.16), lineWidth: 0.8)
+                    )
+                    .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-        .background(.ultraThinMaterial)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(Color.clear)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
