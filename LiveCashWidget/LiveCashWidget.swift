@@ -138,7 +138,7 @@ struct LiveCashWidgetView: View {
                 if s.showExpenses {
                     statCol("Ausgaben", value: s.monthExpenses, color: expense)
                 }
-                if s.showSavings, s.primaryGoalName != nil {
+                if s.showSavings, let goal = s.primaryGoalName {
                     VStack(alignment: .trailing) {
                         Text(goal)
                             .font(.system(size: 10, design: .rounded))
