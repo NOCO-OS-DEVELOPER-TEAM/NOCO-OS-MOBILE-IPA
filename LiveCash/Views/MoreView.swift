@@ -4,73 +4,37 @@ struct MoreView: View {
     @EnvironmentObject private var store: FinanceStore
     @State private var navigateToGoals = false
     @State private var navigateToSubscriptions = false
+    @State private var appeared = false
 
     var body: some View {
         NavigationStack {
             List {
                 Section("Finanzen") {
-                    NavigationLink {
-                        GoalsView()
-                    } label: {
-                        Label("Sparziele", systemImage: "target")
-                    }
-                    NavigationLink {
-                        SubscriptionsView()
-                    } label: {
-                        Label("Abonnements", systemImage: "repeat.circle")
-                    }
-                    NavigationLink {
-                        FutureSimulationView()
-                    } label: {
-                        Label("Zukunfts-Simulation", systemImage: "chart.line.uptrend.xyaxis")
-                    }
-                    NavigationLink {
-                        SpendingLimitsView()
-                    } label: {
-                        Label("Ausgaben-Limits", systemImage: "gauge.with.dots.needle.67percent")
-                    }
+                    moreLink("Smart Assistant", icon: "brain.head.profile") { SmartAssistantHubView() }
+                    moreLink("Sparziele", icon: "target") { GoalsView() }
+                    moreLink("Abonnements", icon: "repeat.circle") { SubscriptionsView() }
+                    moreLink("Zukunfts-Simulation", icon: "chart.line.uptrend.xyaxis") { FutureSimulationView() }
+                    moreLink("Ausgaben-Limits", icon: "gauge.with.dots.needle.67percent") { SpendingLimitsView() }
                 }
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 10)
 
                 Section("Insights") {
-                    NavigationLink {
-                        FinanceReportView()
-                    } label: {
-                        Label("Mein Finanzbericht", systemImage: "doc.text.magnifyingglass")
-                    }
-                    NavigationLink {
-                        AnalyticsCenterView()
-                    } label: {
-                        Label("Analyse", systemImage: "chart.xyaxis.line")
-                    }
-                    NavigationLink {
-                        AnalyzeMeView()
-                    } label: {
-                        Label("Analyze Me", systemImage: "person.crop.circle.badge.questionmark")
-                    }
-                    NavigationLink {
-                        FinanceCalendarView()
-                    } label: {
-                        Label("Kalender", systemImage: "calendar")
-                    }
-                    NavigationLink {
-                        FinancialStoryView()
-                    } label: {
-                        Label("Financial Story", systemImage: "sparkles.rectangle.stack")
-                    }
+                    moreLink("Mein Finanzbericht", icon: "doc.text.magnifyingglass") { FinanceReportView() }
+                    moreLink("Analyse", icon: "chart.xyaxis.line") { AnalyticsCenterView() }
+                    moreLink("Analyze Me", icon: "person.crop.circle.badge.questionmark") { AnalyzeMeView() }
+                    moreLink("Kalender", icon: "calendar") { FinanceCalendarView() }
+                    moreLink("Financial Story", icon: "sparkles.rectangle.stack") { FinancialStoryView() }
                 }
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 14)
 
                 Section("App") {
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Label("Einstellungen", systemImage: "gearshape")
-                    }
-                    NavigationLink {
-                        PrivacyTrustView()
-                    } label: {
-                        Label("Datenschutz & Vertrauen", systemImage: "lock.shield")
-                    }
+                    moreLink("Einstellungen", icon: "gearshape") { SettingsView() }
+                    moreLink("Datenschutz & Vertrauen", icon: "lock.shield") { PrivacyTrustView() }
                 }
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 18)
 
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
@@ -92,10 +56,17 @@ struct MoreView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .opacity(appeared ? 1 : 0)
             }
             .navigationTitle("Mehr")
+            .onAppear {
+                withAnimation(LiveCashMotion.appearEase) {
+                    appeared = true
+                }
+            }
             .onChange(of: store.pendingMoreDestination) { _, destination in
                 guard let destination else { return }
+                HapticService.navigate(store: store)
                 switch destination {
                 case .goals: navigateToGoals = true
                 case .subscriptions: navigateToSubscriptions = true
@@ -110,5 +81,20 @@ struct MoreView: View {
             }
         }
         .id(store.moreNavigationEpoch)
+    }
+
+    private func moreLink<Destination: View>(
+        _ title: String,
+        icon: String,
+        @ViewBuilder destination: () -> Destination
+    ) -> some View {
+        NavigationLink {
+            destination()
+        } label: {
+            Label(title, systemImage: icon)
+        }
+        .simultaneousGesture(TapGesture().onEnded {
+            HapticService.navigate(store: store)
+        })
     }
 }

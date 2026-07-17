@@ -38,7 +38,7 @@ struct SmartInputBar: View {
                 compactBar
             }
         }
-        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: isExpanded)
+        .animation(LiveCashMotion.panelSpring, value: isExpanded)
         .onChange(of: isExpanded) { _, expanded in
             store.isAssistantExpanded = expanded
         }
@@ -64,9 +64,10 @@ struct SmartInputBar: View {
         }
         .onChange(of: focused) { _, isFocused in
             if isFocused {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                withAnimation(LiveCashMotion.panelSpring) {
                     isExpanded = true
                 }
+                HapticService.soft(store: store)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .liveCashCollapseAssistant)) { _ in
@@ -297,28 +298,28 @@ struct SmartInputBar: View {
     // MARK: - Actions
 
     private func expand() {
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+        withAnimation(LiveCashMotion.panelSpring) {
             isExpanded = true
         }
         focused = true
-        HapticService.light(store: store)
+        HapticService.medium(store: store)
     }
 
     private func collapse() {
         focused = false
         store.isAssistantExpanded = false
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+        withAnimation(LiveCashMotion.panelSpring) {
             isExpanded = false
             store.activeInsight = nil
             store.pendingIntent = nil
             store.clearLiveIntelligence()
         }
-        HapticService.light(store: store)
+        HapticService.soft(store: store)
     }
 
     private func handleSuggestion(_ suggestion: LiveSuggestion) {
-        HapticService.light(store: store)
-        withAnimation(.easeOut(duration: 0.15)) {
+        HapticService.medium(store: store)
+        withAnimation(LiveCashMotion.snappy) {
             switch suggestion.action {
             case .submitText(let s):
                 text = s
@@ -377,6 +378,6 @@ struct SmartInputBar: View {
                 focused = false
             }
         }
-        HapticService.light(store: store)
+        HapticService.success(store: store)
     }
 }

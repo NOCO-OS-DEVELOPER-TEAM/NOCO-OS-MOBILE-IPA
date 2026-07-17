@@ -27,17 +27,20 @@ struct SensitiveBalanceView<Content: View>: View {
             content()
                 .blur(radius: shouldMask ? 10 : 0)
                 .opacity(shouldMask ? 0.25 : 1)
+                .animation(LiveCashMotion.snappy, value: shouldMask)
             if shouldMask {
                 Text("••••••")
                     .font(.system(size: 48, weight: .bold, design: .rounded))
                     .foregroundStyle(.secondary)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
+        .animation(LiveCashMotion.softSpring, value: shouldMask)
         .contentShape(Rectangle())
         .onTapGesture {
             Task {
-                _ = await security.revealBalance(settings: store.appSettings.security)
-                HapticService.light(store: store)
+                await security.toggleBalanceReveal(settings: store.appSettings.security)
+                HapticService.rigid(store: store)
             }
         }
     }

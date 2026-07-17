@@ -75,7 +75,19 @@ struct AnalyticsReport: Equatable {
 
 @MainActor
 enum AnalyticsEngine {
+    private static var cached: (sig: UInt64, report: AnalyticsReport)?
+
     static func report(store: FinanceStore) -> AnalyticsReport {
+        let sig = AnalyzeMeEngine.dataSignature(store: store)
+        if let cached, cached.sig == sig {
+            return cached.report
+        }
+        let built = compute(store: store)
+        cached = (sig, built)
+        return built
+    }
+
+    private static func compute(store: FinanceStore) -> AnalyticsReport {
         let analyze = AnalyzeMeEngine.analyze(store: store)
         let cal = Calendar.current
         let now = Date()
@@ -90,7 +102,7 @@ enum AnalyticsEngine {
             .map { ($0.key, $0.value.reduce(0) { $0 + $1.amount }) }
             .sorted { $0.1 > $1.1 }
         let denom = max(totalExp, 1)
-        let slices = grouped.prefix(6).map { cat, amount in
+        let slices = grouped.prefix(8).map { cat, amount in
             AnalyticsCategorySlice(
                 name: cat.rawValue,
                 amount: amount,

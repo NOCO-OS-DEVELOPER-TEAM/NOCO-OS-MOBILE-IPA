@@ -55,6 +55,7 @@ final class FinanceStore: ObservableObject {
     private let persistence = PersistenceService.shared
     private let locationManager = CLLocationManager()
     private var lastActiveDate: Date?
+    private var liveIntelligenceTask: Task<Void, Never>?
 
     init() {
         let data = persistence.load()
@@ -214,23 +215,29 @@ final class FinanceStore: ObservableObject {
     }
 
     func updateLiveIntelligence(for partial: String) {
+        liveIntelligenceTask?.cancel()
         let trimmed = partial.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             liveSuggestions = []
             inputInterpretation = .empty
             return
         }
-        guard notificationPreferences.assistantSuggestionsOnIdle,
-              appSettings.assistant.suggestionsEnabled else {
-            liveSuggestions = []
+        liveIntelligenceTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 140_000_000)
+            guard !Task.isCancelled else { return }
+            guard notificationPreferences.assistantSuggestionsOnIdle,
+                  appSettings.assistant.suggestionsEnabled else {
+                liveSuggestions = []
+                inputInterpretation = LiveIntelligenceEngine.shared.interpret(trimmed, preferredType: inputMode, store: self)
+                return
+            }
+            liveSuggestions = LiveIntelligenceEngine.shared.liveSuggestions(for: trimmed, store: self)
             inputInterpretation = LiveIntelligenceEngine.shared.interpret(trimmed, preferredType: inputMode, store: self)
-            return
         }
-        liveSuggestions = LiveIntelligenceEngine.shared.liveSuggestions(for: trimmed, store: self)
-        inputInterpretation = LiveIntelligenceEngine.shared.interpret(trimmed, preferredType: inputMode, store: self)
     }
 
     func clearLiveIntelligence() {
+        liveIntelligenceTask?.cancel()
         liveSuggestions = []
         inputInterpretation = .empty
     }
@@ -281,7 +288,7 @@ final class FinanceStore: ObservableObject {
     func handleDeviceShake() {
         guard let tx = accountFilteredTransactions.first else { return }
         pendingShakeUndo = PendingShakeUndo(transaction: tx)
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        HapticService.warning(store: self)
     }
 
     func confirmShakeUndo() {

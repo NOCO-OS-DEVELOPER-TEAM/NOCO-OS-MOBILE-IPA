@@ -208,7 +208,43 @@ enum FinancialStoryEngine {
         // Personal pattern slides
         slides.append(contentsOf: personalPatternSlides(expenses: expenses, store: store, period: period))
 
+        if let tip = coachTip(store: store) {
+            slides.append(tip)
+        }
+
         return Array(slides.prefix(period == .month ? 10 : (period == .day ? 5 : 6)))
+    }
+
+    @MainActor
+    private static func coachTip(store: FinanceStore) -> StorySlide? {
+        if let goal = store.activeGoals.first, store.monthlySavingsRate > 0 {
+            let remaining = max(goal.targetAmount - goal.currentAmount, 0)
+            let weeks = remaining / max(store.monthlySavingsRate / 4, 1)
+            let faster = max(weeks - 8, 2)
+            return StorySlide(
+                title: "Unser Tipp",
+                headline: "20€ weniger pro Woche = spürbar früher am Ziel",
+                detail: String(
+                    format: "Bei „%@“ könntest du mit etwas weniger Wochenausgaben ca. %.0f Wochen früher ankommen.",
+                    goal.name,
+                    max(weeks - faster, 2)
+                ),
+                value: "−20€/Wo",
+                isIncome: true,
+                accentEmoji: "✨"
+            )
+        }
+        if store.currentMonthExpenses > 0 {
+            return StorySlide(
+                title: "Unser Tipp",
+                headline: "Kleine Gewohnheiten, großer Effekt",
+                detail: "Erfasse jede Ausgabe sofort — so erkennt Live Cash Muster und gibt bessere Tipps.",
+                value: "1×/Tag",
+                isIncome: true,
+                accentEmoji: "✨"
+            )
+        }
+        return nil
     }
 
     @MainActor

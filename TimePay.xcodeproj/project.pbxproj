@@ -108,6 +108,8 @@
 		LC0000010000000000000092 /* FinanceReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000091 /* FinanceReportView.swift */; };
 		LC0000010000000000000094 /* AnimatedMoneyText.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000093 /* AnimatedMoneyText.swift */; };
 		LC0000010000000000000096 /* PrivacyTrustView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000095 /* PrivacyTrustView.swift */; };
+		LC0000010000000000000098 /* SmartAssistantHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000097 /* SmartAssistantHubView.swift */; };
+		LC000001000000000000009A /* LiveCashMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC0000020000000000000099 /* LiveCashMotion.swift */; };
 		LC000001000000000000001C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = LC000002000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -219,6 +221,8 @@
 		LC0000020000000000000091 /* FinanceReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceReportView.swift; sourceTree = "<group>"; };
 		LC0000020000000000000093 /* AnimatedMoneyText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedMoneyText.swift; sourceTree = "<group>"; };
 		LC0000020000000000000095 /* PrivacyTrustView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyTrustView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000097 /* SmartAssistantHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartAssistantHubView.swift; sourceTree = "<group>"; };
+		LC0000020000000000000099 /* LiveCashMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCashMotion.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -384,6 +388,7 @@
 			isa = PBXGroup;
 			children = (
 				LC000002000000000000000C /* LiveCashTheme.swift */,
+				LC0000020000000000000099 /* LiveCashMotion.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -415,6 +420,7 @@
 				LC000002000000000000008B /* AnalyticsCenterView.swift */,
 				LC0000020000000000000091 /* FinanceReportView.swift */,
 				LC0000020000000000000095 /* PrivacyTrustView.swift */,
+				LC0000020000000000000097 /* SmartAssistantHubView.swift */,
 				LC000005000000000000000B /* Settings */,
 				LC0000050000000000000009 /* Components */,
 			);
@@ -654,6 +660,8 @@
 				LC0000010000000000000092 /* FinanceReportView.swift in Sources */,
 				LC0000010000000000000094 /* AnimatedMoneyText.swift in Sources */,
 				LC0000010000000000000096 /* PrivacyTrustView.swift in Sources */,
+				LC0000010000000000000098 /* SmartAssistantHubView.swift in Sources */,
+				LC000001000000000000009A /* LiveCashMotion.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -723,7 +731,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 32;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -759,7 +767,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCash/LiveCash.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 32;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCash/Info.plist;
@@ -793,7 +801,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 32;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";
@@ -820,7 +828,7 @@
 				CODE_SIGN_ENTITLEMENTS = LiveCashWidget/LiveCashWidget.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 32;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LiveCashWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Live Cash";

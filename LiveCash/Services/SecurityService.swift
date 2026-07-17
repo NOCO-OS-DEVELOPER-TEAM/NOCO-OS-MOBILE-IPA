@@ -62,4 +62,13 @@ final class SecurityService: ObservableObject {
         balanceRevealed = true
         return true
     }
+
+    /// Tap-to-toggle blur on the home balance.
+    func toggleBalanceReveal(settings: SecuritySettings) async {
+        if balanceRevealed {
+            balanceRevealed = false
+            return
+        }
+        _ = await revealBalance(settings: settings)
+    }
 }

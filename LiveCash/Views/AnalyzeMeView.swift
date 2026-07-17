@@ -15,15 +15,25 @@ struct AnalyzeMeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     header
+                        .appearFade(delay: 0)
                     scoreCard
+                        .appearScale(delay: 0.05)
                     profileRingsCard
+                        .appearFade(delay: 0.1)
                     typeCard
+                        .appearFade(delay: 0.14)
                     personalityCard
+                        .appearFade(delay: 0.18)
                     chartsSection
+                        .appearFade(delay: 0.22)
                     factsSection
+                        .appearFade(delay: 0.26)
                     strengthsWeaknesses
+                        .appearFade(delay: 0.3)
                     suggestionsCard
+                        .appearFade(delay: 0.34)
                     futureCard
+                        .appearFade(delay: 0.38)
                 }
                 .padding(20)
             }
@@ -32,11 +42,15 @@ struct AnalyzeMeView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Schließen") { dismiss() }
+                    Button("Schließen") {
+                        HapticService.soft(store: store)
+                        dismiss()
+                    }
                 }
             }
             .onAppear {
-                withAnimation(.easeOut(duration: 1.0)) {
+                HapticService.soft(store: store)
+                withAnimation(LiveCashMotion.softSpring) {
                     animatedScore = CGFloat(report.score) / 100
                 }
             }
@@ -90,11 +104,39 @@ struct AnalyzeMeView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Dein Finanzprofil")
                     .font(LiveCashTheme.headlineFont)
-                HStack(spacing: 12) {
-                    analyzeRing("Sparverhalten", profile.savings, LiveCashTheme.income)
-                    analyzeRing("Ausgabenkontrolle", profile.spendingControl, .orange)
-                    analyzeRing("Planung", profile.planning, .blue)
+                profileMeter("Sparfähigkeit", profile.savings, LiveCashTheme.income)
+                profileMeter("Ausgabenkontrolle", profile.spendingControl, .orange)
+                profileMeter("Planung", profile.planning, .blue)
+                Text(report.personalityLine)
+                    .font(LiveCashTheme.bodyFont)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    private func profileMeter(_ title: String, _ value: Int, _ color: Color) -> some View {
+        HStack(spacing: 12) {
+            Text(profileLevelLabel(value))
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(title)
+                        .font(LiveCashTheme.captionFont.weight(.semibold))
+                    Spacer()
+                    Text("\(value)%")
+                        .font(.system(.subheadline, design: .rounded).weight(.bold))
+                        .foregroundStyle(color)
+                        .contentTransition(.numericText())
                 }
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(color.opacity(0.12))
+                        Capsule()
+                            .fill(color)
+                            .frame(width: geo.size.width * animatedScore * CGFloat(value) / 100)
+                    }
+                }
+                .frame(height: 8)
             }
         }
     }
@@ -118,6 +160,14 @@ struct AnalyzeMeView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func profileLevelLabel(_ value: Int) -> String {
+        switch value {
+        case 80...: return "🟢"
+        case 55..<80: return "🟡"
+        default: return "🔴"
         }
     }
 

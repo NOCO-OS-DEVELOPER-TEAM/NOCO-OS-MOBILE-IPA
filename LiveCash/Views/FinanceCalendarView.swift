@@ -75,21 +75,33 @@ struct FinanceCalendarView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+            .onChange(of: scope) { _, _ in
+                HapticService.selection(store: store)
+            }
 
             legend
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
+                .appearFade(delay: 0.04, offsetY: 6)
 
-            switch scope {
-            case .month:
-                monthHeader
-                weekdayHeader
-                monthGrid
-            case .week:
-                weekList
-            case .year:
-                yearGrid
+            Group {
+                switch scope {
+                case .month:
+                    monthHeader
+                    weekdayHeader
+                    monthGrid
+                        .id(visibleMonth)
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                case .week:
+                    weekList
+                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                case .year:
+                    yearGrid
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
+            .animation(LiveCashMotion.crossfade, value: scope)
+            .animation(LiveCashMotion.panelSpring, value: visibleMonth)
 
             Spacer(minLength: 0)
         }
@@ -125,19 +137,32 @@ struct FinanceCalendarView: View {
     private var monthHeader: some View {
         HStack {
             Button {
-                visibleMonth = cal.date(byAdding: .month, value: -1, to: visibleMonth) ?? visibleMonth
+                withAnimation(LiveCashMotion.panelSpring) {
+                    visibleMonth = cal.date(byAdding: .month, value: -1, to: visibleMonth) ?? visibleMonth
+                }
+                HapticService.selection(store: store)
             } label: {
                 Image(systemName: "chevron.left")
+                    .frame(width: 36, height: 36)
+                    .background(.regularMaterial, in: Circle())
             }
+            .buttonStyle(PremiumPressStyle(scale: 0.9))
             Spacer()
             Text(visibleMonth.formatted(.dateTime.month(.wide).year()))
                 .font(LiveCashTheme.headlineFont)
+                .contentTransition(.opacity)
             Spacer()
             Button {
-                visibleMonth = cal.date(byAdding: .month, value: 1, to: visibleMonth) ?? visibleMonth
+                withAnimation(LiveCashMotion.panelSpring) {
+                    visibleMonth = cal.date(byAdding: .month, value: 1, to: visibleMonth) ?? visibleMonth
+                }
+                HapticService.selection(store: store)
             } label: {
                 Image(systemName: "chevron.right")
+                    .frame(width: 36, height: 36)
+                    .background(.regularMaterial, in: Circle())
             }
+            .buttonStyle(PremiumPressStyle(scale: 0.9))
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 8)
@@ -163,11 +188,11 @@ struct FinanceCalendarView: View {
                     let summary = daySummary(for: date)
                     Button {
                         selectedDay = summary
-                        HapticService.light(store: store)
+                        HapticService.selection(store: store)
                     } label: {
                         dayCell(summary)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SoftPressStyle())
                 } else {
                     Color.clear.frame(height: 54)
                 }
@@ -198,6 +223,13 @@ struct FinanceCalendarView: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(isToday ? LiveCashTheme.accent.opacity(0.1) : Color.primary.opacity(0.04))
         )
+        .overlay {
+            if isToday {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(LiveCashTheme.accent.opacity(0.35), lineWidth: 1)
+            }
+        }
+        .animation(LiveCashMotion.snappy, value: summary.markers.count)
     }
 
     private var weekList: some View {
@@ -208,6 +240,7 @@ struct FinanceCalendarView: View {
                 let summary = daySummary(for: date)
                 Button {
                     selectedDay = summary
+                    HapticService.selection(store: store)
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
@@ -236,6 +269,7 @@ struct FinanceCalendarView: View {
                         .font(LiveCashTheme.captionFont.weight(.semibold))
                     }
                 }
+                .buttonStyle(SoftPressStyle())
             }
         }
         .listStyle(.plain)
@@ -249,8 +283,11 @@ struct FinanceCalendarView: View {
                     let date = cal.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
                     let stats = monthStats(for: date)
                     Button {
-                        visibleMonth = date
-                        scope = .month
+                        withAnimation(LiveCashMotion.panelSpring) {
+                            visibleMonth = date
+                            scope = .month
+                        }
+                        HapticService.selection(store: store)
                     } label: {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(date.formatted(.dateTime.month(.abbreviated)))
@@ -374,10 +411,46 @@ struct FinanceCalendarDaySheet: View {
     @EnvironmentObject private var store: FinanceStore
     let summary: FinanceCalendarDaySummary
     @Environment(\.dismiss) private var dismiss
+    @State private var showAddExpense = false
+    @State private var showAddIncome = false
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    HStack(spacing: 12) {
+                        Button {
+                            showAddExpense = true
+                            HapticService.light(store: store)
+                        } label: {
+                            Label("Ausgabe", systemImage: "minus.circle.fill")
+                                .font(LiveCashTheme.captionFont.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(LiveCashTheme.expense.opacity(0.12))
+                                .foregroundStyle(LiveCashTheme.expense)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(PremiumPressStyle())
+
+                        Button {
+                            showAddIncome = true
+                            HapticService.light(store: store)
+                        } label: {
+                            Label("Einnahme", systemImage: "plus.circle.fill")
+                                .font(LiveCashTheme.captionFont.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(LiveCashTheme.income.opacity(0.12))
+                                .foregroundStyle(LiveCashTheme.income)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(PremiumPressStyle())
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                    .listRowBackground(Color.clear)
+                }
+
                 Section("Tagesübersicht") {
                     LabeledContent("Ausgaben", value: String(format: "%.2f€", summary.expenseTotal))
                     LabeledContent("Einnahmen", value: String(format: "%.2f€", summary.incomeTotal))
@@ -432,6 +505,12 @@ struct FinanceCalendarDaySheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Schließen") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showAddExpense) {
+                AddTransactionView(initialDate: summary.date, initialType: .expense)
+            }
+            .sheet(isPresented: $showAddIncome) {
+                AddTransactionView(initialDate: summary.date, initialType: .income)
             }
         }
         .presentationDetents([.medium, .large])

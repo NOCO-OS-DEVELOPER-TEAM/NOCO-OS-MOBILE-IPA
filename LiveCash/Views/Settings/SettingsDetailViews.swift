@@ -468,8 +468,17 @@ struct UISettingsView: View {
                         Text(level.rawValue).tag(level)
                     }
                 }
+                .onChange(of: store.appSettings.ui.animationLevel) { _, _ in
+                    HapticService.selection(store: store)
+                }
                 Toggle("Haptisches Feedback", isOn: store.uiBinding(\.hapticsEnabled))
+                    .onChange(of: store.appSettings.ui.hapticsEnabled) { _, enabled in
+                        if enabled { HapticService.success(store: store) }
+                    }
                 Toggle("Compact Mode", isOn: store.uiBinding(\.compactMode))
+                    .onChange(of: store.appSettings.ui.compactMode) { _, _ in
+                        HapticService.selection(store: store)
+                    }
             }
         }
         .navigationTitle("UI & Design")

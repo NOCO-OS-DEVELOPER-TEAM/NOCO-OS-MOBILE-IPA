@@ -4,7 +4,7 @@ import Charts
 struct InsightResultView: View {
     @EnvironmentObject private var store: FinanceStore
     let insight: FinanceInsight
-    var onDismiss: () -> Void
+    var onDismiss: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -15,20 +15,24 @@ struct InsightResultView: View {
                     .font(LiveCashTheme.headlineFont)
                     .foregroundStyle(.primary)
                 Spacer()
-                Button(action: onDismiss) {
+                Button(action: {
+                    HapticService.soft(store: store)
+                    onDismiss()
+                }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PremiumPressStyle(scale: 0.88))
             }
 
             if let series = insight.chartSeries, !series.isEmpty, let style = insight.chartStyle {
                 chartView(series: series, style: style)
                     .frame(height: style == .donut ? 140 : 110)
                     .padding(.vertical, 4)
+                    .appearScale(delay: 0.05)
             }
 
-            ForEach(Array(insight.rows.enumerated()), id: \.offset) { _, row in
+            ForEach(Array(insight.rows.enumerated()), id: \.offset) { index, row in
                 HStack {
                     Text(row.0)
                         .foregroundStyle(Color.primary.opacity(0.55))
@@ -38,6 +42,7 @@ struct InsightResultView: View {
                         .foregroundStyle(.primary)
                 }
                 .font(LiveCashTheme.bodyFont)
+                .listRowAppear(index: index)
             }
 
             if let tip = insight.insight {
@@ -60,7 +65,8 @@ struct InsightResultView: View {
                 FlowLayout(spacing: 6) {
                     ForEach(insight.followUpActions, id: \.self) { action in
                         Button {
-                            withAnimation(.easeOut(duration: 0.2)) {
+                            HapticService.selection(store: store)
+                            withAnimation(LiveCashMotion.snappy) {
                                 store.showInsight(for: action)
                             }
                         } label: {
@@ -72,7 +78,7 @@ struct InsightResultView: View {
                                 .foregroundStyle(LiveCashTheme.accent)
                                 .clipShape(Capsule())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PremiumPressStyle(scale: 0.94))
                     }
                 }
             }
@@ -84,6 +90,11 @@ struct InsightResultView: View {
                 .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+        .transition(.asymmetric(
+            insertion: .move(edge: .bottom).combined(with: .opacity),
+            removal: .opacity.combined(with: .scale(scale: 0.96))
+        ))
+        .appearScale()
     }
 
     @ViewBuilder

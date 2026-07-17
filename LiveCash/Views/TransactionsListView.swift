@@ -13,9 +13,9 @@ enum TransactionListFilter: String, CaseIterable, Identifiable {
 
 enum TransactionSortMode: String, CaseIterable, Identifiable {
     case newest = "Neueste zuerst"
-    case highestExpense = "Höchste Ausgaben zuerst"
-    case lowestExpense = "Niedrigste Ausgaben zuerst"
-    case highestIncome = "Höchste Einnahmen zuerst"
+    case highestExpense = "Höchste Ausgaben"
+    case lowestExpense = "Niedrigste Ausgaben"
+    case highestIncome = "Höchste Einnahmen"
     case biggestSavings = "Größte Sparbewegungen"
 
     var id: String { rawValue }
@@ -23,12 +23,11 @@ enum TransactionSortMode: String, CaseIterable, Identifiable {
 
 struct TransactionsListView: View {
     @EnvironmentObject private var store: FinanceStore
-    @State private var showReceiptScan = false
-    @State private var showAddMenu = false
+    @State private var showFilter = false
     @State private var showAddTransaction = false
     @State private var showGoalContribution = false
-    @State private var showFilter = false
-    @State private var showSort = false
+    @State private var showReceiptScan = false
+    @State private var showAddMenu = false
 
     @State private var filter: TransactionListFilter = .all
     @State private var categoryFilter: FinanceCategory?
@@ -80,6 +79,34 @@ struct TransactionsListView: View {
         }
     }
 
+    private var groupedSections: [(title: String, items: [Transaction])] {
+        guard sortMode == .newest else {
+            return [("Alle", displayed)]
+        }
+        let cal = Calendar.current
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "de_DE")
+        formatter.dateStyle = .full
+        var sections: [(title: String, items: [Transaction])] = []
+        for tx in displayed {
+            let day = cal.startOfDay(for: tx.date)
+            let title: String
+            if cal.isDateInToday(day) {
+                title = "Heute"
+            } else if cal.isDateInYesterday(day) {
+                title = "Gestern"
+            } else {
+                title = formatter.string(from: day)
+            }
+            if let idx = sections.firstIndex(where: { $0.title == title }) {
+                sections[idx].items.append(tx)
+            } else {
+                sections.append((title, [tx]))
+            }
+        }
+        return sections
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -95,27 +122,45 @@ struct TransactionsListView: View {
                         )
                     } else {
                         List {
-                            ForEach(displayed) { tx in
-                                NavigationLink {
-                                    TransactionDetailView(transactionID: tx.id)
-                                } label: {
-                                    TransactionRow(transaction: tx)
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                        store.deleteTransaction(tx)
-                                    } label: {
-                                        Label("Löschen", systemImage: "trash")
+                            ForEach(groupedSections, id: \.title) { section in
+                                Section {
+                                    ForEach(Array(section.items.enumerated()), id: \.element.id) { index, tx in
+                                        NavigationLink {
+                                            TransactionDetailView(transactionID: tx.id)
+                                        } label: {
+                                            TransactionRow(transaction: tx)
+                                        }
+                                        .simultaneousGesture(TapGesture().onEnded {
+                                            HapticService.navigate(store: store)
+                                        })
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                            Button(role: .destructive) {
+                                                HapticService.warning(store: store)
+                                                withAnimation(LiveCashMotion.snappy) {
+                                                    store.deleteTransaction(tx)
+                                                }
+                                            } label: {
+                                                Label("Löschen", systemImage: "trash")
+                                            }
+                                        }
+                                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                        .listRowSeparator(.hidden)
+                                        .listRowBackground(Color.clear)
+                                        .listRowAppear(index: min(index, 8))
+                                        .transition(.opacity.combined(with: .move(edge: .trailing)))
                                     }
+                                } header: {
+                                    Text(section.title)
+                                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(.secondary)
+                                        .textCase(nil)
                                 }
-                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
                             }
                         }
                         .listStyle(.plain)
                         .scrollContentBackground(.hidden)
+                        .animation(LiveCashMotion.crossfade, value: sortMode)
+                        .animation(LiveCashMotion.crossfade, value: filter)
                     }
                 }
             }
@@ -124,14 +169,22 @@ struct TransactionsListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {
-                        Button { showAddMenu = true } label: {
+                        Button {
+                            showAddMenu = true
+                            HapticService.medium(store: store)
+                        } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title3)
                                 .foregroundStyle(LiveCashTheme.accent)
                         }
-                        Button { showReceiptScan = true } label: {
+                        .buttonStyle(PremiumPressStyle(scale: 0.9))
+                        Button {
+                            showReceiptScan = true
+                            HapticService.light(store: store)
+                        } label: {
                             Image(systemName: "camera")
                         }
+                        .buttonStyle(PremiumPressStyle(scale: 0.9))
                     }
                 }
             }
@@ -143,15 +196,6 @@ struct TransactionsListView: View {
                     dateTo: $dateTo
                 )
                 .presentationDetents([.medium, .large])
-            }
-            .confirmationDialog("Schnellsortierung", isPresented: $showSort, titleVisibility: .visible) {
-                ForEach(TransactionSortMode.allCases) { mode in
-                    Button(mode.rawValue) {
-                        sortMode = mode
-                        HapticService.selection(store: store)
-                    }
-                }
-                Button("Abbrechen", role: .cancel) {}
             }
             .sheet(isPresented: $showReceiptScan) { ReceiptScanView() }
             .sheet(isPresented: $showAddMenu) {
@@ -171,43 +215,57 @@ struct TransactionsListView: View {
     }
 
     private var quickControls: some View {
-        HStack(spacing: 10) {
-            Button {
-                showFilter = true
-                HapticService.light(store: store)
-            } label: {
-                Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.plain)
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(filterActive ? LiveCashTheme.accent.opacity(0.5) : Color.primary.opacity(0.08), lineWidth: 1)
-            )
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                Button {
+                    showFilter = true
+                    HapticService.light(store: store)
+                } label: {
+                    Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(PremiumPressStyle())
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(filterActive ? LiveCashTheme.accent.opacity(0.5) : Color.primary.opacity(0.08), lineWidth: 1)
+                )
 
-            Button {
-                showSort = true
-                HapticService.light(store: store)
-            } label: {
-                Label("Sortierung", systemImage: "arrow.up.arrow.down.circle")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                Button {
+                    cycleSortMode()
+                } label: {
+                    Label("Sortierung", systemImage: "arrow.up.arrow.down.circle")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(PremiumPressStyle())
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                )
             }
-            .buttonStyle(.plain)
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(sortMode != .newest ? LiveCashTheme.accent.opacity(0.5) : Color.primary.opacity(0.08), lineWidth: 1)
-            )
+
+            Text("Aktuell: \(sortMode.rawValue)")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    private func cycleSortMode() {
+        let all = TransactionSortMode.allCases
+        guard let idx = all.firstIndex(of: sortMode) else { return }
+        sortMode = all[(idx + 1) % all.count]
+        HapticService.selection(store: store)
     }
 
     private var filterActive: Bool {

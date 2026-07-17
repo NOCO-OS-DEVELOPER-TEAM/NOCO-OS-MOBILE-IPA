@@ -6,39 +6,48 @@ struct FinanceReportView: View {
     @EnvironmentObject private var store: FinanceStore
     @Environment(\.dismiss) private var dismiss
     @State private var appearScore: CGFloat = 0
-    @State private var sectionOpacity: Double = 0
+    @State private var selectedSlice: String?
+    @State private var chartAppear: CGFloat = 0
 
     private var analyze: AnalyzeMeReport { AnalyzeMeEngine.analyze(store: store) }
     private var analytics: AnalyticsReport { AnalyticsEngine.report(store: store) }
     private var memory: AssistantMemory { AssistantMemory.build(from: store) }
     private var scenarios: [WhatIfScenario] { FutureSimulationEngine.whatIfScenarios(store: store) }
 
+    private var categorySlices: [AnalyticsCategorySlice] {
+        Array(analytics.categorySlices.prefix(8))
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    hero
-                    whoAmI
-                    spending
-                    strengths
-                    changes
-                    forecast
+                    hero.appearScale(delay: 0)
+                    whoAmI.appearFade(delay: 0.08)
+                    spending.appearFade(delay: 0.14)
+                    monthBars.appearFade(delay: 0.2)
+                    strengths.appearFade(delay: 0.26)
+                    changes.appearFade(delay: 0.32)
+                    forecast.appearFade(delay: 0.38)
                 }
                 .padding(20)
-                .opacity(sectionOpacity)
             }
             .background(LiveCashTheme.screenBackground)
             .navigationTitle("Mein Finanzbericht")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fertig") { dismiss() }
+                    Button("Fertig") {
+                        HapticService.soft(store: store)
+                        dismiss()
+                    }
                 }
             }
             .onAppear {
-                withAnimation(.easeOut(duration: 1.0)) {
+                HapticService.soft(store: store)
+                withAnimation(LiveCashMotion.softSpring) {
                     appearScore = CGFloat(analyze.score) / 100
-                    sectionOpacity = 1
+                    chartAppear = 1
                 }
             }
         }
@@ -61,6 +70,7 @@ struct FinanceReportView: View {
                         .rotationEffect(.degrees(-90))
                     Text("\(analyze.score)")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
                 }
                 Text(analyze.financeType)
                     .font(.system(.title2, design: .rounded).weight(.bold))
@@ -89,34 +99,69 @@ struct FinanceReportView: View {
     private var spending: some View {
         LiveCashCard {
             VStack(alignment: .leading, spacing: 12) {
-                sectionTitle("Wo gebe ich Geld aus?")
-                if analytics.categorySlices.isEmpty {
+                sectionTitle("Wo gebe ich mein Geld aus?")
+                if categorySlices.isEmpty {
                     Text("Noch zu wenig Daten — erfasse ein paar Ausgaben.")
                         .foregroundStyle(.secondary)
                 } else {
-                    Chart(analytics.categorySlices) { slice in
+                    Chart(categorySlices) { slice in
                         SectorMark(
-                            angle: .value("A", slice.amount),
-                            innerRadius: .ratio(0.55),
-                            angularInset: 1.5
+                            angle: .value("A", slice.amount * Double(chartAppear)),
+                            innerRadius: .ratio(selectedSlice == slice.name ? 0.48 : 0.55),
+                            angularInset: selectedSlice == slice.name ? 3 : 1.5
                         )
                         .foregroundStyle(by: .value("K", slice.name))
+                        .opacity(selectedSlice == nil || selectedSlice == slice.name ? 1 : 0.45)
                     }
-                    .frame(height: 160)
+                    .frame(height: 190)
                     .chartLegend(.hidden)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedSlice)
+                    .animation(.easeOut(duration: 0.9), value: chartAppear)
 
-                    ForEach(analytics.categorySlices.prefix(4)) { slice in
+                    if let name = selectedSlice,
+                       let slice = categorySlices.first(where: { $0.name == name }) {
                         HStack {
-                            Text(slice.name)
-                            if let sub = memory.topSubcategory, slice.name == analytics.categorySlices.first?.name {
-                                Text("· \(sub)")
+                            Image(systemName: slice.icon.isEmpty ? "circle.fill" : slice.icon)
+                                .foregroundStyle(LiveCashTheme.accent)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(slice.name)
+                                    .font(LiveCashTheme.bodyFont.weight(.semibold))
+                                Text(String(format: "%.0f€ · %.0f%%", slice.amount, slice.percent))
+                                    .font(LiveCashTheme.captionFont)
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Text(String(format: "%.0f%%", slice.percent))
-                                .foregroundStyle(.secondary)
                         }
-                        .font(LiveCashTheme.captionFont)
+                        .padding(12)
+                        .background(LiveCashTheme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
+                    ForEach(categorySlices) { slice in
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                selectedSlice = selectedSlice == slice.name ? nil : slice.name
+                            }
+                            HapticService.selection(store: store)
+                        } label: {
+                            HStack {
+                                Circle()
+                                    .fill(LiveCashTheme.accent.opacity(selectedSlice == slice.name ? 1 : 0.35))
+                                    .frame(width: 8, height: 8)
+                                Text(slice.name)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Text(String(format: "%.0f€", slice.amount))
+                                    .foregroundStyle(.secondary)
+                                Text(String(format: "%.0f%%", slice.percent))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                                    .frame(width: 44, alignment: .trailing)
+                            }
+                            .font(LiveCashTheme.captionFont)
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     if memory.prevMonthExpenses > 0 {
@@ -129,6 +174,30 @@ struct FinanceReportView: View {
                         .font(LiveCashTheme.bodyFont)
                         .foregroundStyle(delta <= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
                         .padding(.top, 4)
+                    }
+                }
+            }
+        }
+    }
+
+    private var monthBars: some View {
+        LiveCashCard {
+            VStack(alignment: .leading, spacing: 12) {
+                sectionTitle("Monats-Trend")
+                if analytics.monthBars.isEmpty {
+                    Text("Mehr Monate = klarere Trends.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Chart(analytics.monthBars) { bar in
+                        BarMark(
+                            x: .value("M", bar.label),
+                            y: .value("€", bar.amount * Double(chartAppear))
+                        )
+                        .foregroundStyle(LiveCashTheme.accent.gradient)
+                    }
+                    .frame(height: 140)
+                    .chartYAxis {
+                        AxisMarks(position: .leading)
                     }
                 }
             }
@@ -191,6 +260,7 @@ struct FinanceReportView: View {
             Text("\(value)%")
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .foregroundStyle(color)
+                .contentTransition(.numericText())
             Text(title)
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.secondary)

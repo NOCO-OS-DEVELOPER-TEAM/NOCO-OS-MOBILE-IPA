@@ -64,9 +64,11 @@ struct GoalsView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAdd = true
+                    HapticService.medium(store: store)
                 } label: {
                     Image(systemName: "plus")
                 }
+                .buttonStyle(PremiumPressStyle(scale: 0.88))
             }
         }
         .sheet(isPresented: $showAdd) {
@@ -84,6 +86,7 @@ struct GoalsView: View {
         )) {
             Button("Löschen", role: .destructive) {
                 if let goal = goalToDelete {
+                    HapticService.warning(store: store)
                     store.deleteGoal(goal)
                     goalToDelete = nil
                 }
@@ -99,7 +102,8 @@ struct GoalsView: View {
     @ViewBuilder
     private func goalRow(_ goal: SavingsGoal, completed: Bool = false) -> some View {
         Button {
-            editingGoal = goal
+            detailGoal = goal
+            HapticService.selection(store: store)
         } label: {
             GoalCard(
                 goal: goal,
@@ -108,21 +112,23 @@ struct GoalsView: View {
                 completed: completed
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PremiumPressStyle())
+        .appearFade(delay: 0.04, offsetY: 10)
         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button {
-                detailGoal = goal
-                HapticService.light(store: store)
+                editingGoal = goal
+                HapticService.selection(store: store)
             } label: {
-                Label("Details", systemImage: "info.circle")
+                Label("Bearbeiten", systemImage: "pencil")
             }
             .tint(LiveCashTheme.accent)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
+                HapticService.warning(store: store)
                 goalToDelete = goal
             } label: {
                 Label("Löschen", systemImage: "trash")
@@ -166,8 +172,10 @@ struct GoalsView: View {
                 if totalTarget > 0 {
                     ProgressView(value: min(totalSaved / totalTarget, 1))
                         .tint(LiveCashTheme.income)
+                        .animation(LiveCashMotion.softSpring, value: totalSaved)
                 }
             }
         }
+        .appearScale()
     }
 }

@@ -211,6 +211,19 @@ final class SmartInputParser {
     }
 
     private func extractMerchant(from text: String, amount: Double) -> String {
+        let lower = text.lowercased()
+        let known: [(String, String)] = [
+            ("rewe", "REWE"), ("lidl", "Lidl"), ("aldi", "Aldi"), ("edeka", "Edeka"),
+            ("penny", "Penny"), ("netto", "Netto"), ("dm ", "dm"), ("rossmann", "Rossmann"),
+            ("amazon", "Amazon"), ("paypal", "PayPal"), ("spotify", "Spotify"),
+            ("netflix", "Netflix"), ("apple", "Apple"), ("mcdonald", "McDonald's"),
+            ("burger king", "Burger King"), ("starbucks", "Starbucks"), ("shell", "Shell"),
+            ("aral", "Aral"), ("ikea", "IKEA"), ("media markt", "MediaMarkt"), ("saturn", "Saturn")
+        ]
+        for (needle, name) in known where lower.contains(needle) {
+            return name
+        }
+
         var cleaned = text
         let amountStr = String(format: "%.2f", amount).replacingOccurrences(of: ".", with: "[.,]")
         if let regex = try? NSRegularExpression(pattern: #"[+\-]?\s*\#(amountStr)\s*(?:€|eur)?"#, options: .caseInsensitive) {
@@ -219,12 +232,12 @@ final class SmartInputParser {
         cleaned = cleaned.replacingOccurrences(of: "€", with: "")
         cleaned = cleaned.replacingOccurrences(of: "+", with: "")
         let words = cleaned
-            .components(separatedBy: .whitespaces)
+            .components(separatedBy: .whitespacesAndNewlines)
             .map { $0.trimmingCharacters(in: .punctuationCharacters) }
-            .filter { !$0.isEmpty && !$0.allSatisfy(\.isNumber) }
+            .filter { !$0.isEmpty && !$0.allSatisfy(\.isNumber) && $0.count > 1 }
 
         if words.isEmpty { return "Unbekannt" }
-        return words.prefix(4).joined(separator: " ").capitalized
+        return words.prefix(3).joined(separator: " ").capitalized
     }
 
     private func extractDate(from text: String) -> Date? {

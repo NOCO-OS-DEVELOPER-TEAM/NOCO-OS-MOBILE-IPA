@@ -115,12 +115,13 @@ struct FinancialStoryView: View {
         playTask?.cancel()
         playTask = Task {
             while !Task.isCancelled, playMode {
-                try? await Task.sleep(for: .seconds(3))
+                try? await Task.sleep(for: .seconds(5))
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
-                    withAnimation {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
                         slideIndex = (slideIndex + 1) % max(slides.count, 1)
                     }
+                    HapticService.selection(store: store)
                 }
             }
         }

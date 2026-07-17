@@ -22,14 +22,15 @@ struct InputTypeToggle: View {
                         Circle()
                             .strokeBorder(accent.opacity(0.35), lineWidth: 1)
                     )
+                    .scaleEffect(isIncome ? 1.04 : 1)
                 Text(isIncome ? "+" : "–")
                     .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundStyle(accent)
                     .contentTransition(.numericText())
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PremiumPressStyle(scale: 0.88))
         .accessibilityLabel(isIncome ? "Einnahme" : "Ausgabe")
-        .animation(.spring(response: 0.35, dampingFraction: 0.72), value: isIncome)
+        .animation(LiveCashMotion.pressSpring, value: isIncome)
     }
 }

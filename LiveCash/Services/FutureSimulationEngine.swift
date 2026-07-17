@@ -18,7 +18,21 @@ struct WhatIfScenario: Identifiable, Equatable {
 
 enum FutureSimulationEngine {
     @MainActor
+    private static var scenarioCache: (sig: UInt64, extra: Double, scenarios: [WhatIfScenario])?
+
+    @MainActor
     static func whatIfScenarios(store: FinanceStore, extraMonthlySavings: Double = 50) -> [WhatIfScenario] {
+        let sig = AnalyzeMeEngine.dataSignature(store: store)
+        if let scenarioCache, scenarioCache.sig == sig, scenarioCache.extra == extraMonthlySavings {
+            return scenarioCache.scenarios
+        }
+        let built = computeWhatIf(store: store, extraMonthlySavings: extraMonthlySavings)
+        scenarioCache = (sig, extraMonthlySavings, built)
+        return built
+    }
+
+    @MainActor
+    private static func computeWhatIf(store: FinanceStore, extraMonthlySavings: Double) -> [WhatIfScenario] {
         let goal = store.activeGoals.first
         let remaining = goal?.remaining ?? 1000
         let currentMonthly = max(store.monthlySavingsRate, 20)

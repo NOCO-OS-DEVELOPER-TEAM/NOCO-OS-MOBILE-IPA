@@ -28,6 +28,7 @@ struct MainTabView: View {
         }
         .tint(LiveCashTheme.accent)
         .onChange(of: selectedTab) { oldTab, newTab in
+            HapticService.tabChange(store: store)
             if oldTab == 3 || newTab != 3 {
                 // Leaving More (or switching away) → pop nested navigation next visit
                 if oldTab == 3 && newTab != 3 {

@@ -28,10 +28,10 @@ struct AssistantSuggestionsView: View {
             FlowLayout(spacing: 8) {
                 ForEach(actions, id: \.self) { action in
                     Button {
-                        withAnimation(.easeOut(duration: 0.2)) {
+                        withAnimation(LiveCashMotion.snappy) {
                             store.showInsight(for: action)
                         }
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        HapticService.selection(store: store)
                     } label: {
                         Text(FinanceAssistant.shared.actionTitle(action))
                             .font(LiveCashTheme.captionFont.weight(.semibold))
@@ -41,7 +41,8 @@ struct AssistantSuggestionsView: View {
                             .foregroundStyle(LiveCashTheme.accent)
                             .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PremiumPressStyle(scale: 0.94))
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
         }

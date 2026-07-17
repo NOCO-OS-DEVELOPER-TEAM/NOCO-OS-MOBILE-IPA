@@ -24,6 +24,20 @@ struct AssistantMemory: Equatable {
 
     @MainActor
     static func build(from store: FinanceStore) -> AssistantMemory {
+        let sig = AnalyzeMeEngine.dataSignature(store: store)
+        if let memoryCache, memoryCache.sig == sig {
+            return memoryCache.memory
+        }
+        let built = compute(from: store)
+        memoryCache = (sig, built)
+        return built
+    }
+
+    @MainActor
+    private static var memoryCache: (sig: UInt64, memory: AssistantMemory)?
+
+    @MainActor
+    private static func compute(from store: FinanceStore) -> AssistantMemory {
         let cal = Calendar.current
         let now = Date()
         let expenses = store.accountFilteredTransactions.filter {

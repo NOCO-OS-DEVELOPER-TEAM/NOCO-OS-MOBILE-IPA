@@ -12,6 +12,9 @@ struct AddTransactionView: View {
     @EnvironmentObject private var store: FinanceStore
     @Environment(\.dismiss) private var dismiss
 
+    var initialDate: Date?
+    var initialType: TransactionType?
+
     @State private var entryMode: AddEntryMode = .expense
     @State private var merchant = ""
     @State private var amountText = ""
@@ -100,6 +103,13 @@ struct AddTransactionView: View {
             }
             .onAppear {
                 selectedGoalId = store.goals.first?.id
+                if let initialDate {
+                    date = initialDate
+                }
+                if let initialType {
+                    type = initialType
+                    entryMode = initialType == .income ? .income : .expense
+                }
             }
         }
     }
@@ -118,7 +128,7 @@ struct AddTransactionView: View {
         if entryMode == .goal {
             guard let id = selectedGoalId ?? store.goals.first?.id else { return }
             store.contributeToGoal(id: id, amount: abs(amount))
-            HapticService.success(store: store)
+            HapticService.celebrate(store: store)
             dismiss()
             return
         }
@@ -153,6 +163,7 @@ struct AddTransactionView: View {
         )
         store.addTransaction(tx)
         store.lastFeedback = tx.formattedAmount + " · \(tx.merchant)"
+        HapticService.celebrate(store: store)
         dismiss()
     }
 

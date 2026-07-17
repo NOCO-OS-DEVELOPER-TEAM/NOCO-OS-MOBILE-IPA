@@ -17,6 +17,7 @@ private enum SettingsDestination: Hashable {
     case categories
     case moneyCard
     case savings
+    case savingsOptions
     case map
     case ui
     case data
@@ -40,6 +41,7 @@ struct SettingsView: View {
             .init(id: "categories", title: "Kategorien", keywords: ["kategorie", "tags"], section: "Geld & Sparen", destination: .categories),
             .init(id: "money", title: "Money Card & Widget", keywords: ["widget", "money", "karte", "card"], section: "Design", destination: .moneyCard),
             .init(id: "savings", title: "Sparziele", keywords: ["sparziel", "sparen", "ziel", "live activity"], section: "Geld & Sparen", destination: .savings),
+            .init(id: "savings-options", title: "Sparziel-Optionen", keywords: ["live activity", "fortschritt", "sparziel einstellungen"], section: "Geld & Sparen", destination: .savingsOptions),
             .init(id: "map", title: "Geldkarte", keywords: ["karte", "map", "pin", "standort"], section: "Design", destination: .map),
             .init(id: "ui", title: "UI & Design", keywords: ["design", "animation", "haptic", "liquid", "glass", "darstellung"], section: "Design", destination: .ui),
             .init(id: "data", title: "Daten verwalten", keywords: ["export", "import", "backup", "reset", "zurücksetzen"], section: "Daten", destination: .data),
@@ -85,7 +87,12 @@ struct SettingsView: View {
                 }
 
                 Section("Geld & Sparen") {
-                    settingsLink(.savings, title: "Sparziele", icon: "target")
+                    NavigationLink {
+                        GoalsView()
+                    } label: {
+                        Label("Sparziele", systemImage: "target")
+                    }
+                    settingsLink(.savingsOptions, title: "Sparziel-Optionen", icon: "slider.horizontal.3")
                     settingsLink(.limits, title: "Limits", icon: "gauge.with.dots.needle.67percent")
                     settingsLink(.categories, title: "Kategorien", icon: "tag.fill")
                 }
@@ -103,6 +110,7 @@ struct SettingsView: View {
                 Section("Daten verwalten") {
                     settingsLink(.data, title: "Exportieren / Importieren", icon: "externaldrive")
                     Button("Alles zurücksetzen", role: .destructive) {
+                        HapticService.warning(store: store)
                         showResetConfirm = true
                     }
                 }
@@ -122,7 +130,10 @@ struct SettingsView: View {
             destinationView(destination)
         }
         .alert("Alle Daten löschen?", isPresented: $showResetConfirm) {
-            Button("Löschen", role: .destructive) { store.resetAllData() }
+            Button("Löschen", role: .destructive) {
+                HapticService.error(store: store)
+                store.resetAllData()
+            }
             Button("Abbrechen", role: .cancel) {}
         } message: {
             Text("Buchungen, Ziele, Abos und Einstellungen werden gelöscht. Die App startet wie neu.")
@@ -171,6 +182,9 @@ struct SettingsView: View {
         NavigationLink(value: destination) {
             Label(title, systemImage: icon)
         }
+        .simultaneousGesture(TapGesture().onEnded {
+            HapticService.navigate(store: store)
+        })
     }
 
     @ViewBuilder
@@ -183,7 +197,8 @@ struct SettingsView: View {
         case .limits: SpendingLimitsView()
         case .categories: CategoriesSettingsView()
         case .moneyCard: MoneyCardSettingsView()
-        case .savings: SavingsSettingsView()
+        case .savings: GoalsView()
+        case .savingsOptions: SavingsSettingsView()
         case .map: MapSettingsView()
         case .ui: UISettingsView()
         case .data: DataManagementSettingsView()
@@ -203,6 +218,7 @@ struct SettingsView: View {
         case .categories: return "tag.fill"
         case .moneyCard: return "creditcard.fill"
         case .savings: return "target"
+        case .savingsOptions: return "slider.horizontal.3"
         case .map: return "map.fill"
         case .ui: return "paintbrush"
         case .data: return "externaldrive"

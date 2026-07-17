@@ -192,6 +192,6 @@ struct TransactionDetailView: View {
 
         store.updateTransaction(tx)
         isEditing = false
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        HapticService.success(store: store)
     }
 }

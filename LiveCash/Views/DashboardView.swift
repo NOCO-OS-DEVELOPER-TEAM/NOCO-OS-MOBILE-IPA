@@ -46,9 +46,13 @@ struct DashboardView: View {
                     VStack(spacing: contentSpacing) {
                         Color.clear.frame(height: 8)
                         headerSection
+                            .appearScale(delay: 0)
                         savingsProgressSection
+                            .appearFade(delay: 0.08)
                         insightsSection
+                            .appearFade(delay: 0.14)
                         recentSection
+                            .appearFade(delay: 0.2)
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 110)
@@ -63,6 +67,7 @@ struct DashboardView: View {
                     Color.black.opacity(0.4)
                         .ignoresSafeArea()
                         .onTapGesture {
+                            HapticService.soft(store: store)
                             NotificationCenter.default.post(name: .liveCashCollapseAssistant, object: nil)
                         }
                         .transition(.opacity)
@@ -72,7 +77,7 @@ struct DashboardView: View {
                 SmartInputBar(showReceiptScan: $showReceiptScan)
                     .zIndex(2)
             }
-            .animation(.easeInOut(duration: 0.25), value: store.isAssistantExpanded)
+            .animation(LiveCashMotion.panelSpring, value: store.isAssistantExpanded)
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showReceiptScan) {
                 ReceiptScanView()
@@ -95,31 +100,36 @@ struct DashboardView: View {
 
             Button {
                 showFinanceReport = true
-                HapticService.light(store: store)
+                HapticService.medium(store: store)
             } label: {
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(LiveCashTheme.accent)
+                    .symbolEffect(.bounce, value: showFinanceReport)
             }
+            .buttonStyle(PremiumPressStyle(scale: 0.9))
             .accessibilityLabel("Mein Finanzbericht")
 
             Button {
                 showFinancialStory = true
-                HapticService.light(store: store)
+                HapticService.medium(store: store)
             } label: {
                 Image(systemName: "sparkles.rectangle.stack")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(LiveCashTheme.accent)
             }
+            .buttonStyle(PremiumPressStyle(scale: 0.9))
             .accessibilityLabel("Financial Story")
 
             if store.loginReward.loginStreakDays > 0 {
                 PulsingFlameLabel(days: store.loginReward.loginStreakDays)
+                    .id("flame-\(store.loginReward.loginStreakDays)")
+                    .transition(.scale.combined(with: .opacity))
             }
-            if store.loginReward.coins > 0 {
-                SpinningCoinLabel(coins: store.loginReward.coins)
-            }
+            SpinningCoinLabel(coins: max(store.loginReward.coins, 0))
+                .id("coins-\(store.loginReward.coins)")
         }
+        .animation(LiveCashMotion.softSpring, value: store.loginReward.loginStreakDays)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.regularMaterial)
@@ -156,10 +166,13 @@ struct DashboardView: View {
                     Label(LiveCashTheme.money(store.currentMonthExpenses), systemImage: "arrow.down.circle.fill")
                         .font(LiveCashTheme.captionFont)
                         .foregroundStyle(LiveCashTheme.expense)
+                        .contentTransition(.numericText())
                     Label(LiveCashTheme.money(store.currentMonthIncome), systemImage: "arrow.up.circle.fill")
                         .font(LiveCashTheme.captionFont)
                         .foregroundStyle(LiveCashTheme.income)
+                        .contentTransition(.numericText())
                 }
+                .animation(LiveCashMotion.snappy, value: store.currentMonthExpenses)
             }
         }
     }
@@ -183,6 +196,7 @@ struct DashboardView: View {
                                 Capsule()
                                     .fill(LiveCashTheme.accent)
                                     .frame(width: geo.size.width * goal.progress)
+                                    .animation(LiveCashMotion.softSpring, value: goal.progress)
                             }
                         }
                         .frame(height: 10)
@@ -190,6 +204,7 @@ struct DashboardView: View {
                             Text("\(goal.progressPercent)%")
                                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                                 .foregroundStyle(LiveCashTheme.accent)
+                                .contentTransition(.numericText())
                             Spacer()
                             Text(String(format: "%.0f€ / %.0f€", goal.currentAmount, goal.targetAmount))
                                 .font(LiveCashTheme.captionFont)
@@ -197,10 +212,12 @@ struct DashboardView: View {
                         }
                     }
                 }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             } else if store.transactions.isEmpty && store.goals.isEmpty {
                 EmptyView()
             }
         }
+        .animation(LiveCashMotion.panelSpring, value: store.activeGoals.first?.id)
     }
 
     private var insightsSection: some View {
@@ -213,24 +230,29 @@ struct DashboardView: View {
                         systemImage: "airplane.departure",
                         primaryActionTitle: "Erstes Sparziel",
                         primaryAction: {
+                            HapticService.medium(store: store)
                             store.pendingTabSelection = 3
                             store.pendingMoreDestination = .goals
                         },
                         secondaryActionTitle: "Finanzbericht",
-                        secondaryAction: { showFinanceReport = true }
+                        secondaryAction: {
+                            HapticService.light(store: store)
+                            showFinanceReport = true
+                        }
                     )
                 }
             } else {
                 SectionHeader(title: "Erkenntnisse")
-                ForEach(Array(insightTips.enumerated()), id: \.offset) { _, tip in
+                ForEach(Array(insightTips.enumerated()), id: \.offset) { index, tip in
                     Button {
                         store.showInsight(for: tip.action)
-                        HapticService.light(store: store)
+                        HapticService.selection(store: store)
                     } label: {
                         LiveCashCard {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "lightbulb.fill")
                                     .foregroundStyle(LiveCashTheme.accent)
+                                    .symbolEffect(.pulse, options: .repeating.speed(0.4), value: tip.shortTitle)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(tip.shortTitle)
                                         .font(LiveCashTheme.captionFont.weight(.semibold))
@@ -244,10 +266,12 @@ struct DashboardView: View {
                             }
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SoftPressStyle())
+                    .listRowAppear(index: index)
                 }
 
                 Button {
+                    HapticService.medium(store: store)
                     showFinanceReport = true
                 } label: {
                     Label("Mein Finanzbericht", systemImage: "doc.text.magnifyingglass")
@@ -258,7 +282,7 @@ struct DashboardView: View {
                         .foregroundStyle(LiveCashTheme.accent)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PremiumPressStyle())
             }
         }
     }
@@ -273,16 +297,25 @@ struct DashboardView: View {
                         .foregroundStyle(.secondary)
                 }
             } else {
-                ForEach(store.accountFilteredTransactions.prefix(5)) { tx in
+                ForEach(Array(store.accountFilteredTransactions.prefix(5).enumerated()), id: \.element.id) { index, tx in
                     NavigationLink {
                         TransactionDetailView(transactionID: tx.id)
                     } label: {
                         TransactionRow(transaction: tx)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SoftPressStyle())
+                    .simultaneousGesture(TapGesture().onEnded {
+                        HapticService.navigate(store: store)
+                    })
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .trailing)),
+                        removal: .opacity.combined(with: .scale(scale: 0.96))
+                    ))
+                    .listRowAppear(index: index)
                 }
             }
         }
+        .animation(LiveCashMotion.snappy, value: store.accountFilteredTransactions.prefix(5).map(\.id))
     }
 
     private var monthTitle: String {

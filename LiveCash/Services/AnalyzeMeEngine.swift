@@ -28,6 +28,33 @@ struct AnalyzeMeReport: Equatable {
 
 @MainActor
 enum AnalyzeMeEngine {
+    private static var cached: (sig: UInt64, report: AnalyzeMeReport)?
+
+    /// Shared invalidation key for Analyze Me / Analytics / Memory caches.
+    static func dataSignature(store: FinanceStore) -> UInt64 {
+        var h: UInt64 = 5381
+        h = h &* 33 &+ UInt64(store.transactions.count)
+        h = h &* 33 &+ UInt64(store.goals.count)
+        h = h &* 33 &+ UInt64(store.subscriptions.count)
+        h = h &* 33 &+ UInt64(store.loginReward.loginStreakDays)
+        h = h &* 33 &+ UInt64(bitPattern: Int64((store.availableBalance * 100).rounded()))
+        h = h &* 33 &+ UInt64(bitPattern: Int64(store.activeAccountId?.hashValue ?? 0))
+        if let tx = store.transactions.first {
+            h = h &* 33 &+ UInt64(bitPattern: Int64(tx.id.hashValue))
+            h = h &* 33 &+ UInt64(bitPattern: Int64((tx.amount * 100).rounded()))
+            h = h &* 33 &+ UInt64(bitPattern: Int64(tx.date.timeIntervalSinceReferenceDate.rounded()))
+        }
+        if let goal = store.goals.first {
+            h = h &* 33 &+ UInt64(bitPattern: Int64((goal.currentAmount * 100).rounded()))
+            h = h &* 33 &+ UInt64(bitPattern: Int64((goal.targetAmount * 100).rounded()))
+        }
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        h = h &* 33 &+ UInt64(day.year ?? 0)
+        h = h &* 33 &+ UInt64(day.month ?? 0)
+        h = h &* 33 &+ UInt64(day.day ?? 0)
+        return h
+    }
+
     static func matchesQuery(_ text: String) -> Bool {
         let n = text.lowercased()
             .replacingOccurrences(of: "ä", with: "ae")
@@ -45,6 +72,16 @@ enum AnalyzeMeEngine {
     }
 
     static func analyze(store: FinanceStore) -> AnalyzeMeReport {
+        let sig = dataSignature(store: store)
+        if let cached, cached.sig == sig {
+            return cached.report
+        }
+        let report = compute(store: store)
+        cached = (sig, report)
+        return report
+    }
+
+    private static func compute(store: FinanceStore) -> AnalyzeMeReport {
         let cal = Calendar.current
         let now = Date()
         let expenses = store.accountFilteredTransactions.filter {
