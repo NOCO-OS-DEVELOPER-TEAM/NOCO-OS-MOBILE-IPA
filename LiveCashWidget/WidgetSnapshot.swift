@@ -21,6 +21,9 @@ struct WidgetSnapshot: Codable {
     var showSubscriptions: Bool
     var showRecentExpense: Bool
     var updatedAt: Date
+    var hasLiveData: Bool
+    var blockedInGoals: Double
+    var totalWealth: Double
 
     static let empty = WidgetSnapshot(
         balance: 0, monthExpenses: 0, monthIncome: 0,
@@ -32,7 +35,10 @@ struct WidgetSnapshot: Codable {
         lastTransactionIsIncome: false, refreshIntervalMinutes: 15,
         showBalance: true, showExpenses: true, showSavings: true,
         showSubscriptions: true, showRecentExpense: true,
-        updatedAt: Date()
+        updatedAt: .distantPast,
+        hasLiveData: false,
+        blockedInGoals: 0,
+        totalWealth: 0
     )
 
     init(
@@ -55,7 +61,10 @@ struct WidgetSnapshot: Codable {
         showSavings: Bool = true,
         showSubscriptions: Bool = true,
         showRecentExpense: Bool = true,
-        updatedAt: Date
+        updatedAt: Date,
+        hasLiveData: Bool = true,
+        blockedInGoals: Double = 0,
+        totalWealth: Double = 0
     ) {
         self.balance = balance
         self.monthExpenses = monthExpenses
@@ -77,6 +86,9 @@ struct WidgetSnapshot: Codable {
         self.showSubscriptions = showSubscriptions
         self.showRecentExpense = showRecentExpense
         self.updatedAt = updatedAt
+        self.hasLiveData = hasLiveData
+        self.blockedInGoals = blockedInGoals
+        self.totalWealth = totalWealth
     }
 
     init(from decoder: Decoder) throws {
@@ -100,7 +112,10 @@ struct WidgetSnapshot: Codable {
         showSavings = try c.decodeIfPresent(Bool.self, forKey: .showSavings) ?? true
         showSubscriptions = try c.decodeIfPresent(Bool.self, forKey: .showSubscriptions) ?? true
         showRecentExpense = try c.decodeIfPresent(Bool.self, forKey: .showRecentExpense) ?? true
-        updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? .distantPast
+        hasLiveData = try c.decodeIfPresent(Bool.self, forKey: .hasLiveData) ?? true
+        blockedInGoals = try c.decodeIfPresent(Double.self, forKey: .blockedInGoals) ?? 0
+        totalWealth = try c.decodeIfPresent(Double.self, forKey: .totalWealth) ?? balance
     }
 
     enum CodingKeys: String, CodingKey {
@@ -109,21 +124,46 @@ struct WidgetSnapshot: Codable {
         case lastExpenseMerchant, lastExpenseAmount
         case lastTransactionMerchant, lastTransactionAmount, lastTransactionIsIncome, refreshIntervalMinutes
         case showBalance, showExpenses, showSavings, showSubscriptions, showRecentExpense, updatedAt
+        case hasLiveData, blockedInGoals, totalWealth
     }
 }
 
 enum WidgetConstants {
     static let appGroup = "group.de.noco.timepay"
     static let snapshotKey = "livecash_widget_snapshot"
+    static let snapshotFileName = "livecash_widget_snapshot.json"
 }
 
 enum WidgetSnapshotLoader {
     static func load() -> WidgetSnapshot {
-        guard let data = UserDefaults(suiteName: WidgetConstants.appGroup)?.data(forKey: WidgetConstants.snapshotKey) else {
-            return .empty
+        let primary = JSONDecoder()
+        primary.dateDecodingStrategy = .secondsSince1970
+        let legacy = JSONDecoder()
+        legacy.dateDecodingStrategy = .iso8601
+
+        func decode(_ data: Data) -> WidgetSnapshot? {
+            if let snap = try? primary.decode(WidgetSnapshot.self, from: data) { return snap }
+            if let snap = try? legacy.decode(WidgetSnapshot.self, from: data) { return snap }
+            return nil
         }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return (try? decoder.decode(WidgetSnapshot.self, from: data)) ?? .empty
+
+        if let data = UserDefaults(suiteName: WidgetConstants.appGroup)?.data(forKey: WidgetConstants.snapshotKey),
+           let snap = decode(data),
+           snap.hasLiveData || snap.updatedAt.timeIntervalSince1970 > 1_000_000 {
+            return snap
+        }
+
+        if let container = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: WidgetConstants.appGroup
+        ) {
+            let file = container.appendingPathComponent(WidgetConstants.snapshotFileName)
+            if let data = try? Data(contentsOf: file),
+               let snap = decode(data),
+               snap.hasLiveData || snap.updatedAt.timeIntervalSince1970 > 1_000_000 {
+                return snap
+            }
+        }
+
+        return .empty
     }
 }

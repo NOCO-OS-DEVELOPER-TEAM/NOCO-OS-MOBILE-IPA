@@ -21,6 +21,9 @@ struct WidgetSnapshot: Codable {
     var showSubscriptions: Bool
     var showRecentExpense: Bool
     var updatedAt: Date
+    var hasLiveData: Bool
+    var blockedInGoals: Double
+    var totalWealth: Double
 
     static let empty = WidgetSnapshot(
         balance: 0,
@@ -42,7 +45,10 @@ struct WidgetSnapshot: Codable {
         showSavings: true,
         showSubscriptions: true,
         showRecentExpense: true,
-        updatedAt: Date()
+        updatedAt: .distantPast,
+        hasLiveData: false,
+        blockedInGoals: 0,
+        totalWealth: 0
     )
 
     init(
@@ -65,7 +71,10 @@ struct WidgetSnapshot: Codable {
         showSavings: Bool,
         showSubscriptions: Bool,
         showRecentExpense: Bool,
-        updatedAt: Date
+        updatedAt: Date,
+        hasLiveData: Bool = true,
+        blockedInGoals: Double = 0,
+        totalWealth: Double = 0
     ) {
         self.balance = balance
         self.monthExpenses = monthExpenses
@@ -87,6 +96,9 @@ struct WidgetSnapshot: Codable {
         self.showSubscriptions = showSubscriptions
         self.showRecentExpense = showRecentExpense
         self.updatedAt = updatedAt
+        self.hasLiveData = hasLiveData
+        self.blockedInGoals = blockedInGoals
+        self.totalWealth = totalWealth
     }
 
     init(from decoder: Decoder) throws {
@@ -110,7 +122,10 @@ struct WidgetSnapshot: Codable {
         showSavings = try c.decodeIfPresent(Bool.self, forKey: .showSavings) ?? true
         showSubscriptions = try c.decodeIfPresent(Bool.self, forKey: .showSubscriptions) ?? true
         showRecentExpense = try c.decodeIfPresent(Bool.self, forKey: .showRecentExpense) ?? true
-        updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? .distantPast
+        hasLiveData = try c.decodeIfPresent(Bool.self, forKey: .hasLiveData) ?? true
+        blockedInGoals = try c.decodeIfPresent(Double.self, forKey: .blockedInGoals) ?? 0
+        totalWealth = try c.decodeIfPresent(Double.self, forKey: .totalWealth) ?? balance
     }
 
     enum CodingKeys: String, CodingKey {
@@ -119,6 +134,7 @@ struct WidgetSnapshot: Codable {
         case lastExpenseMerchant, lastExpenseAmount
         case lastTransactionMerchant, lastTransactionAmount, lastTransactionIsIncome, refreshIntervalMinutes
         case showBalance, showExpenses, showSavings, showSubscriptions, showRecentExpense, updatedAt
+        case hasLiveData, blockedInGoals, totalWealth
     }
 
     func encode(to encoder: Encoder) throws {
@@ -143,6 +159,9 @@ struct WidgetSnapshot: Codable {
         try c.encode(showSubscriptions, forKey: .showSubscriptions)
         try c.encode(showRecentExpense, forKey: .showRecentExpense)
         try c.encode(updatedAt, forKey: .updatedAt)
+        try c.encode(hasLiveData, forKey: .hasLiveData)
+        try c.encode(blockedInGoals, forKey: .blockedInGoals)
+        try c.encode(totalWealth, forKey: .totalWealth)
     }
 }
 
@@ -158,4 +177,5 @@ struct WidgetPreferences: Codable, Equatable {
 enum LiveCashAppGroup {
     static let identifier = "group.de.noco.timepay"
     static let widgetSnapshotKey = "livecash_widget_snapshot"
+    static let widgetSnapshotFileName = "livecash_widget_snapshot.json"
 }

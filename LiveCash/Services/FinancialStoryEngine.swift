@@ -16,14 +16,16 @@ struct StorySlide: Identifiable, Equatable {
     let detail: String
     let value: String
     let isIncome: Bool
+    let accentEmoji: String?
 
-    init(title: String, headline: String, detail: String, value: String, isIncome: Bool = false) {
-        self.id = title + headline
+    init(title: String, headline: String, detail: String, value: String, isIncome: Bool = false, accentEmoji: String? = nil) {
+        self.id = title + headline + value
         self.title = title
         self.headline = headline
         self.detail = detail
         self.value = value
         self.isIncome = isIncome
+        self.accentEmoji = accentEmoji
     }
 }
 
@@ -63,6 +65,38 @@ enum FinancialStoryEngine {
             let prevExp = store.accountFilteredTransactions
                 .filter { $0.type == .expense && $0.date >= prevRange.start && $0.date < prevRange.end }
                 .reduce(0) { $0 + $1.amount }
+            let saved = max(0, totalInc - totalExp)
+            slides.append(StorySlide(
+                title: "Dein Monat",
+                headline: "Einkommen, Ausgaben, Gespart",
+                detail: String(format: "💰 %.0f€ rein · 💸 %.0f€ raus · 🎯 %.0f€ gespart", totalInc, totalExp, saved),
+                value: String(format: "%.0f€", saved),
+                isIncome: true,
+                accentEmoji: "💰"
+            ))
+            if let top = expenses.max(by: { $0.amount < $1.amount }) {
+                slides.append(StorySlide(
+                    title: "Deine größte Ausgabe",
+                    headline: top.merchant,
+                    detail: "\(top.category.rawValue) war dein größter Einzelposten.",
+                    value: String(format: "%.0f€", top.amount),
+                    accentEmoji: "💸"
+                ))
+            }
+            if prevExp > 0 {
+                let pct = ((totalExp - prevExp) / prevExp) * 100
+                let better = -pct
+                slides.append(StorySlide(
+                    title: "Dein Fortschritt",
+                    headline: better > 0
+                        ? String(format: "Du bist %.0f%% besser als letzten Monat.", better)
+                        : String(format: "%.0f%% mehr Ausgaben als letzten Monat.", abs(pct)),
+                    detail: better > 0 ? "Weiter so — der Trend stimmt." : "Schau dir deine Top-Kategorie an.",
+                    value: String(format: "%+.0f%%", pct),
+                    isIncome: better > 0,
+                    accentEmoji: "📈"
+                ))
+            }
             let trendDetail: String
             if prevExp > 0 {
                 let pct = ((totalExp - prevExp) / prevExp) * 100
@@ -146,10 +180,18 @@ enum FinancialStoryEngine {
         }
 
         if let goal = store.goals.max(by: { $0.progress < $1.progress }) {
+            let paceBetter: String
+            if goal.progressPercent >= 50 {
+                paceBetter = "Deine Sparziele laufen besser als zuletzt — weiter so."
+            } else if goal.paceStatus(referenceMonthlySavings: store.monthlySavingsRate) == .slow {
+                paceBetter = "Dein Ziel braucht etwas mehr Tempo."
+            } else {
+                paceBetter = "Jeder Beitrag bringt dich näher."
+            }
             slides.append(StorySlide(
                 title: "Sparstatus",
                 headline: goal.name,
-                detail: goal.progress > 0 ? "Weiter so — jedes Stück zählt." : "Lege heute den ersten Betrag an.",
+                detail: paceBetter,
                 value: "\(goal.progressPercent)%",
                 isIncome: true
             ))
@@ -163,7 +205,85 @@ enum FinancialStoryEngine {
             ))
         }
 
-        return Array(slides.prefix(period == .month ? 6 : (period == .day ? 4 : 3)))
+        // Personal pattern slides
+        slides.append(contentsOf: personalPatternSlides(expenses: expenses, store: store, period: period))
+
+        return Array(slides.prefix(period == .month ? 10 : (period == .day ? 5 : 6)))
+    }
+
+    @MainActor
+    private static func personalPatternSlides(expenses: [Transaction], store: FinanceStore, period: StoryPeriod) -> [StorySlide] {
+        var extra: [StorySlide] = []
+        let spending = expenses.filter { !FinanceStore.isGoalContribution($0) }
+
+        if let weekday = expensiveWeekdayInsight(spending) {
+            extra.append(StorySlide(
+                title: "Muster",
+                headline: weekday.title,
+                detail: weekday.detail,
+                value: weekday.value
+            ))
+        }
+
+        if let top = Dictionary(grouping: spending, by: \.category)
+            .map({ ($0.key, $0.value.reduce(0) { $0 + $1.amount }) })
+            .max(by: { $0.1 < $1.1 }), top.1 > 0 {
+            let total = max(spending.reduce(0) { $0 + $1.amount }, 1)
+            let pct = top.1 / total * 100
+            extra.append(StorySlide(
+                title: "Lieblingskategorie",
+                headline: "Deine häufigste Kategorie ist \(top.0.rawValue).",
+                detail: String(format: "%.0f%% deiner Ausgaben in diesem Zeitraum.", pct),
+                value: String(format: "%.0f€", top.1)
+            ))
+        }
+
+        let places = spending.compactMap { $0.location?.label ?? ($0.merchant.isEmpty ? nil : $0.merchant) }
+        if let favorite = Dictionary(grouping: places, by: { $0 }).max(by: { $0.value.count < $1.value.count }),
+           favorite.value.count >= 2 {
+            extra.append(StorySlide(
+                title: "Ort",
+                headline: "Dein Lieblingsort: \(favorite.key)",
+                detail: "\(favorite.value.count)× besucht in diesem Zeitraum.",
+                value: "\(favorite.value.count)×"
+            ))
+        }
+
+        if period == .month || period == .week {
+            let rate = store.monthlySavingsRate
+            if rate > 0 {
+                extra.append(StorySlide(
+                    title: "Trend",
+                    headline: "Dein Sparverhalten trägt",
+                    detail: String(format: "Aktuelles Tempo: ca. %.0f€/Monat Richtung Ziele.", rate),
+                    value: String(format: "%.0f€", rate),
+                    isIncome: true
+                ))
+            }
+        }
+
+        return extra
+    }
+
+    private static func expensiveWeekdayInsight(_ expenses: [Transaction]) -> (title: String, detail: String, value: String)? {
+        guard expenses.count >= 8 else { return nil }
+        let names = ["", "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
+        var totals: [Int: Double] = [:]
+        for tx in expenses {
+            let wd = Calendar.current.component(.weekday, from: tx.date)
+            totals[wd, default: 0] += tx.amount
+        }
+        guard let peak = totals.max(by: { $0.value < $1.value }),
+              let avg = totals.values.isEmpty ? nil : totals.values.reduce(0, +) / Double(totals.count),
+              avg > 0 else { return nil }
+        let pct = ((peak.value - avg) / avg) * 100
+        guard pct >= 15 else { return nil }
+        let name = names[peak.key]
+        return (
+            "\(name) ist teurer",
+            String(format: "Du gibst %@s durchschnittlich %.0f%% mehr aus.", name.lowercased(), pct),
+            String(format: "+%.0f%%", pct)
+        )
     }
 
     @MainActor

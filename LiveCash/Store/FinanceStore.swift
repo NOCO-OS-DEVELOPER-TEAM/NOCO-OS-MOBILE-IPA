@@ -40,6 +40,12 @@ final class FinanceStore: ObservableObject {
     @Published var showInputSourceSheet = false
     @Published var showGoalContributionSheet = false
     @Published var pendingGoalContributionAmount: Double?
+    @Published var pendingGoalTransferIsWithdraw = false
+    @Published var isAssistantExpanded = false
+    @Published var showAnalyzeMe = false
+    @Published var showFinanceReport = false
+    @Published var mapResetEpoch = 0
+    @Published var moreNavigationEpoch = 0
     @Published var hasCompletedOnboarding = true
     @Published private(set) var userCategories: [UserCategory] = []
     @Published var onboardingProfile: OnboardingProfile?
@@ -340,6 +346,15 @@ final class FinanceStore: ObservableObject {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
+        if AnalyzeMeEngine.matchesQuery(trimmed) {
+            showAnalyzeMe = true
+            lastFeedback = "Analyze Me — dein Finanzprofil"
+            pendingIntent = nil
+            activeInsight = nil
+            clearLiveIntelligence()
+            return
+        }
+
         if trimmed.contains("\n") || trimmed.count > 80 {
             let bulk = SmartInputParser.shared.parseBulk(trimmed)
             if !bulk.isEmpty {
@@ -440,6 +455,12 @@ final class FinanceStore: ObservableObject {
         lastFeedback = nil
         switch response.mode {
         case .directInsight(let insight):
+            if insight.title == "Analyze Me" {
+                showAnalyzeMe = true
+                activeInsight = nil
+                pendingIntent = nil
+                return
+            }
             activeInsight = insight
             pendingIntent = nil
         case .suggestions(let intent, let headline, let actions):
@@ -456,6 +477,22 @@ final class FinanceStore: ObservableObject {
             pendingIntent = nil
             assistantHeadline = ""
             assistantActions = []
+            return
+        }
+        if case .analyzeMe = action {
+            showAnalyzeMe = true
+            pendingIntent = nil
+            assistantHeadline = ""
+            assistantActions = []
+            activeInsight = nil
+            return
+        }
+        if case .financeReport = action {
+            showFinanceReport = true
+            pendingIntent = nil
+            assistantHeadline = ""
+            assistantActions = []
+            activeInsight = nil
             return
         }
         activeInsight = FinanceAssistant.shared.generateInsight(action: action, store: self)
@@ -575,6 +612,49 @@ final class FinanceStore: ObservableObject {
     func contributeToGoal(id: UUID, amount: Double) {
         guard let goal = goals.first(where: { $0.id == id }) else { return }
         addToGoal(goal, amount: amount)
+        pendingGoalContributionAmount = nil
+        showGoalContributionSheet = false
+    }
+
+    func withdrawFromGoal(_ goal: SavingsGoal, amount: Double) {
+        guard amount > 0, let idx = goals.firstIndex(where: { $0.id == goal.id }) else { return }
+        let capped = min(amount, goals[idx].currentAmount)
+        guard capped > 0 else {
+            lastFeedback = "Keine Mittel im Sparziel zum Entnehmen"
+            return
+        }
+        goals[idx].currentAmount -= capped
+        let updated = goals[idx]
+
+        let withdrawal = Transaction(
+            amount: capped,
+            type: .income,
+            category: .income,
+            merchant: "Sparziel Entnahme: \(updated.name)",
+            rawInput: "goal-withdraw:\(updated.id.uuidString)"
+        )
+        transactions.insert(withdrawal, at: 0)
+        transactions.sort { $0.date > $1.date }
+
+        recordDailyActivity()
+        persist()
+        HapticService.success(store: self)
+
+        if appSettings.savings.liveActivityEnabled {
+            SavingsLiveActivityService.updateOrStart(goal: goals[idx], todayExpenses: todayExpenses)
+        }
+
+        lastFeedback = String(
+            format: "%.0f€ aus „%@“ entnommen · Verfügbar jetzt %.0f€",
+            capped,
+            updated.name,
+            availableBalance
+        )
+    }
+
+    func withdrawFromGoal(id: UUID, amount: Double) {
+        guard let goal = goals.first(where: { $0.id == id }) else { return }
+        withdrawFromGoal(goal, amount: amount)
         pendingGoalContributionAmount = nil
         showGoalContributionSheet = false
     }
@@ -975,7 +1055,7 @@ final class FinanceStore: ObservableObject {
     }
 
     var currentMonthIncome: Double {
-        transactions(inMonth: Date()).filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
+        transactions(inMonth: Date()).filter { $0.type == .income && !Self.isGoalContribution($0) }.reduce(0) { $0 + $1.amount }
     }
 
     var currentBalance: Double {
@@ -1035,7 +1115,12 @@ final class FinanceStore: ObservableObject {
     }
 
     static func isGoalContribution(_ transaction: Transaction) -> Bool {
-        transaction.merchant.hasPrefix("Sparziel:")
+        if let raw = transaction.rawInput,
+           raw.hasPrefix("goal:") || raw.hasPrefix("goal-withdraw:") {
+            return true
+        }
+        return transaction.merchant.hasPrefix("Sparziel:")
+            || transaction.merchant.hasPrefix("Sparziel Entnahme:")
     }
 
     private func spendingTransactions(since start: Date? = nil, todayOnly: Bool = false) -> [Transaction] {
@@ -1055,7 +1140,7 @@ final class FinanceStore: ObservableObject {
 
     var weeklyIncome: Double {
         let start = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return accountFilteredTransactions.filter { $0.date >= start && $0.type == .income }.reduce(0) { $0 + $1.amount }
+        return accountFilteredTransactions.filter { $0.date >= start && $0.type == .income && !Self.isGoalContribution($0) }.reduce(0) { $0 + $1.amount }
     }
 
     var weeklyNetCashflow: Double {

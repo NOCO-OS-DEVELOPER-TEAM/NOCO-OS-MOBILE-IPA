@@ -105,7 +105,53 @@ enum MapPinLayout {
             ))
         }
 
-        return result
+        return spreadNearbyPins(result)
+    }
+
+    /// Pushes nearby place pins farther apart so they stay readable.
+    private static func spreadNearbyPins(_ pins: [MapPinDisplay]) -> [MapPinDisplay] {
+        guard pins.count > 1 else { return pins }
+        var adjusted = pins
+        let minSeparation = 0.00035
+
+        for i in 0..<adjusted.count {
+            var offsetLat = 0.0
+            var offsetLon = 0.0
+            var neighbors = 0
+            for j in 0..<adjusted.count where i != j {
+                let dLat = adjusted[i].coordinate.latitude - adjusted[j].coordinate.latitude
+                let dLon = adjusted[i].coordinate.longitude - adjusted[j].coordinate.longitude
+                let dist = sqrt(dLat * dLat + dLon * dLon)
+                if dist < minSeparation {
+                    neighbors += 1
+                    let angle = Double(i * 47 + neighbors * 73) * .pi / 180
+                    let push = (minSeparation - dist) * 0.65 + 0.00012
+                    offsetLat += cos(angle) * push
+                    offsetLon += sin(angle) * push
+                }
+            }
+            if neighbors > 0 {
+                let pin = adjusted[i]
+                let coord = CLLocationCoordinate2D(
+                    latitude: pin.coordinate.latitude + offsetLat,
+                    longitude: pin.coordinate.longitude + offsetLon
+                )
+                adjusted[i] = MapPinDisplay(
+                    id: pin.id,
+                    transaction: pin.transaction,
+                    coordinate: coord,
+                    clusterSize: pin.clusterSize,
+                    expenseTotal: pin.expenseTotal,
+                    incomeTotal: pin.incomeTotal,
+                    clusterTotal: pin.clusterTotal,
+                    isClusterRepresentative: pin.isClusterRepresentative,
+                    placeTitle: pin.placeTitle,
+                    lastVisit: pin.lastVisit,
+                    clusteredTransactions: pin.clusteredTransactions
+                )
+            }
+        }
+        return adjusted
     }
 
     private static func bestPlaceTitle(for transactions: [Transaction]) -> String {

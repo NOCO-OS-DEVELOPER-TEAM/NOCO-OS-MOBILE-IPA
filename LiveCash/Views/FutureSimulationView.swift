@@ -22,6 +22,8 @@ struct FutureSimulationView: View {
                         }
                 }
 
+                whatIfSection
+
                 HStack(spacing: 12) {
                     Button {
                         playing.toggle()
@@ -48,12 +50,37 @@ struct FutureSimulationView: View {
                 Text("Aktueller Saldo")
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)
-                Text(String(format: "%.0f€", store.allTimeBalance))
-                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                    .foregroundStyle(store.allTimeBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
-                Text("Basierend auf deinem Verhalten der letzten Wochen")
+                AnimatedMoneyText(
+                    value: store.allTimeBalance,
+                    font: .system(.largeTitle, design: .rounded).weight(.bold),
+                    color: store.allTimeBalance >= 0 ? LiveCashTheme.income : LiveCashTheme.expense,
+                    decimals: 0
+                )
+                Text("Basierend auf deinem Verhalten — plus Was-wäre-wenn Szenarien")
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var whatIfSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Was passiert wenn…")
+                .font(LiveCashTheme.headlineFont)
+            ForEach(FutureSimulationEngine.whatIfScenarios(store: store)) { scenario in
+                LiveCashCard {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(scenario.title)
+                            .font(LiveCashTheme.bodyFont.weight(.semibold))
+                        Text(scenario.resultLabel)
+                            .font(.system(.title3, design: .rounded).weight(.bold))
+                            .foregroundStyle(LiveCashTheme.accent)
+                        Text(scenario.detail)
+                            .font(LiveCashTheme.captionFont)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
     }

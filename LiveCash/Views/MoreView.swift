@@ -33,6 +33,26 @@ struct MoreView: View {
 
                 Section("Insights") {
                     NavigationLink {
+                        FinanceReportView()
+                    } label: {
+                        Label("Mein Finanzbericht", systemImage: "doc.text.magnifyingglass")
+                    }
+                    NavigationLink {
+                        AnalyticsCenterView()
+                    } label: {
+                        Label("Analyse", systemImage: "chart.xyaxis.line")
+                    }
+                    NavigationLink {
+                        AnalyzeMeView()
+                    } label: {
+                        Label("Analyze Me", systemImage: "person.crop.circle.badge.questionmark")
+                    }
+                    NavigationLink {
+                        FinanceCalendarView()
+                    } label: {
+                        Label("Kalender", systemImage: "calendar")
+                    }
+                    NavigationLink {
                         FinancialStoryView()
                     } label: {
                         Label("Financial Story", systemImage: "sparkles.rectangle.stack")
@@ -44,6 +64,11 @@ struct MoreView: View {
                         SettingsView()
                     } label: {
                         Label("Einstellungen", systemImage: "gearshape")
+                    }
+                    NavigationLink {
+                        PrivacyTrustView()
+                    } label: {
+                        Label("Datenschutz & Vertrauen", systemImage: "lock.shield")
                     }
                 }
 
@@ -84,5 +109,6 @@ struct MoreView: View {
                 SubscriptionsView()
             }
         }
+        .id(store.moreNavigationEpoch)
     }
 }

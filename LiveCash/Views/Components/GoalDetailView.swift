@@ -5,6 +5,7 @@ struct GoalDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     let goal: SavingsGoal
+    @State private var animatedProgress: CGFloat = 0
 
     private var liveGoal: SavingsGoal {
         store.goals.first(where: { $0.id == goal.id }) ?? goal
@@ -17,6 +18,11 @@ struct GoalDetailView: View {
     private var estimatedWeeksAt10: Int {
         guard liveGoal.remaining > 0 else { return 0 }
         return max(Int(ceil(liveGoal.remaining / 10)), 1)
+    }
+
+    private var weeklyAverage: Double {
+        let weeks = max(Calendar.current.dateComponents([.weekOfYear], from: liveGoal.createdAt, to: Date()).weekOfYear ?? 1, 1)
+        return liveGoal.currentAmount / Double(weeks)
     }
 
     var body: some View {
@@ -39,7 +45,7 @@ struct GoalDetailView: View {
                                     Capsule().fill(LiveCashTheme.incomeSoft)
                                     Capsule()
                                         .fill(liveGoal.isCompleted ? LiveCashTheme.income : LiveCashTheme.accent)
-                                        .frame(width: geo.size.width * liveGoal.progress)
+                                        .frame(width: geo.size.width * animatedProgress)
                                 }
                             }
                             .frame(height: 12)
@@ -51,6 +57,16 @@ struct GoalDetailView: View {
                                 Spacer()
                                 statBlock(title: "Übrig", value: String(format: "%.0f€", liveGoal.remaining), color: .secondary)
                             }
+
+                            HStack {
+                                Label(String(format: "Ø %.0f€/Woche", weeklyAverage), systemImage: "calendar")
+                                Spacer()
+                                if let days = liveGoal.daysRemaining, liveGoal.goalTimeTrackingEnabled {
+                                    Text("\(days) Tage")
+                                }
+                            }
+                            .font(LiveCashTheme.captionFont)
+                            .foregroundStyle(.secondary)
                         }
                     }
 
@@ -105,10 +121,11 @@ struct GoalDetailView: View {
                     Button {
                         dismiss()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            store.pendingGoalTransferIsWithdraw = false
                             store.showGoalContributionSheet = true
                         }
                     } label: {
-                        Label("Betrag hinzufügen", systemImage: "plus.circle.fill")
+                        Label("Geld hinzufügen", systemImage: "plus.circle.fill")
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(LiveCashTheme.income)
@@ -116,6 +133,22 @@ struct GoalDetailView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .disabled(liveGoal.isCompleted || store.availableBalance <= 0)
+
+                    Button {
+                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            store.pendingGoalTransferIsWithdraw = true
+                            store.showGoalContributionSheet = true
+                        }
+                    } label: {
+                        Label("Geld entnehmen", systemImage: "minus.circle.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(LiveCashTheme.accent.opacity(0.15))
+                            .foregroundStyle(LiveCashTheme.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .disabled(liveGoal.currentAmount <= 0)
                 }
                 .padding(20)
             }
@@ -125,6 +158,17 @@ struct GoalDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Schließen") { dismiss() }
+                }
+            }
+            .onAppear {
+                animatedProgress = 0
+                withAnimation(.spring(response: 0.85, dampingFraction: 0.78)) {
+                    animatedProgress = liveGoal.progress
+                }
+            }
+            .onChange(of: liveGoal.progress) { _, newValue in
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    animatedProgress = newValue
                 }
             }
         }

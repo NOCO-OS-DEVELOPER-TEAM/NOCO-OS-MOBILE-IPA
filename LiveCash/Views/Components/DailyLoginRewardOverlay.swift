@@ -10,6 +10,7 @@ struct DailyLoginRewardOverlay: View {
     @State private var coinOffset: CGFloat = 40
     @State private var coinOpacity: Double = 0
     @State private var contentOpacity: Double = 0
+    @State private var coinSpin: Double = 0
 
     var body: some View {
         ZStack {
@@ -47,6 +48,7 @@ struct DailyLoginRewardOverlay: View {
                         .scaleEffect(flameScale)
                         .opacity(flameOpacity)
                         .shadow(color: .orange.opacity(0.45), radius: 18, y: 4)
+                        .symbolEffect(.pulse, options: .repeating.speed(0.55), value: flameOpacity)
                 }
 
                 VStack(spacing: 8) {
@@ -64,6 +66,7 @@ struct DailyLoginRewardOverlay: View {
                         .foregroundStyle(
                             LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom)
                         )
+                        .rotationEffect(.degrees(coinSpin))
                     Text("+\(result.coinsAwarded) Coin")
                         .font(.system(.title3, design: .rounded).weight(.bold))
                     Text("· \(result.totalCoins) gesamt")
@@ -117,6 +120,7 @@ struct DailyLoginRewardOverlay: View {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.18)) {
             coinOffset = 0
             coinOpacity = 1
+            coinSpin = 360
         }
         withAnimation(.easeOut(duration: 0.35).delay(0.1)) {
             contentOpacity = 1

@@ -10,43 +10,40 @@ struct LiveSuggestionsView: View {
     private var header: String {
         switch mode {
         case .input: return "Schnell speichern"
-        case .question: return "Antworten"
-        case .suggestion: return "Fertige Fragen"
+        case .question: return "Passende Fragen"
+        case .suggestion: return "Vorschläge"
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: mode.icon)
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(LiveCashTheme.accent)
-                Text(header)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.secondary)
-            }
+            Text(header)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.primary.opacity(0.55))
 
             ForEach(suggestions.prefix(limit)) { suggestion in
                 Button {
                     onSelect(suggestion)
                 } label: {
-                    HStack {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: mode == .input ? "checkmark.circle.fill" : "text.bubble.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(LiveCashTheme.accent)
+                            .padding(.top, 2)
                         Text(suggestion.title)
-                            .font(LiveCashTheme.captionFont)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(LiveCashTheme.accent.opacity(0.7))
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 11)
+                    .background(Color.primary.opacity(0.05))
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(LiveCashTheme.glassBorder, lineWidth: 0.5)
+                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -74,14 +71,14 @@ struct InterpretationChip: View {
                     .fill(indicatorColor)
                     .frame(width: 6, height: 6)
                 Text(hint)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary)
                 if let amount = interpretation.amount {
                     Text(String(format: "%.2f€", amount))
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(interpretation.type == .income ? LiveCashTheme.income : LiveCashTheme.expense)
                 }
             }
-            .foregroundStyle(interpretation.confidence == .safe ? .secondary : indicatorColor)
             .padding(.horizontal, 4)
         }
     }
@@ -99,10 +96,11 @@ struct ConfirmationBanner: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(confirmation.message)
                     .font(LiveCashTheme.headlineFont)
+                    .foregroundStyle(.primary)
 
                 Text(detailLine)
                     .font(LiveCashTheme.captionFont)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.55))
 
                 if confirmation.confidence == .highRisk, !confirmation.options.isEmpty {
                     VStack(spacing: 8) {
@@ -150,7 +148,7 @@ struct ConfirmationBanner: View {
                 Button(action: onCancel) {
                     Text("Abbrechen")
                         .font(LiveCashTheme.captionFont)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(0.5))
                 }
                 .buttonStyle(.plain)
             }

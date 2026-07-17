@@ -18,7 +18,10 @@ struct LiveCashWidgetProvider: TimelineProvider {
             lastTransactionIsIncome: false, refreshIntervalMinutes: 15,
             showBalance: true, showExpenses: true, showSavings: true,
             showSubscriptions: true, showRecentExpense: true,
-            updatedAt: Date()
+            updatedAt: Date(),
+            hasLiveData: true,
+            blockedInGoals: 180,
+            totalWealth: 1420
         ))
     }
 
@@ -43,17 +46,35 @@ struct LiveCashWidgetView: View {
     private var accent: Color { Color(red: 0.12, green: 0.72, blue: 0.52) }
     private var income: Color { Color(red: 0.15, green: 0.78, blue: 0.42) }
     private var expense: Color { Color(red: 0.94, green: 0.32, blue: 0.36) }
-    private var hasData: Bool { s.updatedAt.timeIntervalSince1970 > 0 }
+    private var hasData: Bool { s.hasLiveData && s.updatedAt.timeIntervalSince1970 > 1_000_000 }
 
     var body: some View {
         Group {
-            if family == .systemMedium {
+            if !hasData {
+                emptyLayout
+            } else if family == .systemMedium {
                 mediumLayout
             } else {
                 smallLayout
             }
         }
         .widgetURL(URL(string: "livecash://widget"))
+    }
+
+    private var emptyLayout: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Live Cash")
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text("Keine Live-Daten")
+                .font(.system(.headline, design: .rounded).weight(.bold))
+            Text("App einmal öffnen — Widgets aktualisieren sich automatisch.")
+                .font(.system(size: 11, design: .rounded))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding()
     }
 
     private var smallLayout: some View {
@@ -63,6 +84,8 @@ struct LiveCashWidgetView: View {
                 Text(String(format: "%.0f€", s.balance))
                     .font(.system(.title2, design: .rounded).weight(.bold))
                     .foregroundStyle(s.balance >= 0 ? income : expense)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
                 Text("Verfügbar")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
@@ -73,7 +96,7 @@ struct LiveCashWidgetView: View {
                 }
                 Spacer()
                 if s.showSavings, let goal = s.primaryGoalName {
-                    statCol("Sparen", valueText: "\(goal) \(s.savingsProgressPercent)%", color: income)
+                    statCol("Sparen", valueText: "\(s.savingsProgressPercent)%", color: income)
                 }
             }
             if s.showRecentExpense {
@@ -95,9 +118,16 @@ struct LiveCashWidgetView: View {
                     Text(String(format: "%.0f€", s.balance))
                         .font(.system(.title, design: .rounded).weight(.bold))
                         .foregroundStyle(s.balance >= 0 ? income : expense)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
                     Text("Verfügbar")
                         .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
+                    if s.blockedInGoals > 0 {
+                        Text(String(format: "Vermögen %.0f€", s.totalWealth))
+                            .font(.system(size: 10, design: .rounded))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 if s.showRecentExpense {
                     lastTransactionRow
@@ -136,10 +166,6 @@ struct LiveCashWidgetView: View {
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(color)
                 .lineLimit(1)
-        } else if !hasData {
-            Text("App öffnen für Live-Daten")
-                .font(.system(size: 10, design: .rounded))
-                .foregroundStyle(.secondary)
         }
     }
 

@@ -7,10 +7,13 @@ enum WidgetDataSync {
         let top = store.topCategoryThisMonth
         let primaryGoal = store.activeGoals.first ?? store.goals.max(by: { $0.progress < $1.progress })
         let prefs = store.widgetPreferences
-        let lastExpense = store.accountFilteredTransactions.first { $0.type == .expense }
-        let lastTx = store.accountFilteredTransactions.first
+        let lastExpense = store.accountFilteredTransactions.first {
+            $0.type == .expense && !FinanceStore.isGoalContribution($0)
+        }
+        let lastTx = store.accountFilteredTransactions.first { !FinanceStore.isGoalContribution($0) }
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = .secondsSince1970
+
         let snapshot = WidgetSnapshot(
             balance: store.availableBalance,
             monthExpenses: store.currentMonthExpenses,
@@ -31,29 +34,74 @@ enum WidgetDataSync {
             showSavings: prefs.showSavings,
             showSubscriptions: prefs.showSubscriptions,
             showRecentExpense: prefs.showRecentExpense,
-            updatedAt: Date()
+            updatedAt: Date(),
+            hasLiveData: true,
+            blockedInGoals: store.blockedInGoals,
+            totalWealth: store.totalWealth
         )
+
         guard let data = try? encoder.encode(snapshot) else { return }
-        let defaults = UserDefaults(suiteName: LiveCashAppGroup.identifier)
-        defaults?.set(data, forKey: LiveCashAppGroup.widgetSnapshotKey)
-        defaults?.synchronize()
+
+        // 1) App Group UserDefaults
+        if let defaults = UserDefaults(suiteName: LiveCashAppGroup.identifier) {
+            defaults.set(data, forKey: LiveCashAppGroup.widgetSnapshotKey)
+            defaults.synchronize()
+        }
+
+        // 2) Shared container file (fallback if defaults fail)
+        if let container = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: LiveCashAppGroup.identifier
+        ) {
+            let file = container.appendingPathComponent(LiveCashAppGroup.widgetSnapshotFileName)
+            try? data.write(to: file, options: .atomic)
+        }
+
         WidgetCenter.shared.reloadAllTimelines()
+        WidgetCenter.shared.reloadTimelines(ofKind: "LiveCashWidget")
     }
 
     @MainActor
     static func clearSnapshot() {
-        let defaults = UserDefaults(suiteName: LiveCashAppGroup.identifier)
-        defaults?.removeObject(forKey: LiveCashAppGroup.widgetSnapshotKey)
-        defaults?.synchronize()
+        if let defaults = UserDefaults(suiteName: LiveCashAppGroup.identifier) {
+            defaults.removeObject(forKey: LiveCashAppGroup.widgetSnapshotKey)
+            defaults.synchronize()
+        }
+        if let container = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: LiveCashAppGroup.identifier
+        ) {
+            let file = container.appendingPathComponent(LiveCashAppGroup.widgetSnapshotFileName)
+            try? FileManager.default.removeItem(at: file)
+        }
         WidgetCenter.shared.reloadAllTimelines()
     }
 
     static func loadSnapshot() -> WidgetSnapshot {
-        guard let data = UserDefaults(suiteName: LiveCashAppGroup.identifier)?.data(forKey: LiveCashAppGroup.widgetSnapshotKey) else {
-            return .empty
-        }
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return (try? decoder.decode(WidgetSnapshot.self, from: data)) ?? .empty
+        decoder.dateDecodingStrategy = .secondsSince1970
+
+        if let data = UserDefaults(suiteName: LiveCashAppGroup.identifier)?.data(forKey: LiveCashAppGroup.widgetSnapshotKey),
+           let snap = try? decoder.decode(WidgetSnapshot.self, from: data) {
+            return snap
+        }
+
+        // Legacy ISO8601 snapshots
+        let iso = JSONDecoder()
+        iso.dateDecodingStrategy = .iso8601
+        if let data = UserDefaults(suiteName: LiveCashAppGroup.identifier)?.data(forKey: LiveCashAppGroup.widgetSnapshotKey),
+           let snap = try? iso.decode(WidgetSnapshot.self, from: data) {
+            return snap
+        }
+
+        if let container = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: LiveCashAppGroup.identifier
+        ) {
+            let file = container.appendingPathComponent(LiveCashAppGroup.widgetSnapshotFileName)
+            if let data = try? Data(contentsOf: file) {
+                if let snap = try? decoder.decode(WidgetSnapshot.self, from: data) { return snap }
+                if let snap = try? iso.decode(WidgetSnapshot.self, from: data) { return snap }
+            }
+        }
+
+        return .empty
     }
 }

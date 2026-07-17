@@ -85,22 +85,46 @@ enum InsightAction: String, Identifiable, Hashable {
     case unusualSpending
     case merchantBreakdown
     case categoryDetail
+    case analyzeMe
+    case affordability
+    case weeklyBudget
+    case whySpending
+    case whatIf
+    case financeReport
+    case vacationAffordability
 
     var id: String { rawValue }
 }
 
 struct FinanceInsight: Identifiable {
+    enum ChartStyle: Equatable {
+        case donut
+        case bar
+        case line
+    }
+
     let id = UUID()
     let title: String
     let rows: [(String, String)]
     let insight: String?
     let followUpActions: [InsightAction]
+    let chartSeries: [(label: String, value: Double)]?
+    let chartStyle: ChartStyle?
 
-    init(title: String, rows: [(String, String)], insight: String?, followUpActions: [InsightAction] = []) {
+    init(
+        title: String,
+        rows: [(String, String)],
+        insight: String?,
+        followUpActions: [InsightAction] = [],
+        chartSeries: [(label: String, value: Double)]? = nil,
+        chartStyle: ChartStyle? = nil
+    ) {
         self.title = title
         self.rows = rows
         self.insight = insight
         self.followUpActions = followUpActions
+        self.chartSeries = chartSeries
+        self.chartStyle = chartStyle
     }
 }
 
@@ -140,7 +164,8 @@ final class FinanceAssistant {
         IntentRule(intent: .geography, keywords: ["ort", "karte", "geo", "standort", "wo kaufe", "wo einkauf", "geldkarte"], weight: 3, directAction: .expensiveAreas),
         IntentRule(intent: .goals, keywords: ["sparziel", "ziel", "urlaub", "ansparen", "fortschritt"], weight: 3, directAction: .goalsProgress),
         IntentRule(intent: .trends, keywords: ["trend", "vergleich", "vormonat", "mehr als", "weniger als", "entwicklung"], weight: 3, directAction: .monthCompare),
-        IntentRule(intent: .category, keywords: ["lebensmittel", "essen", "transport", "einkaufen", "unterhaltung", "kategorie"], weight: 2, directAction: .byCategory)
+        IntentRule(intent: .category, keywords: ["lebensmittel", "essen", "transport", "einkaufen", "unterhaltung", "kategorie"], weight: 2, directAction: .byCategory),
+        IntentRule(intent: .overview, keywords: ["analyze me", "analysiere mich", "wer bin ich finanziell", "finanztyp", "finanz persönlichkeit"], weight: 5, directAction: .analyzeMe)
     ]
 
     private let merchantKeywords = ["netflix", "spotify", "amazon", "lidl", "aldi", "rewe", "dm", "apple", "google", "disney", "prime"]
@@ -151,6 +176,31 @@ final class FinanceAssistant {
         let normalized = normalize(input)
         let context = parseContext(from: normalized)
 
+        // Decision answers first — personal, not "bitte Ausgabe eingeben"
+        if (normalized.contains("urlaub") || normalized.contains("reise")) &&
+            (normalized.contains("leisten") || normalized.contains("kann ich")) {
+            return .init(mode: .directInsight(DecisionEngine.vacationAffordability(store: store)))
+        }
+        if normalized.contains("kann ich mir") || (normalized.contains("leisten") && !normalized.contains("urlaub")) {
+            let amount = SmartInputParser.shared.parseSingle(input)?.amount
+            return .init(mode: .directInsight(
+                DecisionEngine.affordability(amount: amount, store: store, contextHint: input)
+            ))
+        }
+        if normalized.contains("wie viel darf ich") || normalized.contains("wochenbudget") {
+            return .init(mode: .directInsight(DecisionEngine.weeklyBudget(store: store)))
+        }
+        if normalized.contains("warum") && (normalized.contains("mehr") || normalized.contains("ausgegeben")) {
+            return .init(mode: .directInsight(DecisionEngine.whyMoreSpending(store: store)))
+        }
+        if normalized.contains("was passiert wenn") || normalized.contains("was waere wenn") || normalized.contains("was wäre wenn") {
+            return .init(mode: .directInsight(DecisionEngine.whatIf(store: store)))
+        }
+        if normalized.contains("finanzbericht") {
+            store.showFinanceReport = true
+            return .init(mode: .directInsight(generateInsight(action: .financeReport, store: store, context: context)))
+        }
+
         // Direktantworten für klare Analysefragen
         let directPhrases: [(String, InsightAction)] = [
             ("wo gebe ich", .byCategory),
@@ -158,9 +208,22 @@ final class FinanceAssistant {
             ("meiste geld", .byCategory),
             ("monat zusammen", .monthlySummary),
             ("übersicht", .incomeVsExpense),
+            ("wo kann ich sparen", .savingsTips),
             ("sparen", .savingsTips),
             ("abos", .monthlySubCost),
-            ("abonnement", .monthlySubCost)
+            ("abonnement", .monthlySubCost),
+            ("analyze me", .analyzeMe),
+            ("analysiere mich", .analyzeMe),
+            ("wer bin ich finanziell", .analyzeMe),
+            ("wie gut spare ich", .analyzeMe),
+            ("größte schwäche", .analyzeMe),
+            ("groesste schwaeche", .analyzeMe),
+            ("was sollte ich ändern", .analyzeMe),
+            ("was sollte ich aendern", .analyzeMe),
+            ("wie sieht meine zukunft", .whatIf),
+            ("besser bin ich", .analyzeMe),
+            ("wochenbudget", .weeklyBudget),
+            ("warum habe ich", .whySpending)
         ]
         for (phrase, action) in directPhrases where normalized.contains(phrase) {
             let insight = generateInsight(action: action, store: store, context: context)
@@ -243,6 +306,13 @@ final class FinanceAssistant {
         case .unusualSpending: return "Ungewöhnliche Ausgaben"
         case .merchantBreakdown: return "Nach Händler"
         case .categoryDetail: return "Kategorie-Details"
+        case .analyzeMe: return "Analyze Me"
+        case .affordability: return "Kann ich mir das leisten?"
+        case .weeklyBudget: return "Wochenbudget"
+        case .whySpending: return "Warum mehr ausgegeben?"
+        case .whatIf: return "Was-wäre-wenn"
+        case .financeReport: return "Mein Finanzbericht"
+        case .vacationAffordability: return "Urlaub leisten?"
         }
     }
 
@@ -353,9 +423,63 @@ final class FinanceAssistant {
         case .unusualSpending:
             return unusualSpendingInsight(store: store)
 
+        case .analyzeMe:
+            let report = AnalyzeMeEngine.analyze(store: store)
+            return FinanceInsight(
+                title: "Analyze Me",
+                rows: [
+                    ("Finanz-Typ", report.financeType),
+                    ("Score", "\(report.score)/100"),
+                    ("Sparquote", String(format: "%.0f%%", report.savingsRatePercent))
+                ],
+                insight: report.personalityLine + " Öffne „Mein Finanzbericht“ für die volle Analyse.",
+                followUpActions: [.financeReport, .savingsTips, .monthCompare]
+            )
+
+        case .affordability:
+            return DecisionEngine.affordability(amount: nil, store: store)
+
+        case .weeklyBudget:
+            return DecisionEngine.weeklyBudget(store: store)
+
+        case .whySpending:
+            return DecisionEngine.whyMoreSpending(store: store)
+
+        case .whatIf:
+            return DecisionEngine.whatIf(store: store)
+
+        case .vacationAffordability:
+            return DecisionEngine.vacationAffordability(store: store)
+
+        case .financeReport:
+            store.showFinanceReport = true
+            return FinanceInsight(
+                title: "Mein Finanzbericht",
+                rows: [
+                    ("Status", "Wird geöffnet"),
+                    ("Inhalt", "Profil · Ausgaben · Stärken · Prognose")
+                ],
+                insight: "Dein persönlicher Finanzbericht öffnet sich jetzt.",
+                followUpActions: [.analyzeMe, .monthCompare, .goalsProgress]
+            )
+
         case .openMap, .expensiveAreas, .frequentAreas, .withoutLocation:
-            let withLoc = store.transactions.filter { $0.location != nil && $0.type == .expense }
+            let monthExpenses = store.transactions(inMonth: Date()).filter { $0.type == .expense }
+            let hotspots = MapHeatLayout.hotspots(from: monthExpenses, limit: 5)
             let without = store.transactions.filter { $0.location == nil }.count
+            if !hotspots.isEmpty {
+                let top = hotspots[0]
+                return FinanceInsight(
+                    title: "Ausgaben-Hotspots",
+                    rows: hotspots.map { ("\($0.intensity.label.capitalized) · \($0.title)", String(format: "%.0f€", $0.amount)) }
+                        + [("Ohne Standort", "\(without) Buchungen")],
+                    insight: "Dein teuerster Ort: \(top.title) — \(String(format: "%.0f€", top.amount)) diesen Monat.",
+                    followUpActions: [.openMap, .byCategory],
+                    chartSeries: hotspots.map { (label: $0.title, value: $0.amount) },
+                    chartStyle: .bar
+                )
+            }
+            let withLoc = store.transactions.filter { $0.location != nil && $0.type == .expense }
             let grouped = Dictionary(grouping: withLoc, by: { $0.location?.label ?? "Unbekannt" })
             let sorted = grouped.map { ($0.key, $0.value.reduce(0) { $0 + $1.amount }) }.sorted { $0.1 > $1.1 }.prefix(5)
             return FinanceInsight(
@@ -521,7 +645,9 @@ final class FinanceAssistant {
             title: "Nach Kategorie · \(period.label)",
             rows: top.map { ($0.0, String(format: "%.2f€", $0.1)) },
             insight: insight,
-            followUpActions: [.savingsTips, .top5Expenses]
+            followUpActions: [.savingsTips, .top5Expenses],
+            chartSeries: sorted.prefix(6).map { (label: $0.0, value: $0.1) },
+            chartStyle: .donut
         )
     }
 
@@ -566,7 +692,12 @@ final class FinanceAssistant {
                 ("Differenz", String(format: "%+.2f€ (%.0f%%)", diff, pct))
             ],
             insight: personal ?? fallback,
-            followUpActions: [.byCategory, .spendingPace, .unusualSpending]
+            followUpActions: [.byCategory, .spendingPace, .unusualSpending],
+            chartSeries: [
+                (label: "Vormonat", value: prevTotal),
+                (label: "Dieser Monat", value: cur)
+            ],
+            chartStyle: .bar
         )
     }
 
@@ -630,11 +761,25 @@ final class FinanceAssistant {
             tips.append(("Tipp", "Erfasse mehr Buchungen für personalisierte Tipps"))
         }
         let insight = tips.first?.1 ?? "Je mehr du nutzt, desto besser versteht dich Live Cash."
+        let income = store.currentMonthIncome
+        let expenses = store.currentMonthExpenses
+        let saved = max(0, income - expenses)
+        let rate = income > 0 ? saved / income * 100 : 0
+        let rows: [(String, String)] = [
+            ("Sparquote", String(format: "%.0f%%", rate)),
+            ("Gespart", String(format: "%.0f€", saved)),
+            ("Prognose (Jahr)", String(format: "~%.0f€", max(store.monthlySavingsRate, saved) * 12))
+        ] + Array(tips.prefix(3))
         return FinanceInsight(
-            title: "Persönliche Tipps",
-            rows: Array(tips.prefix(5)),
-            insight: insight,
-            followUpActions: [.monthCompare, .goalsProgress, .byCategory]
+            title: "Wie gut sparst du?",
+            rows: rows,
+            insight: String(format: "Sparquote %.0f%% — %@", rate, insight),
+            followUpActions: [.monthCompare, .goalsProgress, .byCategory],
+            chartSeries: [
+                (label: "Gespart", value: max(saved, 0.01)),
+                (label: "Ausgegeben", value: max(expenses, 0.01))
+            ],
+            chartStyle: .donut
         )
     }
 
@@ -677,18 +822,22 @@ final class FinanceAssistant {
     }
 
     private func contextualHeadline(for intent: FinanceIntent, store: FinanceStore) -> String {
+        let memory = AssistantMemory.build(from: store)
         if store.transactions.isEmpty {
-            return "Noch keine Daten — erfasse Buchungen für Analysen."
+            return "Deine Finanzreise beginnt — frag z. B. „Kann ich mir 40€ leisten?“"
         }
         switch intent {
         case .save:
             if store.currentMonthExpenses > store.currentMonthIncome, store.currentMonthIncome > 0 {
                 return "Du gibst mehr aus als du einnimmst — hier sind Spar-Optionen:"
             }
-            return "Personalisierte Analyse basierend auf deinen Buchungen:"
+            if let goal = memory.primaryGoalName {
+                return "Dein \(goal)-Ziel steht bei \(memory.primaryGoalProgress)% — so kommst du schneller hin:"
+            }
+            return "Personalisierte Spar-Ideen basierend auf deinen Gewohnheiten:"
         case .spendingOverview:
-            if let top = store.topCategoryThisMonth {
-                return "Deine größte Kategorie: \(top.0.rawValue) (\(String(format: "%.0f€", top.1)))"
+            if let top = memory.topCategories.first {
+                return "Du gibst am meisten für \(top.name) aus (\(String(format: "%.0f€", top.amount)))."
             }
             return "Wähle eine Ausgaben-Analyse:"
         case .subscriptions:
@@ -696,14 +845,21 @@ final class FinanceAssistant {
                 "Noch keine Abos erkannt — wiederkehrende Zahlungen werden automatisch gefunden." :
                 String(format: "%.0f€/Monat an Abos — Details:", store.monthlySubscriptionCost)
         default:
-            return "Was möchtest du genauer sehen?"
+            return "Was möchtest du entscheiden oder genauer sehen?"
         }
     }
 
     private func contextualFallback(store: FinanceStore) -> (headline: String, actions: [InsightAction]) {
         if store.transactions.isEmpty {
-            return ("Beispiele: „Netflix 13,99“ oder „sparen“", [.monthlySummary, .savingsTips])
+            return ("Frag mich z. B. „Kann ich mir das leisten?“ oder tippe „Kaffee 4,50“", [.affordability, .financeReport, .savingsTips])
         }
-        return ("Meintest du eine dieser Analysen?", [.incomeVsExpense, .byCategory, .top5Expenses, .savingsTips, .monthCompare])
+        let memory = AssistantMemory.build(from: store)
+        let headline: String
+        if let goal = memory.primaryGoalName {
+            headline = "Ich kenne dein \(goal)-Ziel (\(memory.primaryGoalProgress)%) — wonach suchst du?"
+        } else {
+            headline = String(format: "Du hast noch %.0f€ verfügbar — wonach suchst du?", memory.availableBalance)
+        }
+        return (headline, [.affordability, .weeklyBudget, .whySpending, .financeReport, .savingsTips])
     }
 }

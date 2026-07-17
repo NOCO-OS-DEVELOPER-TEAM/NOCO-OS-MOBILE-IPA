@@ -133,4 +133,5 @@ private struct AppLockOverlay: View {
 
 extension Notification.Name {
     static let liveCashQuickAction = Notification.Name("liveCashQuickAction")
+    static let liveCashCollapseAssistant = Notification.Name("liveCashCollapseAssistant")
 }

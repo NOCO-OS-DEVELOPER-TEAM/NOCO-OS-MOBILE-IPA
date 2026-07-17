@@ -25,12 +25,15 @@ struct GoalsView: View {
             }
 
             if store.goals.isEmpty {
-                ContentUnavailableView(
-                    "Keine Sparziele",
+                LiveCashEmptyState(
+                    title: "Dein erstes Sparziel wartet",
+                    message: "Ob PS5, Urlaub oder Notgroschen — ein Ziel macht Sparen konkret.",
                     systemImage: "target",
-                    description: Text("Lege ein Ziel an — z. B. Urlaub oder neues iPhone.")
+                    primaryActionTitle: "Ziel erstellen",
+                    primaryAction: { showAdd = true }
                 )
                 .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 24, leading: 8, bottom: 24, trailing: 8))
             } else {
                 if !store.activeGoals.isEmpty {
                     Section {

@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct InsightResultView: View {
     @EnvironmentObject private var store: FinanceStore
@@ -6,69 +7,122 @@ struct InsightResultView: View {
     var onDismiss: () -> Void
 
     var body: some View {
-        LiveCashCard {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "chart.bar.fill")
+                    .foregroundStyle(LiveCashTheme.accent)
+                Text(insight.title)
+                    .font(LiveCashTheme.headlineFont)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color.primary.opacity(0.35))
+                }
+                .buttonStyle(.plain)
+            }
+
+            if let series = insight.chartSeries, !series.isEmpty, let style = insight.chartStyle {
+                chartView(series: series, style: style)
+                    .frame(height: style == .donut ? 140 : 110)
+                    .padding(.vertical, 4)
+            }
+
+            ForEach(Array(insight.rows.enumerated()), id: \.offset) { _, row in
                 HStack {
-                    Image(systemName: "chart.bar.fill")
-                        .foregroundStyle(LiveCashTheme.accent)
-                    Text(insight.title)
-                        .font(LiveCashTheme.headlineFont)
+                    Text(row.0)
+                        .foregroundStyle(Color.primary.opacity(0.55))
                     Spacer()
-                    Button(action: onDismiss) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
+                    Text(row.1)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
                 }
+                .font(LiveCashTheme.bodyFont)
+            }
 
-                ForEach(Array(insight.rows.enumerated()), id: \.offset) { _, row in
-                    HStack {
-                        Text(row.0)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(row.1)
-                            .fontWeight(.medium)
-                    }
-                    .font(LiveCashTheme.bodyFont)
-                }
-
-                if let tip = insight.insight {
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.caption)
-                            .foregroundStyle(LiveCashTheme.accent)
-                        Text(tip)
-                            .font(LiveCashTheme.captionFont)
-                            .foregroundStyle(.primary.opacity(0.85))
-                    }
-                    .padding(.top, 4)
-                }
-
-                if !insight.followUpActions.isEmpty {
-                    Divider().opacity(0.5)
-                    Text("Weiter")
+            if let tip = insight.insight {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.caption)
+                        .foregroundStyle(LiveCashTheme.accent)
+                    Text(tip)
                         .font(LiveCashTheme.captionFont)
-                        .foregroundStyle(.secondary)
-                    FlowLayout(spacing: 6) {
-                        ForEach(insight.followUpActions, id: \.self) { action in
-                            Button {
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    store.showInsight(for: action)
-                                }
-                            } label: {
-                                Text(FinanceAssistant.shared.actionTitle(action))
-                                    .font(.system(size: 11, weight: .medium))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(LiveCashTheme.accentSoft)
-                                    .foregroundStyle(LiveCashTheme.accent)
-                                    .clipShape(Capsule())
+                        .foregroundStyle(.primary)
+                }
+                .padding(.top, 2)
+            }
+
+            if !insight.followUpActions.isEmpty {
+                Divider().opacity(0.35)
+                Text("Weiter")
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(Color.primary.opacity(0.5))
+                FlowLayout(spacing: 6) {
+                    ForEach(insight.followUpActions, id: \.self) { action in
+                        Button {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                store.showInsight(for: action)
                             }
-                            .buttonStyle(.plain)
+                        } label: {
+                            Text(FinanceAssistant.shared.actionTitle(action))
+                                .font(.system(size: 11, weight: .semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(LiveCashTheme.accent.opacity(0.14))
+                                .foregroundStyle(LiveCashTheme.accent)
+                                .clipShape(Capsule())
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+    }
+
+    @ViewBuilder
+    private func chartView(series: [(label: String, value: Double)], style: FinanceInsight.ChartStyle) -> some View {
+        switch style {
+        case .donut:
+            Chart(Array(series.enumerated()), id: \.offset) { _, item in
+                SectorMark(
+                    angle: .value("Wert", item.value),
+                    innerRadius: .ratio(0.55),
+                    angularInset: 1.2
+                )
+                .foregroundStyle(by: .value("Label", item.label))
+            }
+            .chartLegend(position: .bottom, spacing: 4)
+        case .bar:
+            Chart(Array(series.enumerated()), id: \.offset) { _, item in
+                BarMark(
+                    x: .value("Label", item.label),
+                    y: .value("Wert", item.value)
+                )
+                .foregroundStyle(LiveCashTheme.accent.gradient)
+                .cornerRadius(6)
+            }
+            .chartXAxis(.hidden)
+        case .line:
+            Chart(Array(series.enumerated()), id: \.offset) { idx, item in
+                LineMark(
+                    x: .value("i", idx),
+                    y: .value("Wert", item.value)
+                )
+                .foregroundStyle(LiveCashTheme.accent)
+                PointMark(
+                    x: .value("i", idx),
+                    y: .value("Wert", item.value)
+                )
+                .foregroundStyle(LiveCashTheme.income)
+            }
+            .chartXAxis(.hidden)
         }
     }
 }

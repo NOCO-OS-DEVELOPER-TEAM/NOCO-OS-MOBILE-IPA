@@ -13,6 +13,12 @@ final class LiveIntelligenceEngine {
         let t = partial.trimmingCharacters(in: .whitespacesAndNewlines)
         if t.isEmpty { return .suggestion }
         if SmartInputParser.shared.isLikelyQuery(t) || t.contains("?") { return .question }
+        // Short question starters → treat as questions for live suggestions.
+        let starters = ["was", "wie", "wo", "wann", "warum", "welch", "zeig", "gib", "kann", "hab"]
+        let lower = t.lowercased()
+        if starters.contains(where: { lower == $0 || lower.hasPrefix($0 + " ") || ($0.hasPrefix(lower) && lower.count >= 2) }) {
+            return .question
+        }
         if SmartInputParser.shared.containsAmount(t) || SmartInputParser.shared.looksLikeTransaction(t) { return .input }
         if FinanceAssistant.shared.matchIntent(t) != nil { return .question }
         return store.assistantModePreference
@@ -179,6 +185,25 @@ final class LiveIntelligenceEngine {
         let mode = detectMode(for: partial, store: store)
         store.currentAssistantMode = mode
 
+        let limit: Int
+        switch store.appSettings.assistant.suggestionIntensity {
+        case .low: limit = 2
+        case .medium, .high: limit = 3
+        }
+
+        // Prefer local question-bank matches while typing questions / incomplete words.
+        if mode == .question || mode == .suggestion || (!SmartInputParser.shared.containsAmount(t) && t.count <= 40) {
+            let bankMatches = AssistantQuestionBank.matches(for: t, limit: limit)
+            if !bankMatches.isEmpty, mode != .input || !SmartInputParser.shared.containsAmount(t) {
+                return bankMatches.map { q in
+                    if let action = q.action {
+                        return LiveSuggestion(id: q.id, title: q.prompt, action: .insight(action))
+                    }
+                    return LiveSuggestion(id: q.id, title: q.prompt, action: .submitText(q.query ?? q.prompt))
+                }
+            }
+        }
+
         let suggestions: [LiveSuggestion]
         switch mode {
         case .suggestion:
@@ -187,12 +212,6 @@ final class LiveIntelligenceEngine {
             suggestions = questionModeChips(for: t, store: store)
         case .input:
             suggestions = inputModeChips(for: t, store: store)
-        }
-
-        let limit: Int
-        switch store.appSettings.assistant.suggestionIntensity {
-        case .low: limit = 1
-        case .medium, .high: limit = 3
         }
         return Array(suggestions.prefix(limit))
     }

@@ -27,6 +27,20 @@ struct MainTabView: View {
                 .tag(3)
         }
         .tint(LiveCashTheme.accent)
+        .onChange(of: selectedTab) { oldTab, newTab in
+            if oldTab == 3 || newTab != 3 {
+                // Leaving More (or switching away) → pop nested navigation next visit
+                if oldTab == 3 && newTab != 3 {
+                    store.moreNavigationEpoch += 1
+                }
+            }
+            if newTab == 2 {
+                store.mapResetEpoch += 1
+            }
+            if newTab != 0 {
+                NotificationCenter.default.post(name: .liveCashCollapseAssistant, object: nil)
+            }
+        }
         .onChange(of: store.pendingQuickAction) { _, action in
             guard let action else { return }
             switch action {
@@ -72,14 +86,24 @@ struct MainTabView: View {
             AddTransactionView()
         }
         .sheet(isPresented: $showGoalContribution) {
-            GoalContributionView(prefilledAmount: store.pendingGoalContributionAmount)
+            GoalContributionView(
+                prefilledAmount: store.pendingGoalContributionAmount,
+                initialMode: store.pendingGoalTransferIsWithdraw ? .withdraw : .deposit
+            )
                 .onDisappear {
                     store.pendingGoalContributionAmount = nil
+                    store.pendingGoalTransferIsWithdraw = false
                     store.showGoalContributionSheet = false
                 }
         }
         .sheet(isPresented: $showReceiptScan) {
             ReceiptScanView()
+        }
+        .sheet(isPresented: $store.showAnalyzeMe) {
+            AnalyzeMeView()
+        }
+        .sheet(isPresented: $store.showFinanceReport) {
+            FinanceReportView()
         }
     }
 }

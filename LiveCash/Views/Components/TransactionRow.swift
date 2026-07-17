@@ -35,6 +35,11 @@ struct TransactionRow: View {
                     Text(store.categoryName(for: transaction))
                         .font(LiveCashTheme.captionFont)
                         .foregroundStyle(.secondary)
+                    if let sub = transaction.subcategory {
+                        Text("· \(sub)")
+                            .font(LiveCashTheme.captionFont)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
 

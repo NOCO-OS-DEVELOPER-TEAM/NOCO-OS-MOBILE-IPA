@@ -28,6 +28,9 @@ enum FinanceCategory: String, Codable, CaseIterable, Identifiable {
     }
 
     static func detect(from text: String) -> FinanceCategory {
+        if let sub = SpendingSubcategory.detect(from: text) {
+            return sub.parent
+        }
         let lower = text.lowercased()
         let rules: [(FinanceCategory, [String])] = [
             (.food, ["lidl", "aldi", "rewe", "edeka", "netto", "penny", "food", "essen", "pizza", "restaurant", "bäcker", "kaffee", "mcdonald", "burger"]),

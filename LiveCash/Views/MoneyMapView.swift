@@ -8,6 +8,7 @@ struct MoneyMapView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var mapSelectedDate = Date()
     @State private var placeDetail: MapPlaceDetail?
+    @State private var showFilters = false
 
     private var mapEndDate: Date {
         Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: mapSelectedDate) ?? mapSelectedDate
@@ -23,6 +24,10 @@ struct MoneyMapView: View {
 
     private var heatZones: [MapHeatZone] {
         MapHeatLayout.zones(from: filteredTransactions)
+    }
+
+    private var topHotspot: MapHeatZone? {
+        heatZones.filter { !$0.isIncome }.max(by: { $0.total < $1.total })
     }
 
     private var pinDisplays: [MapPinDisplay] {
@@ -44,55 +49,138 @@ struct MoneyMapView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                categoryFilter
+            ZStack(alignment: .bottom) {
                 mapContent
-                if store.appSettings.map.timelineHistoryEnabled {
-                    timelineBar
+                    .ignoresSafeArea()
+
+                VStack(spacing: 10) {
+                    topGlassBar
+                    if let hotspot = topHotspot, selectedPin == nil {
+                        hotspotCaption(hotspot)
+                    }
+                    Spacer(minLength: 0)
+                    if showFilters {
+                        filterGlassPanel
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    if store.appSettings.map.timelineHistoryEnabled {
+                        timelineGlass
+                    }
+                    if selectedPin != nil {
+                        transactionDetail
+                    }
                 }
-                transactionDetail
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
             }
-            .navigationTitle("Geldkarte")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("\(pinDisplays.count) Orte · \(filteredTransactions.count) Buchungen")
-                        .font(LiveCashTheme.captionFont)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .onAppear {
-                if store.appSettings.map.resetFilterOnOpen {
-                    selectedCategory = nil
-                    selectedID = nil
-                }
                 store.ensureLocationForMap()
-                adjustCamera()
+                resetToOverview()
             }
-            .onDisappear {
-                if store.appSettings.map.resetFilterOnOpen {
-                    selectedCategory = nil
-                    selectedID = nil
-                }
-            }
-            .onChange(of: pinDisplays.count) { _, _ in
-                if selectedID == nil { adjustCamera() }
-            }
-            .onChange(of: mapSelectedDate) { _, _ in
-                if selectedID == nil { adjustCamera() }
+            .onChange(of: store.mapResetEpoch) { _, _ in
+                resetToOverview()
             }
             .sheet(item: $placeDetail) { detail in
                 MapPlaceDetailSheet(detail: detail)
             }
+            .animation(.spring(response: 0.35, dampingFraction: 0.86), value: showFilters)
+            .animation(.spring(response: 0.35, dampingFraction: 0.86), value: selectedID)
         }
     }
 
-    private var timelineBar: some View {
+    private func hotspotCaption(_ zone: MapHeatZone) -> some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(zone.intensity.color)
+                .frame(width: 10, height: 10)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Teuerster Ort")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
+                Text("\(zone.placeTitle) · \(String(format: "%.0f€", zone.total))")
+                    .font(LiveCashTheme.captionFont.weight(.semibold))
+            }
+            Spacer()
+            Text(zone.intensity.label)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(zone.intensity.color)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private var topGlassBar: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Geldkarte")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                Text("\(pinDisplays.count) Orte · \(filteredTransactions.count) Buchungen")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                showFilters.toggle()
+                HapticService.light(store: store)
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(showFilters || selectedCategory != nil ? LiveCashTheme.accent : .primary)
+            }
+            Button {
+                resetToOverview()
+                HapticService.light(store: store)
+            } label: {
+                Image(systemName: "arrow.counterclockwise.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.primary)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+    }
+
+    private var filterGlassPanel: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                filterChip(title: "Alle", active: selectedCategory == nil) {
+                    selectedCategory = nil
+                }
+                ForEach(FinanceCategory.allCases.filter { $0 != .income }) { cat in
+                    filterChip(title: cat.rawValue, active: selectedCategory == cat) {
+                        selectedCategory = cat
+                    }
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+        }
+        .padding(10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private var timelineGlass: some View {
         VStack(spacing: 6) {
             HStack {
                 Text("Zeitverlauf")
-                    .font(LiveCashTheme.captionFont)
-                    .foregroundStyle(.secondary)
+                    .font(LiveCashTheme.captionFont.weight(.semibold))
                 Spacer()
                 Text(mapSelectedDate.formatted(date: .abbreviated, time: .omitted))
                     .font(LiveCashTheme.captionFont)
@@ -107,9 +195,12 @@ struct MoneyMapView: View {
             )
             .tint(LiveCashTheme.accent)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+        )
     }
 
     private var mapContent: some View {
@@ -119,8 +210,7 @@ struct MoneyMapView: View {
                 ForEach(heatZones) { zone in
                     MapCircle(center: zone.coordinate, radius: zone.radius)
                         .foregroundStyle(
-                            (zone.isIncome ? LiveCashTheme.income : LiveCashTheme.expense)
-                                .opacity(min(0.3, 0.1 + zone.total / 600))
+                            zone.intensity.color.opacity(min(0.32, 0.12 + zone.total / 700))
                         )
                 }
             }
@@ -128,12 +218,14 @@ struct MoneyMapView: View {
                 Annotation(pin.placeTitle, coordinate: pin.coordinate) {
                     Button {
                         HapticService.light(store: store)
-                        if selectedID == pin.id {
-                            selectedID = nil
-                        } else {
-                            selectedID = pin.id
-                            if store.appSettings.map.pinZoomEnabled {
-                                zoomToPin(pin.coordinate)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                            if selectedID == pin.id {
+                                selectedID = nil
+                            } else {
+                                selectedID = pin.id
+                                if store.appSettings.map.pinZoomEnabled {
+                                    zoomToPin(pin.coordinate)
+                                }
                             }
                         }
                     } label: {
@@ -149,18 +241,11 @@ struct MoneyMapView: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
         .mapControls {
             MapUserLocationButton()
             MapCompass()
         }
-    }
-
-    private func pinOpacity(for tx: Transaction) -> Double {
-        let cal = Calendar.current
-        if cal.isDate(tx.date, inSameDayAs: mapSelectedDate) { return 1 }
-        let days = cal.dateComponents([.day], from: cal.startOfDay(for: tx.date), to: cal.startOfDay(for: mapSelectedDate)).day ?? 0
-        return max(0.2, 1.0 - Double(days) / 21.0)
     }
 
     @ViewBuilder
@@ -176,21 +261,18 @@ struct MoneyMapView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Details") {
-                        placeDetail = pin.placeDetail
-                    }
-                    .font(LiveCashTheme.captionFont.weight(.semibold))
+                    Button("Details") { placeDetail = pin.placeDetail }
+                        .font(LiveCashTheme.captionFont.weight(.semibold))
                 }
 
                 HStack(spacing: 12) {
                     Label(String(format: "%.0f€", pin.expenseTotal), systemImage: "arrow.down.circle.fill")
-                        .font(LiveCashTheme.captionFont.weight(.semibold))
                         .foregroundStyle(LiveCashTheme.expense)
                     Label(String(format: "%.0f€", pin.incomeTotal), systemImage: "arrow.up.circle.fill")
-                        .font(LiveCashTheme.captionFont.weight(.semibold))
                         .foregroundStyle(LiveCashTheme.income)
                     Spacer()
                 }
+                .font(LiveCashTheme.captionFont.weight(.semibold))
 
                 if let first = pin.clusteredTransactions.first {
                     NavigationLink {
@@ -201,44 +283,35 @@ struct MoneyMapView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial)
+            .padding(14)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.15), radius: 16, y: 6)
             .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-
-    private var categoryFilter: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterChip(title: "Alle", active: selectedCategory == nil) {
-                    selectedCategory = nil
-                }
-                ForEach(FinanceCategory.allCases.filter { $0 != .income }) { cat in
-                    filterChip(title: cat.rawValue, active: selectedCategory == cat) {
-                        selectedCategory = cat
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
         }
     }
 
     private func filterChip(title: String, active: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(LiveCashTheme.captionFont)
+                .font(LiveCashTheme.captionFont.weight(.semibold))
                 .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(active ? LiveCashTheme.accent : Color.clear)
+                .padding(.vertical, 7)
+                .background(active ? LiveCashTheme.accent : Color.primary.opacity(0.06))
                 .foregroundStyle(active ? .white : .primary)
                 .clipShape(Capsule())
-                .overlay(
-                    Capsule().strokeBorder(active ? Color.clear : LiveCashTheme.glassBorder, lineWidth: 0.6)
-                )
         }
         .buttonStyle(.plain)
+    }
+
+    private func pinOpacity(for tx: Transaction) -> Double {
+        let cal = Calendar.current
+        if cal.isDate(tx.date, inSameDayAs: mapSelectedDate) { return 1 }
+        let days = cal.dateComponents([.day], from: cal.startOfDay(for: tx.date), to: cal.startOfDay(for: mapSelectedDate)).day ?? 0
+        return max(0.25, 1.0 - Double(days) / 21.0)
     }
 
     private func zoomToPin(_ coordinate: CLLocationCoordinate2D) {
@@ -251,6 +324,14 @@ struct MoneyMapView: View {
         }
     }
 
+    private func resetToOverview() {
+        selectedCategory = nil
+        selectedID = nil
+        showFilters = false
+        mapSelectedDate = Date()
+        adjustCamera()
+    }
+
     private func adjustCamera() {
         let coords = pinDisplays.map(\.coordinate)
         guard !coords.isEmpty else {
@@ -260,8 +341,8 @@ struct MoneyMapView: View {
         if coords.count == 1 {
             cameraPosition = .region(MKCoordinateRegion(
                 center: coords[0],
-                latitudinalMeters: 2000,
-                longitudinalMeters: 2000
+                latitudinalMeters: 3500,
+                longitudinalMeters: 3500
             ))
             return
         }
@@ -270,7 +351,7 @@ struct MoneyMapView: View {
             let point = MKMapPoint(c)
             rect = rect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
         }
-        cameraPosition = .rect(rect.insetBy(dx: -rect.size.width * 0.2, dy: -rect.size.height * 0.2))
+        cameraPosition = .rect(rect.insetBy(dx: -rect.size.width * 0.28, dy: -rect.size.height * 0.28))
     }
 }
 
@@ -286,12 +367,19 @@ private struct MapPinView: View {
     }
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 3) {
             ZStack(alignment: .topTrailing) {
-                Image(systemName: clusterSize != nil ? "mappin.and.ellipse" : "mappin.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(selected ? LiveCashTheme.accent : pinColor)
-                    .shadow(color: pinColor.opacity(0.35), radius: selected ? 8 : 3, y: 2)
+                Circle()
+                    .fill(.regularMaterial)
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Image(systemName: clusterSize != nil ? "mappin.and.ellipse" : "mappin.circle.fill")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(selected ? LiveCashTheme.accent : pinColor)
+                    )
+                    .overlay(Circle().strokeBorder(pinColor.opacity(0.35), lineWidth: 1))
+                    .shadow(color: pinColor.opacity(0.35), radius: selected ? 10 : 4, y: 2)
+
                 if let clusterSize, clusterSize > 1 {
                     Text("\(clusterSize)")
                         .font(.system(size: 9, weight: .bold))
@@ -299,19 +387,18 @@ private struct MapPinView: View {
                         .padding(4)
                         .background(pinColor)
                         .clipShape(Circle())
-                        .offset(x: 8, y: -6)
+                        .offset(x: 10, y: -6)
                 }
             }
             Text(String(format: "%.0f€", amount))
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(pinColor)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(.ultraThinMaterial)
-                .clipShape(Capsule())
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(.regularMaterial, in: Capsule())
         }
         .opacity(opacity)
-        .scaleEffect(selected ? 1.08 : 1)
+        .scaleEffect(selected ? 1.1 : 1)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selected)
     }
 }

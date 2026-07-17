@@ -3,8 +3,6 @@ import UniformTypeIdentifiers
 
 struct DataManagementSettingsView: View {
     @EnvironmentObject private var store: FinanceStore
-    @ObservedObject private var cloud = CloudSyncService.shared
-    @ObservedObject private var appleSignIn = AppleSignInService.shared
 
     @State private var exportURL: URL?
     @State private var showExporter = false
@@ -12,68 +10,26 @@ struct DataManagementSettingsView: View {
     @State private var importMerge = true
     @State private var statusMessage: String?
     @State private var errorMessage: String?
+    @State private var showResetConfirm = false
 
     var body: some View {
         List {
             Section {
-                Text("Exportiere alle Daten als Backup oder spiele sie auf einem neuen Gerät wieder ein.")
+                Text("Nur lokale Backups — Export, Import und Reset.")
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)
             }
 
             Section("Backup") {
-                Button("Daten exportieren (JSON)") {
-                    exportData()
-                }
-                Button("Daten importieren") {
-                    showImporter = true
-                }
+                Button("Exportieren (JSON)") { exportData() }
+                Button("Importieren") { showImporter = true }
                 Toggle("Beim Import zusammenführen", isOn: $importMerge)
             }
 
-            Section("iCloud") {
-                Toggle("iCloud Sync", isOn: Binding(
-                    get: { store.appSettings.cloud.iCloudSyncEnabled },
-                    set: { enabled in
-                        var settings = store.appSettings
-                        settings.cloud.iCloudSyncEnabled = enabled
-                        store.setAppSettings(settings)
-                        if enabled {
-                            CloudSyncService.shared.push(store: store)
-                        }
-                    }
-                ))
-                if let last = cloud.lastSyncDate {
-                    LabeledContent("Letzter Sync", value: last.formatted(date: .abbreviated, time: .shortened))
+            Section {
+                Button("Alles zurücksetzen", role: .destructive) {
+                    showResetConfirm = true
                 }
-                if let err = cloud.syncError {
-                    Text(err).font(LiveCashTheme.captionFont).foregroundStyle(LiveCashTheme.expense)
-                }
-                Button("Jetzt synchronisieren") {
-                    CloudSyncService.shared.push(store: store)
-                    statusMessage = "Sync ausgelöst"
-                }
-            }
-
-            Section("Apple ID") {
-                if appleSignIn.isSignedIn {
-                    LabeledContent("Angemeldet", value: "Aktiv")
-                    Button("Abmelden", role: .destructive) {
-                        appleSignIn.signOut()
-                    }
-                } else {
-                    Button("Mit Apple anmelden") {
-                        appleSignIn.signIn()
-                    }
-                }
-                Toggle("Sign in with Apple nutzen", isOn: Binding(
-                    get: { store.appSettings.cloud.signInWithAppleEnabled },
-                    set: { value in
-                        var settings = store.appSettings
-                        settings.cloud.signInWithAppleEnabled = value
-                        store.setAppSettings(settings)
-                    }
-                ))
             }
 
             if let statusMessage {
@@ -93,6 +49,12 @@ struct DataManagementSettingsView: View {
         }
         .navigationTitle("Daten verwalten")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Alles zurücksetzen?", isPresented: $showResetConfirm) {
+            Button("Löschen", role: .destructive) { store.resetAllData() }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Alle Daten und Einstellungen werden gelöscht.")
+        }
         .fileExporter(
             isPresented: $showExporter,
             document: BackupFileDocument(url: exportURL),

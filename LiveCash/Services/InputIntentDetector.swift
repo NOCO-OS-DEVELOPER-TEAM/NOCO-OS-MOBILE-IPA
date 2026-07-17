@@ -45,6 +45,11 @@ enum InputIntentDetector {
             return .advisory(.overview)
         }
 
+        // Decision phrasing with amount must never become a booking
+        if lower.contains("leisten") || lower.hasPrefix("kann ich") || lower.contains("darf ich diese woche") {
+            return .advisory(.overview)
+        }
+
         if FinanceAssistant.shared.matchIntent(trimmed) != nil,
            !SmartInputParser.shared.looksLikeTransaction(trimmed) {
             return .advisory(FinanceAssistant.shared.matchIntent(trimmed) ?? .overview)

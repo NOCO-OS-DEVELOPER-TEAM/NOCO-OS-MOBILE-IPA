@@ -22,7 +22,7 @@ struct AssistantSuggestionsView: View {
                     .foregroundStyle(LiveCashTheme.accent)
                 Text(headline)
                     .font(LiveCashTheme.captionFont.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
             }
 
             FlowLayout(spacing: 8) {
@@ -34,10 +34,10 @@ struct AssistantSuggestionsView: View {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     } label: {
                         Text(FinanceAssistant.shared.actionTitle(action))
-                            .font(LiveCashTheme.captionFont)
+                            .font(LiveCashTheme.captionFont.weight(.semibold))
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(LiveCashTheme.accentSoft)
+                            .background(LiveCashTheme.accent.opacity(0.14))
                             .foregroundStyle(LiveCashTheme.accent)
                             .clipShape(Capsule())
                     }
@@ -45,7 +45,13 @@ struct AssistantSuggestionsView: View {
                 }
             }
         }
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 

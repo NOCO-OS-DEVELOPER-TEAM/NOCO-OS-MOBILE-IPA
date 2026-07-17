@@ -28,6 +28,8 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
     var ocrText: String?
     var accountId: UUID?
     var userCategoryId: UUID?
+    /// Auto-detected fine category (Restaurant, Supermarkt, …)
+    var subcategory: String?
 
     init(
         id: UUID = UUID(),
@@ -40,7 +42,8 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
         rawInput: String? = nil,
         ocrText: String? = nil,
         accountId: UUID? = nil,
-        userCategoryId: UUID? = nil
+        userCategoryId: UUID? = nil,
+        subcategory: String? = nil
     ) {
         self.id = id
         self.amount = abs(amount)
@@ -53,10 +56,11 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
         self.ocrText = ocrText
         self.accountId = accountId
         self.userCategoryId = userCategoryId
+        self.subcategory = subcategory ?? SpendingSubcategory.detect(from: merchant)?.rawValue
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, amount, type, category, merchant, date, location, rawInput, ocrText, accountId, userCategoryId
+        case id, amount, type, category, merchant, date, location, rawInput, ocrText, accountId, userCategoryId, subcategory
     }
 
     init(from decoder: Decoder) throws {
@@ -72,6 +76,8 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
         ocrText = try c.decodeIfPresent(String.self, forKey: .ocrText)
         accountId = try c.decodeIfPresent(UUID.self, forKey: .accountId)
         userCategoryId = try c.decodeIfPresent(UUID.self, forKey: .userCategoryId)
+        subcategory = try c.decodeIfPresent(String.self, forKey: .subcategory)
+            ?? SpendingSubcategory.detect(from: merchant)?.rawValue
     }
 
     func encode(to encoder: Encoder) throws {
@@ -87,6 +93,7 @@ struct Transaction: Identifiable, Codable, Equatable, Hashable {
         try c.encodeIfPresent(ocrText, forKey: .ocrText)
         try c.encodeIfPresent(accountId, forKey: .accountId)
         try c.encodeIfPresent(userCategoryId, forKey: .userCategoryId)
+        try c.encodeIfPresent(subcategory, forKey: .subcategory)
     }
 
     var signedAmount: Double {

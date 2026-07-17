@@ -67,14 +67,18 @@ final class SmartInputParser {
     func isLikelyQuery(_ text: String) -> Bool {
         let lower = text.lowercased()
         if lower.contains("?") { return true }
-        let starters = ["wie ", "was ", "wo ", "wann ", "warum ", "welche", "zeig ", "liste ", "hilf"]
+        let starters = ["wie ", "was ", "wo ", "wann ", "warum ", "welche", "zeig ", "liste ", "hilf", "kann "]
         if starters.contains(where: { lower.hasPrefix($0) }) { return true }
+        let decisionWords = ["leisten", "urlaub leisten", "wochenbudget", "finanzbericht", "was passiert wenn", "was wäre wenn"]
+        if decisionWords.contains(where: { lower.contains($0) }) { return true }
         if FinanceAssistant.shared.matchIntent(text) != nil, !looksLikeTransactionPrivate(text) { return true }
         return false
     }
 
     func looksLikeTransaction(_ text: String) -> Bool {
-        containsAmount(text) && !text.lowercased().hasPrefix("wie ") && !text.lowercased().hasPrefix("wo ")
+        let lower = text.lowercased()
+        if lower.contains("leisten") || lower.hasPrefix("kann ") || lower.contains("darf ich") { return false }
+        return containsAmount(text) && !lower.hasPrefix("wie ") && !lower.hasPrefix("wo ")
     }
 
     func detectDocumentKind(_ text: String) -> OCRDocumentKind {
@@ -100,7 +104,9 @@ final class SmartInputParser {
     }
 
     private func looksLikeTransactionPrivate(_ text: String) -> Bool {
-        containsAmount(text) && !text.lowercased().hasPrefix("wie ")
+        let lower = text.lowercased()
+        if lower.contains("leisten") || lower.hasPrefix("kann ") || lower.contains("darf ich") { return false }
+        return containsAmount(text) && !lower.hasPrefix("wie ")
     }
 
     func containsAmount(_ text: String) -> Bool {
