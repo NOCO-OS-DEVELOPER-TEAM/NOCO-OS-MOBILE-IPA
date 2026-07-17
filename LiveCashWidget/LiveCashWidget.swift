@@ -95,7 +95,7 @@ struct LiveCashWidgetView: View {
                     statCol("Ausgaben", value: s.monthExpenses, color: expense)
                 }
                 Spacer()
-                if s.showSavings, let goal = s.primaryGoalName {
+                if s.showSavings, s.primaryGoalName != nil {
                     statCol("Sparen", valueText: "\(s.savingsProgressPercent)%", color: income)
                 }
             }
@@ -138,7 +138,7 @@ struct LiveCashWidgetView: View {
                 if s.showExpenses {
                     statCol("Ausgaben", value: s.monthExpenses, color: expense)
                 }
-                if s.showSavings, let goal = s.primaryGoalName {
+                if s.showSavings, s.primaryGoalName != nil {
                     VStack(alignment: .trailing) {
                         Text(goal)
                             .font(.system(size: 10, design: .rounded))

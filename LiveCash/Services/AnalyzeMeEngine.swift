@@ -1,5 +1,12 @@
 import Foundation
 
+struct AnalyzeMeCategoryShare: Identifiable, Equatable {
+    var id: String { name }
+    var name: String
+    var percent: Double
+    var amount: Double
+}
+
 struct AnalyzeMeReport: Equatable {
     var financeType: String
     var typeSubtitle: String
@@ -8,7 +15,7 @@ struct AnalyzeMeReport: Equatable {
     var strengths: [String]
     var weaknesses: [String]
     var suggestions: [String]
-    var categoryShares: [(name: String, percent: Double, amount: Double)]
+    var categoryShares: [AnalyzeMeCategoryShare]
     var savingsRatePercent: Double
     var monthCompareDeltaPercent: Double
     var goalCompletionPercent: Double
@@ -192,7 +199,9 @@ enum AnalyzeMeEngine {
             strengths: Array(strengths.prefix(4)),
             weaknesses: Array(weaknesses.prefix(4)),
             suggestions: Array(suggestions.prefix(4)),
-            categoryShares: shares.map { (name: $0.name, percent: $0.percent, amount: $0.amount) },
+            categoryShares: shares.map {
+                AnalyzeMeCategoryShare(name: $0.name, percent: $0.percent, amount: $0.amount)
+            },
             savingsRatePercent: savingsRate,
             monthCompareDeltaPercent: monthDelta,
             goalCompletionPercent: goalCompletion,
