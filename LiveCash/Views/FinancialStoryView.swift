@@ -353,14 +353,16 @@ private struct CategoryChartSceneContent: View {
                 .font(.system(.title2, design: .rounded).weight(.bold))
 
             if let series = slide.chartSeries, !series.isEmpty {
-                Chart(Array(series.enumerated()), id: \.offset) { _, item in
-                    SectorMark(
-                        angle: .value("Betrag", chartShown ? item.value : 0),
-                        innerRadius: .ratio(0.58),
-                        angularInset: 1.5
-                    )
-                    .foregroundStyle(by: .value("Kategorie", item.label))
-                    .cornerRadius(4)
+                Chart {
+                    ForEach(Array(series.enumerated()), id: \.offset) { _, item in
+                        SectorMark(
+                            angle: .value("Betrag", chartShown ? item.1 : 0),
+                            innerRadius: .ratio(0.58),
+                            angularInset: 1.5
+                        )
+                        .foregroundStyle(by: .value("Kategorie", item.0))
+                        .cornerRadius(4)
+                    }
                 }
                 .chartLegend(position: .bottom, spacing: 6)
                 .frame(height: 200)
@@ -434,13 +436,15 @@ private struct GoalsProgressSceneContent: View {
             }
 
             if let series = slide.chartSeries, series.count >= 2 {
-                Chart(Array(series.enumerated()), id: \.offset) { _, item in
-                    BarMark(
-                        x: .value("Anteil", item.label),
-                        y: .value("Prozent", chartShown ? item.value : 0)
-                    )
-                    .foregroundStyle(item.label == "Erreicht" ? LiveCashTheme.income.gradient : Color.primary.opacity(0.12).gradient)
-                    .cornerRadius(8)
+                Chart {
+                    ForEach(Array(series.enumerated()), id: \.offset) { _, item in
+                        BarMark(
+                            x: .value("Anteil", item.0),
+                            y: .value("Prozent", chartShown ? item.1 : 0)
+                        )
+                        .foregroundStyle(item.0 == "Erreicht" ? LiveCashTheme.income.gradient : Color.primary.opacity(0.12).gradient)
+                        .cornerRadius(8)
+                    }
                 }
                 .chartYScale(domain: 0...100)
                 .frame(height: 110)
