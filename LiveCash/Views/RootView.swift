@@ -25,7 +25,6 @@ struct RootView: View {
         .onShake()
         .onAppear {
             security.resetLockState(for: store.appSettings.security)
-            handleQuickAction()
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -43,9 +42,6 @@ struct RootView: View {
             @unknown default:
                 break
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .liveCashQuickAction)) { _ in
-            handleQuickAction()
         }
         .onReceive(NotificationCenter.default.publisher(for: .liveCashDeviceDidShake)) { _ in
             store.handleDeviceShake()
@@ -73,22 +69,6 @@ struct RootView: View {
             get: { store.pendingShakeUndo != nil },
             set: { if !$0 { store.cancelShakeUndo() } }
         )
-    }
-
-    private func handleQuickAction() {
-        guard let action = QuickActionRouter.pending else { return }
-        QuickActionRouter.pending = nil
-        switch action {
-        case .addTransaction:
-            store.pendingQuickAction = .addTransaction
-        case .openAssistant:
-            store.pendingQuickAction = .openAssistant
-            store.focusInputOnAppear = true
-        case .openOverview:
-            store.pendingQuickAction = .openOverview
-        case .openGoals:
-            store.pendingQuickAction = .openGoals
-        }
     }
 
     @ViewBuilder

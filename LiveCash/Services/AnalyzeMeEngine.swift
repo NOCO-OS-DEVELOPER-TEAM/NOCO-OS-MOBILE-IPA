@@ -158,50 +158,74 @@ enum AnalyzeMeEngine {
         var weaknesses: [String] = []
         var suggestions: [String] = []
 
-        if savingsRate >= 15 { strengths.append("Spart regelmäßig") }
-        if goalUsage { strengths.append("Nutzt Sparziele aktiv") }
-        if store.loginReward.loginStreakDays >= 5 { strengths.append("Öffnet die App konsequent") }
-        if monthDelta <= 0 && prevExpenses > 0 { strengths.append("Ausgaben unter oder auf Vormonatsniveau") }
-        if expenses.count >= 15 { strengths.append("Gute Übersicht durch viele erfasste Buchungen") }
-        if strengths.isEmpty { strengths.append("Bereit, das Finanzverhalten klarer zu machen") }
+        if savingsRate >= 15 { strengths.append("Du sparst regelmäßig und hältst deine Sparquote stabil") }
+        if goalUsage { strengths.append("Deine größte Stärke ist langfristige Planung mit Sparzielen") }
+        if store.loginReward.loginStreakDays >= 5 { strengths.append("Du pflegst deine Finanzen konsequent — das zahlt sich aus") }
+        if monthDelta <= 0 && prevExpenses > 0 { strengths.append("Deine Ausgaben liegen unter oder auf Vormonatsniveau") }
+        if expenses.count >= 15 { strengths.append("Du hast eine klare Übersicht durch viele erfasste Buchungen") }
+        if strengths.isEmpty { strengths.append("Du bist bereit, dein Finanzverhalten gezielt zu verbessern") }
 
         if foodPercent >= 20 {
-            weaknesses.append(String(format: "%.0f%% der Ausgaben gehen für Essen/Freizeit drauf", foodPercent))
+            weaknesses.append(String(format: "Etwa %.0f%% deiner Ausgaben gehen für Essen und Freizeit drauf", foodPercent))
         }
-        if smallExpenseShare > 0.35 { weaknesses.append("Viele kleine Ausgaben") }
-        if missedDays >= 4 { weaknesses.append("Vergisst manchmal Buchungen einzutragen") }
-        if postPaydaySpend { weaknesses.append("Gibt nach Gehaltseingängen mehr aus") }
+        if smallExpenseShare > 0.35 { weaknesses.append("Viele kleine Ausgaben summieren sich unbemerkt") }
+        if missedDays >= 4 { weaknesses.append("Du vergisst manchmal, Buchungen einzutragen") }
+        if postPaydaySpend { weaknesses.append("Du bist nach Gehaltseingängen impulsiver als sonst") }
         if store.activeGoals.contains(where: { $0.paceStatus(referenceMonthlySavings: store.monthlySavingsRate) == .slow }) {
-            weaknesses.append("Liegt bei mindestens einem Sparziel hinter dem Plan")
+            weaknesses.append("Mindestens ein Sparziel liegt hinter dem Plan zurück")
         }
         if weaknesses.isEmpty { weaknesses.append("Noch zu wenig Daten für klare Schwächen — weiter erfassen") }
 
         if foodPercent >= 20 {
-            suggestions.append("Setze ein wöchentliches Essens-Limit und prüfe es freitags.")
+            suggestions.append("Setze ein wöchentliches Essens-Limit und prüfe es freitags — das hilft besonders nach Gehaltseingängen.")
         }
         if smallExpenseShare > 0.35 {
-            suggestions.append("Bündele Kleinstausgaben (z. B. max. 1–2 „Sonstiges“-Blöcke pro Woche).")
+            suggestions.append("Bündele Kleinstausgaben: max. 1–2 „Sonstiges“-Blöcke pro Woche statt vieler Mini-Buchungen.")
         }
         if !goalUsage {
-            suggestions.append("Lege ein konkretes Sparziel an — das steigert die Sparquote messbar.")
+            suggestions.append("Lege ein konkretes Sparziel an — das steigert deine Sparquote messbar.")
         } else if let goal = store.activeGoals.first {
             suggestions.append(String(format: "Überweise wöchentlich 10€ zu „%@“ — Automatismus schlägt Motivation.", goal.name))
         }
         if postPaydaySpend {
-            suggestions.append("Am Gehaltstag zuerst sparen, dann ausgeben (Pay-yourself-first).")
+            suggestions.append("Am Gehaltstag zuerst sparen, dann ausgeben — so bleibst du auch impulsiven Phasen voraus.")
         }
         if missedDays >= 4 {
-            suggestions.append("Abend-Reminder nutzen: 30 Sekunden reichen für die Tagesbuchungen.")
+            suggestions.append("Nutze einen Abend-Reminder: 30 Sekunden reichen für die Tagesbuchungen.")
         }
         if suggestions.isEmpty {
-            suggestions.append("Halte den aktuellen Kurs und prüfe monatlich die Top-Kategorie.")
+            suggestions.append("Halte den aktuellen Kurs und prüfe monatlich deine Top-Kategorie.")
         }
 
         let projected = store.monthlySavingsRate > 0 ? store.monthlySavingsRate * 12 : savingsThisMonth * 12
-        let future = String(
-            format: "Wenn du so weitermachst, wirst du dein aktuelles Sparverhalten in den nächsten 12 Monaten wahrscheinlich beibehalten und etwa %.0f€ sparen.",
-            max(projected, 0)
-        )
+        var future: String
+        if let goal = store.activeGoals.first,
+           let required = goal.requiredDailyPace,
+           let actual = goal.actualDailyPace,
+           actual > required * 1.05,
+           let targetDate = goal.targetDate {
+            let daysEarly = Int((goal.remaining / actual) - (goal.remaining / required))
+            if daysEarly > 3 {
+                future = String(
+                    format: "Wenn du so weitermachst, erreichst du „%@“ voraussichtlich %d Tage früher als geplant (Ziel: %@).",
+                    goal.name,
+                    daysEarly,
+                    targetDate.formatted(date: .abbreviated, time: .omitted)
+                )
+            } else {
+                future = String(
+                    format: "Wenn du so weitermachst, erreichst du „%@“ planmäßig — weiter so.",
+                    goal.name
+                )
+            }
+        } else if projected > 0 {
+            future = String(
+                format: "Wenn du so weitermachst, legst du in den nächsten 12 Monaten voraussichtlich ~%.0f€ zurück.",
+                projected
+            )
+        } else {
+            future = "Wenn du so weitermachst, bleibt dein Sparverhalten stabil — ein Sparziel würde den Fortschritt beschleunigen."
+        }
 
         var facts: [String] = []
         if let weekday {
@@ -222,11 +246,26 @@ enum AnalyzeMeEngine {
             facts.append("Login-Serie: \(store.loginReward.loginStreakDays) Tage.")
         }
 
-        let personality = String(
-            format: "%@ — %@.",
-            type.title,
-            type.subtitle.lowercased()
-        )
+        let personality: String
+        if postPaydaySpend && savingsRate >= 10 {
+            personality = String(
+                format: "%@ — Du sparst regelmäßig, bist aber nach Gehaltseingängen impulsiver.",
+                type.title
+            )
+        } else if savingsRate >= 20 {
+            personality = String(
+                format: "%@ — Deine größte Stärke ist langfristige Planung und eine Sparquote von %.0f%%.",
+                type.title,
+                savingsRate
+            )
+        } else if foodPercent >= 25 {
+            personality = String(
+                format: "%@ — Du genießt Essen und Freizeit, solltest aber das Wochenbudget im Blick behalten.",
+                type.title
+            )
+        } else {
+            personality = String(format: "%@ — %@.", type.title, type.subtitle)
+        }
 
         return AnalyzeMeReport(
             financeType: type.title,

@@ -14,6 +14,10 @@ enum WidgetDataSync {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .secondsSince1970
 
+        let day = max(Calendar.current.component(.day, from: Date()), 1)
+        let weeklyBudget = (store.currentMonthExpenses / Double(day)) * 7
+        let score = AnalyzeMeEngine.analyze(store: store).score
+
         let snapshot = WidgetSnapshot(
             balance: store.availableBalance,
             monthExpenses: store.currentMonthExpenses,
@@ -37,7 +41,11 @@ enum WidgetDataSync {
             updatedAt: Date(),
             hasLiveData: true,
             blockedInGoals: store.blockedInGoals,
-            totalWealth: store.totalWealth
+            totalWealth: store.totalWealth,
+            financeScore: score,
+            coins: store.loginReward.coins,
+            weeklyBudget: weeklyBudget,
+            loginStreakDays: store.loginReward.loginStreakDays
         )
 
         guard let data = try? encoder.encode(snapshot) else { return }

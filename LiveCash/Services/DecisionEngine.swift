@@ -156,7 +156,12 @@ enum DecisionEngine {
             title: "Kann ich mir das leisten?",
             rows: rows,
             insight: insight,
-            followUpActions: [.weeklyBudget, .goalsProgress, .savingsTips]
+            followUpActions: [.weeklyBudget, .goalsProgress, .savingsTips],
+            chartSeries: spend > 0 ? [
+                (label: "Verfügbar", value: max(available, 0.01)),
+                (label: "Ausgabe", value: spend)
+            ] : nil,
+            chartStyle: spend > 0 ? .bar : nil
         )
     }
 
@@ -267,30 +272,43 @@ enum DecisionEngine {
             rows.append(("Teuerster Tag", wd))
         }
 
+        let cal = Calendar.current
+        let day = max(cal.component(.day, from: Date()), 1)
+        let projected = memory.monthExpenses / Double(day) * Double(cal.range(of: .day, in: .month, for: Date())?.count ?? 30)
+
         let insight: String
         if memory.prevMonthExpenses <= 0 {
             insight = "Noch kein Vormonat zum Vergleich — gib weiter Buchungen ein."
         } else if delta > 0, let top = memory.topCategories.first {
-            insight = String(
-                format: "Du hast %.0f€ mehr ausgegeben als letzten Monat — vor allem bei %@. %@",
+            var text = String(
+                format: "Du hast %.0f€ mehr ausgegeben als letzten Monat — vor allem bei %@.",
                 delta,
-                top.name,
-                memory.expensiveWeekday.map { "\($0) ist typischerweise dein teuerster Tag." } ?? ""
+                top.name
             )
+            if let wd = memory.expensiveWeekday {
+                text += " \(wd) ist typischerweise dein teuerster Tag."
+            }
+            text += String(format: " Tipp: Senke %@ um ~%.0f€/Monat.", top.name, min(delta * 0.3, top.amount * 0.2))
+            text += String(format: " Prognose Monatsende: ~%.0f€.", projected)
+            insight = text
         } else if delta < 0 {
-            insight = String(format: "Gute Nachricht: Du hast %.0f€ weniger ausgegeben als letzten Monat.", abs(delta))
+            insight = String(
+                format: "Gute Nachricht: Du hast %.0f€ weniger ausgegeben als letzten Monat. Prognose Monatsende: ~%.0f€.",
+                abs(delta),
+                projected
+            )
         } else {
-            insight = "Dein Ausgaben-Niveau ist stabil gegenüber dem Vormonat."
+            insight = String(format: "Dein Ausgaben-Niveau ist stabil gegenüber dem Vormonat. Prognose Monatsende: ~%.0f€.", projected)
         }
 
         return FinanceInsight(
             title: "Warum mehr ausgegeben?",
-            rows: rows,
+            rows: rows + [("Prognose", String(format: "~%.0f€", projected))],
             insight: insight.trimmingCharacters(in: .whitespaces),
-            followUpActions: [.byCategory, .unusualSpending, .savingsTips],
+            followUpActions: [.byCategory, .unusualSpending, .savingsTips, .monthCompare],
             chartSeries: [
-                (label: "Vormonat", value: memory.prevMonthExpenses),
-                (label: "Monat", value: memory.monthExpenses)
+                (label: "Vormonat", value: max(memory.prevMonthExpenses, 0.01)),
+                (label: "Monat", value: max(memory.monthExpenses, 0.01))
             ],
             chartStyle: .bar
         )

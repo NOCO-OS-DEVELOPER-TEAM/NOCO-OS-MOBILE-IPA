@@ -854,6 +854,7 @@ final class FinanceStore: ObservableObject {
     func setWidgetPreferences(_ prefs: WidgetPreferences) {
         widgetPreferences = prefs
         persist()
+        WidgetDataSync.writeSnapshot(from: self)
     }
 
     func setSpendingLimitsEnabled(_ enabled: Bool) {

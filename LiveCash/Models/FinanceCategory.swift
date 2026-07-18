@@ -33,7 +33,12 @@ enum FinanceCategory: String, Codable, CaseIterable, Identifiable {
         }
         let lower = text.lowercased()
         let rules: [(FinanceCategory, [String])] = [
-            (.food, ["lidl", "aldi", "rewe", "edeka", "netto", "penny", "food", "essen", "pizza", "restaurant", "bäcker", "kaffee", "mcdonald", "burger"]),
+            (.food, [
+                "lidl", "aldi", "rewe", "edeka", "netto", "penny", "food", "essen", "pizza", "restaurant",
+                "bäcker", "baecker", "kaffee", "mcdonald", "burger",
+                "sprite", "cola", "fanta", "wasser", "getränk", "getraenk", "saft", "bier", "energy",
+                "red bull", "monster", "trink", "snack", "chips", "schokolade", "eis "
+            ]),
             (.transport, ["tank", "benzin", "db ", "bahn", "uber", "bolt", "bus", "ticket", "park"]),
             (.shopping, ["amazon", "zalando", "h&m", "ikea", "mediamarkt", "saturn", "shop"]),
             (.subscription, ["netflix", "spotify", "disney", "apple music", "youtube", "abo", "subscription", "prime", "gym", "fitness"]),

@@ -37,7 +37,10 @@ enum SpendingSubcategory: String, Codable, CaseIterable, Identifiable {
             (.supermarket, ["lidl", "aldi", "rewe", "edeka", "netto", "penny", "kaufland", "supermarkt"]),
             (.fastFood, ["mcdonald", "burger king", "kfc", "subway", "döner", "doener", "kebab", "pizza hut"]),
             (.restaurant, ["restaurant", "gasthaus", "wirtshaus", "trattoria", "sushi"]),
-            (.cafe, ["café", "cafe", "starbucks", "coffee", "bäckerei", "baeckerei", "barista"]),
+            (.cafe, [
+                "café", "cafe", "starbucks", "coffee", "bäckerei", "baeckerei", "barista",
+                "sprite", "cola", "fanta", "getränk", "getraenk", "saft", "smoothie", "bubble tea"
+            ]),
             (.fuel, ["tank", "shell", "aral", "esso", "jet ", "benzin"]),
             (.publicTransit, ["db ", "bahn", "bus", "tram", "öpnv", "oepnv", "hvv", "bvg", "mvg"]),
             (.rideshare, ["uber", "bolt", "free now", "taxi"]),

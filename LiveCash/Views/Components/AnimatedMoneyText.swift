@@ -36,39 +36,66 @@ struct AnimatedMoneyText: View {
 
 struct PulsingFlameLabel: View {
     let days: Int
+    var pulseToken: Int = 0
     @State private var pulse = false
+    @State private var bounce = false
 
     var body: some View {
         Label("\(days)", systemImage: "flame.fill")
             .font(.system(size: 13, weight: .bold, design: .rounded))
             .foregroundStyle(.orange)
-            .scaleEffect(pulse ? 1.08 : 1.0)
+            .scaleEffect(bounce ? 1.22 : (pulse ? 1.08 : 1.0))
             .opacity(pulse ? 1 : 0.88)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                    pulse = true
+            .symbolEffect(.bounce, value: pulseToken)
+            .onAppear { startPulse() }
+            .onChange(of: pulseToken) { _, _ in
+                bounce = false
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) {
+                    bounce = true
                 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                        bounce = false
+                    }
+                }
+                startPulse()
             }
+    }
+
+    private func startPulse() {
+        pulse = false
+        withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: true)) {
+            pulse = true
+        }
     }
 }
 
 struct SpinningCoinLabel: View {
     let coins: Int
-    @State private var spin = false
+    var spinToken: Int = 0
+    @State private var spinDegrees: Double = 0
 
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "circle.circle.fill")
-                .rotationEffect(.degrees(spin ? 360 : 0))
+                .rotationEffect(.degrees(spinDegrees))
                 .foregroundStyle(.yellow)
+                .symbolEffect(.bounce, value: spinToken)
             Text("\(coins)")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundStyle(.yellow)
+                .contentTransition(.numericText())
         }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.9)) {
-                spin = true
-            }
+        .onAppear { spinOnce() }
+        .onChange(of: spinToken) { _, _ in
+            spinOnce()
+        }
+    }
+
+    private func spinOnce() {
+        spinDegrees = 0
+        withAnimation(.easeOut(duration: 0.85)) {
+            spinDegrees = 360
         }
     }
 }

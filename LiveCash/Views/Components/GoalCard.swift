@@ -32,11 +32,12 @@ struct GoalCard: View {
                         Capsule()
                             .fill(LiveCashTheme.incomeSoft)
                         Capsule()
-                            .fill(LiveCashTheme.income)
-                            .frame(width: geo.size.width * goal.progress)
+                            .fill(LiveCashTheme.income.gradient)
+                            .frame(width: max(0, geo.size.width * goal.progress))
+                            .animation(LiveCashMotion.softSpring, value: goal.progress)
                     }
                 }
-                .frame(height: 8)
+                .frame(height: 10)
                 .opacity(showProgress ? 1 : 0)
 
                 HStack {

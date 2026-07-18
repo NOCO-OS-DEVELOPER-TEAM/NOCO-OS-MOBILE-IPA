@@ -370,10 +370,12 @@ struct MoneyCardSettingsView: View {
                     Text("30 Min").tag(30)
                     Text("60 Min").tag(60)
                 }
-                Button("Widget aktualisieren") {
+                Button("Widgets aktualisieren") {
                     store.refreshWidgets()
+                    HapticService.success(store: store)
                 }
-                Text("Erzwingt eine sofortige Widget-Aktualisierung — hilfreich wenn die Anzeige hängt.")
+                .buttonStyle(PremiumPressStyle())
+                Text("Schreibt Kontostand, Sparziel, Score, Coins und Wochenbudget neu in die Widgets.")
                     .font(LiveCashTheme.captionFont)
                     .foregroundStyle(.secondary)
             }

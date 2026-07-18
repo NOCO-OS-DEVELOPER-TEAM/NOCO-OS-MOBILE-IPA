@@ -10,7 +10,7 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            DashboardView()
+            DashboardView(isSelected: selectedTab == 0)
                 .tabItem { Label("Start", systemImage: "house.fill") }
                 .tag(0)
 
@@ -22,18 +22,18 @@ struct MainTabView: View {
                 .tabItem { Label("Karte", systemImage: "map.fill") }
                 .tag(2)
 
-            MoreView()
+            MoreView(isSelected: selectedTab == 3)
                 .tabItem { Label("Mehr", systemImage: "ellipsis.circle.fill") }
                 .tag(3)
         }
         .tint(LiveCashTheme.accent)
+        .onAppear {
+            consumePendingQuickAction(store.pendingQuickAction)
+        }
         .onChange(of: selectedTab) { oldTab, newTab in
             HapticService.tabChange(store: store)
-            if oldTab == 3 || newTab != 3 {
-                // Leaving More (or switching away) → pop nested navigation next visit
-                if oldTab == 3 && newTab != 3 {
-                    store.moreNavigationEpoch += 1
-                }
+            if oldTab == 3 && newTab != 3 {
+                store.moreNavigationEpoch += 1
             }
             if newTab == 2 {
                 store.mapResetEpoch += 1
@@ -43,26 +43,13 @@ struct MainTabView: View {
             }
         }
         .onChange(of: store.pendingQuickAction) { _, action in
-            guard let action else { return }
-            switch action {
-            case .addTransaction:
-                selectedTab = 0
-                showAddMenu = true
-            case .openAssistant:
-                selectedTab = 0
-                store.focusInputOnAppear = true
-            case .openOverview:
-                selectedTab = 0
-                store.showInsight(for: .monthlySummary)
-            case .openGoals:
-                selectedTab = 3
-                store.pendingMoreDestination = .goals
-            }
-            store.pendingQuickAction = nil
+            consumePendingQuickAction(action)
         }
         .onChange(of: store.pendingTabSelection) { _, tab in
             if let tab {
-                selectedTab = tab
+                withAnimation(LiveCashMotion.crossfade) {
+                    selectedTab = tab
+                }
                 store.pendingTabSelection = nil
             }
         }
@@ -91,11 +78,11 @@ struct MainTabView: View {
                 prefilledAmount: store.pendingGoalContributionAmount,
                 initialMode: store.pendingGoalTransferIsWithdraw ? .withdraw : .deposit
             )
-                .onDisappear {
-                    store.pendingGoalContributionAmount = nil
-                    store.pendingGoalTransferIsWithdraw = false
-                    store.showGoalContributionSheet = false
-                }
+            .onDisappear {
+                store.pendingGoalContributionAmount = nil
+                store.pendingGoalTransferIsWithdraw = false
+                store.showGoalContributionSheet = false
+            }
         }
         .sheet(isPresented: $showReceiptScan) {
             ReceiptScanView()
@@ -106,5 +93,31 @@ struct MainTabView: View {
         .sheet(isPresented: $store.showFinanceReport) {
             FinanceReportView()
         }
+    }
+
+    private func consumePendingQuickAction(_ action: LiveCashQuickAction?) {
+        guard let action else { return }
+        switch action {
+        case .addTransaction:
+            selectedTab = 0
+            // Skip menu — open booking form directly
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                showAddTransaction = true
+            }
+        case .openAssistant:
+            selectedTab = 0
+            store.focusInputOnAppear = true
+            store.isAssistantExpanded = true
+        case .openOverview:
+            selectedTab = 0
+            store.isAssistantExpanded = false
+            store.activeInsight = nil
+        case .openGoals:
+            selectedTab = 3
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                store.pendingMoreDestination = .goals
+            }
+        }
+        store.pendingQuickAction = nil
     }
 }

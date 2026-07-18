@@ -21,7 +21,11 @@ struct LiveCashWidgetProvider: TimelineProvider {
             updatedAt: Date(),
             hasLiveData: true,
             blockedInGoals: 180,
-            totalWealth: 1420
+            totalWealth: 1420,
+            financeScore: 72,
+            coins: 40,
+            weeklyBudget: 180,
+            loginStreakDays: 5
         ))
     }
 
@@ -68,7 +72,7 @@ struct LiveCashWidgetView: View {
                 .foregroundStyle(.secondary)
             Text("Keine Live-Daten")
                 .font(.system(.headline, design: .rounded).weight(.bold))
-            Text("App einmal öffnen — Widgets aktualisieren sich automatisch.")
+            Text("App öffnen → Einstellungen → Widget aktualisieren.")
                 .font(.system(size: 11, design: .rounded))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -78,7 +82,7 @@ struct LiveCashWidgetView: View {
     }
 
     private var smallLayout: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             header
             if s.showBalance {
                 Text(String(format: "%.0f€", s.balance))
@@ -86,23 +90,20 @@ struct LiveCashWidgetView: View {
                     .foregroundStyle(s.balance >= 0 ? income : expense)
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
-                Text("Verfügbar")
-                    .font(.system(size: 10, design: .rounded))
-                    .foregroundStyle(.secondary)
             }
-            HStack {
-                if s.showExpenses {
-                    statCol("Ausgaben", value: s.monthExpenses, color: expense)
+            HStack(spacing: 10) {
+                if s.financeScore > 0 {
+                    miniStat("Score", "\(s.financeScore)")
                 }
-                Spacer()
                 if s.showSavings, s.primaryGoalName != nil {
-                    statCol("Sparen", valueText: "\(s.savingsProgressPercent)%", color: income)
+                    miniStat("Ziel", "\(s.savingsProgressPercent)%")
+                }
+                if s.coins > 0 {
+                    miniStat("Coins", "\(s.coins)")
                 }
             }
-            if s.showRecentExpense {
-                lastTransactionRow
-            } else if s.showSubscriptions, s.monthlySubscriptionCost > 0 {
-                Text(String(format: "Abos: %.0f€/M", s.monthlySubscriptionCost))
+            if s.weeklyBudget > 0 {
+                Text(String(format: "Woche ~%.0f€", s.weeklyBudget))
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -111,7 +112,7 @@ struct LiveCashWidgetView: View {
     }
 
     private var mediumLayout: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
                 header
                 if s.showBalance {
@@ -123,50 +124,39 @@ struct LiveCashWidgetView: View {
                     Text("Verfügbar")
                         .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
-                    if s.blockedInGoals > 0 {
-                        Text(String(format: "Vermögen %.0f€", s.totalWealth))
-                            .font(.system(size: 10, design: .rounded))
-                            .foregroundStyle(.secondary)
-                    }
                 }
-                if s.showRecentExpense {
-                    lastTransactionRow
+                if s.weeklyBudget > 0 {
+                    Text(String(format: "Wochenbudget ~%.0f€", s.weeklyBudget))
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(accent)
                 }
             }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 10) {
-                if s.showExpenses {
-                    statCol("Ausgaben", value: s.monthExpenses, color: expense)
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 8) {
+                if s.financeScore > 0 {
+                    labeledValue("Score", "\(s.financeScore)", accent)
                 }
                 if s.showSavings, let goal = s.primaryGoalName {
-                    VStack(alignment: .trailing) {
-                        Text(goal)
-                            .font(.system(size: 10, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Text("\(s.savingsProgressPercent)%")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(income)
+                    labeledValue(goal, "\(s.savingsProgressPercent)%", income)
+                }
+                if s.coins > 0 || s.loginStreakDays > 0 {
+                    HStack(spacing: 8) {
+                        if s.loginStreakDays > 0 {
+                            Text("🔥 \(s.loginStreakDays)")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                        }
+                        if s.coins > 0 {
+                            Text("🟡 \(s.coins)")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                        }
                     }
                 }
-                if s.showSubscriptions, s.monthlySubscriptionCost > 0 {
-                    statCol("Abos/M", value: s.monthlySubscriptionCost, color: accent)
+                if s.showExpenses {
+                    labeledValue("Ausgaben", String(format: "%.0f€", s.monthExpenses), expense)
                 }
             }
         }
         .padding()
-    }
-
-    @ViewBuilder
-    private var lastTransactionRow: some View {
-        if let merchant = s.lastTransactionMerchant, s.lastTransactionAmount > 0 {
-            let color = s.lastTransactionIsIncome ? income : expense
-            let prefix = s.lastTransactionIsIncome ? "+" : "−"
-            Text("Letzte: \(merchant) · \(prefix)\(String(format: "%.0f€", s.lastTransactionAmount))")
-                .font(.system(size: 10, design: .rounded))
-                .foregroundStyle(color)
-                .lineLimit(1)
-        }
     }
 
     private var header: some View {
@@ -181,19 +171,26 @@ struct LiveCashWidgetView: View {
         }
     }
 
-    private func statCol(_ title: String, value: Double, color: Color) -> some View {
-        statCol(title, valueText: String(format: "%.0f€", value), color: color)
-    }
-
-    private func statCol(_ title: String, valueText: String, color: Color) -> some View {
-        VStack(alignment: .leading) {
+    private func miniStat(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
             Text(title)
                 .font(.system(size: 9))
                 .foregroundStyle(.secondary)
-            Text(valueText)
+            Text(value)
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(color)
+                .foregroundStyle(accent)
+        }
+    }
+
+    private func labeledValue(_ title: String, _ value: String, _ color: Color) -> some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            Text(title)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
+            Text(value)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
         }
     }
 }
@@ -207,7 +204,7 @@ struct LiveCashWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Live Cash")
-        .description("Kontostand, Ausgaben, Sparfortschritt und letzte Bewegung.")
+        .description("Kontostand, Sparziel, Finanzscore, Coins und Wochenbudget.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

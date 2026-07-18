@@ -193,6 +193,10 @@ final class FinanceAssistant {
         if normalized.contains("warum") && (normalized.contains("mehr") || normalized.contains("ausgegeben")) {
             return .init(mode: .directInsight(DecisionEngine.whyMoreSpending(store: store)))
         }
+        if (normalized.contains("zu viel") || normalized.contains("zuviel")) &&
+            (normalized.contains("ausgegeben") || normalized.contains("ausgebe")) {
+            return .init(mode: .directInsight(DecisionEngine.whyMoreSpending(store: store)))
+        }
         if normalized.contains("was passiert wenn") || normalized.contains("was waere wenn") || normalized.contains("was wäre wenn") {
             return .init(mode: .directInsight(DecisionEngine.whatIf(store: store)))
         }
@@ -223,7 +227,9 @@ final class FinanceAssistant {
             ("wie sieht meine zukunft", .whatIf),
             ("besser bin ich", .analyzeMe),
             ("wochenbudget", .weeklyBudget),
-            ("warum habe ich", .whySpending)
+            ("warum habe ich", .whySpending),
+            ("zu viel ausgegeben", .whySpending),
+            ("diesen monat zu viel", .whySpending)
         ]
         for (phrase, action) in directPhrases where normalized.contains(phrase) {
             let insight = generateInsight(action: action, store: store, context: context)
@@ -326,7 +332,14 @@ final class FinanceAssistant {
             let pct = shareOfExpenses(top.first?.amount ?? 0, in: txs)
             let insight: String? = rows.isEmpty ? "Noch keine Ausgaben in \(context.period.label)." :
                 "Größte Ausgabe: \(top.first?.merchant ?? "") (\(pct)% deiner Ausgaben)."
-            return FinanceInsight(title: "Top-Ausgaben · \(context.period.label)", rows: Array(rows), insight: insight, followUpActions: [.byCategory, .savingsTips])
+            return FinanceInsight(
+                title: "Top-Ausgaben · \(context.period.label)",
+                rows: Array(rows),
+                insight: insight,
+                followUpActions: [.byCategory, .savingsTips],
+                chartSeries: top.map { (label: String($0.merchant.prefix(14)), value: $0.amount) },
+                chartStyle: .bar
+            )
 
         case .biggestCategory, .topCategory, .byCategory, .top3Categories:
             return categoryBreakdownInsight(txs: txs, period: context.period, limit: action == .top3Categories ? 3 : 5)
@@ -372,11 +385,14 @@ final class FinanceAssistant {
                     insightLines = ["Lege ein Sparziel unter „Mehr“ an."]
                 }
             }
+            let chartSeries = store.goals.map { (label: String($0.name.prefix(12)), value: Double($0.progressPercent)) }
             return FinanceInsight(
                 title: "Sparziele",
                 rows: rows.isEmpty ? [("—", "Noch keine Ziele")] : rows,
                 insight: insightLines.joined(separator: " "),
-                followUpActions: [.savingsTips, .monthCompare]
+                followUpActions: [.savingsTips, .monthCompare],
+                chartSeries: chartSeries.isEmpty ? nil : chartSeries,
+                chartStyle: chartSeries.isEmpty ? nil : .bar
             )
 
         case .byMerchant, .merchantBreakdown:
@@ -384,18 +400,28 @@ final class FinanceAssistant {
             let sorted = grouped.map { ($0.key, $0.value.reduce(0) { $0 + $1.amount }) }.sorted { $0.1 > $1.1 }.prefix(8)
             let top = sorted.first
             let insight = top.map { "\($0.0) ist dein häufigster Kostenpunkt (\(String(format: "%.2f€", $0.1)))." }
-            return FinanceInsight(title: "Nach Händler · \(context.period.label)", rows: Array(sorted.map { ($0.0, String(format: "%.2f€", $0.1)) }), insight: insight)
+            return FinanceInsight(
+                title: "Nach Händler · \(context.period.label)",
+                rows: Array(sorted.map { ($0.0, String(format: "%.2f€", $0.1)) }),
+                insight: insight,
+                followUpActions: [.top5Expenses, .monthCompare],
+                chartSeries: sorted.prefix(6).map { (label: String($0.0.prefix(14)), value: $0.1) },
+                chartStyle: .bar
+            )
 
         case .thisWeek, .last7Days:
             let weekTxs = transactions(for: .last7Days, store: store, reference: Date())
             let total = weekTxs.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
             let rows = weekTxs.filter { $0.type == .expense }.sorted { $0.amount > $1.amount }.prefix(5)
                 .map { ($0.merchant, String(format: "-%.2f€", $0.amount)) }
+            let dailySeries = dailyExpenseSeries(transactions: weekTxs.filter { $0.type == .expense }, days: 7)
             return FinanceInsight(
                 title: "Letzte 7 Tage",
                 rows: Array(rows),
                 insight: String(format: "Gesamt: %.2f€ · Ø %.2f€/Tag", total, total / 7),
-                followUpActions: [.monthCompare, .unusualSpending]
+                followUpActions: [.monthCompare, .unusualSpending],
+                chartSeries: dailySeries,
+                chartStyle: dailySeries.isEmpty ? nil : .bar
             )
 
         case .monthCompare:
@@ -425,15 +451,30 @@ final class FinanceAssistant {
 
         case .analyzeMe:
             let report = AnalyzeMeEngine.analyze(store: store)
+            var rows: [(String, String)] = [
+                ("Finanz-Typ", report.financeType),
+                ("Persönlichkeit", report.typeSubtitle),
+                ("Score", "\(report.score)/100"),
+                ("Sparquote", String(format: "%.0f%%", report.savingsRatePercent))
+            ]
+            if let strength = report.strengths.first {
+                rows.append(("Stärke", strength))
+            }
+            if let weakness = report.weaknesses.first {
+                rows.append(("Schwäche", weakness))
+            }
+            let profileMeters: [(label: String, value: Double)] = [
+                (label: "Score", value: Double(report.score)),
+                (label: "Sparquote", value: report.savingsRatePercent),
+                (label: "Ziele", value: report.goalCompletionPercent)
+            ].filter { $0.value > 0 }
             return FinanceInsight(
                 title: "Analyze Me",
-                rows: [
-                    ("Finanz-Typ", report.financeType),
-                    ("Score", "\(report.score)/100"),
-                    ("Sparquote", String(format: "%.0f%%", report.savingsRatePercent))
-                ],
+                rows: rows,
                 insight: report.personalityLine + " Öffne „Mein Finanzbericht“ für die volle Analyse.",
-                followUpActions: [.financeReport, .savingsTips, .monthCompare]
+                followUpActions: [.financeReport, .savingsTips, .monthCompare],
+                chartSeries: profileMeters.isEmpty ? nil : profileMeters,
+                chartStyle: profileMeters.isEmpty ? nil : .bar
             )
 
         case .affordability:
@@ -660,6 +701,9 @@ final class FinanceAssistant {
             let day = max(Calendar.current.component(.day, from: Date()), 1)
             let projected = expenses / Double(day) * 30
             insight += String(format: " Hochrechnung Monatsende: ~%.0f€ Ausgaben.", projected)
+            if projected > income && income > 0 {
+                insight += String(format: " Prognose: ~%.0f€ über den Einnahmen.", projected - income)
+            }
         }
         return FinanceInsight(
             title: "Übersicht · \(period.label)",
@@ -669,7 +713,12 @@ final class FinanceAssistant {
                 ("Saldo", String(format: "%+.2f€", balance))
             ],
             insight: txs.isEmpty ? "Noch keine Daten für \(period.label)." : insight,
-            followUpActions: [.top5Expenses, .byCategory, .monthCompare]
+            followUpActions: [.top5Expenses, .byCategory, .monthCompare],
+            chartSeries: [
+                (label: "Einnahmen", value: max(income, 0.01)),
+                (label: "Ausgaben", value: max(expenses, 0.01))
+            ],
+            chartStyle: .bar
         )
     }
 
@@ -682,14 +731,24 @@ final class FinanceAssistant {
         let diff = cur - prevTotal
         let pct = prevTotal > 0 ? diff / prevTotal * 100 : 0
         let personal = PersonalFinanceInsights.categoryMonthOverMonth(store: store)?.message
-        let fallback = diff > 0 ? "Du gibst \(String(format: "%.0f%%", abs(pct))) mehr aus als im Vormonat." :
+        var fallback = diff > 0 ? "Du gibst \(String(format: "%.0f%%", abs(pct))) mehr aus als im Vormonat." :
             (diff < 0 ? "Du gibst weniger aus — gut gemacht!" : "Gleich wie im Vormonat.")
+        let day = max(cal.component(.day, from: now), 1)
+        let daysInMonth = cal.range(of: .day, in: .month, for: now)?.count ?? 30
+        let projected = cur / Double(day) * Double(daysInMonth)
+        if diff > 0 {
+            fallback += String(format: " Tipp: Reduziere Top-Kategorie um ~%.0f€/Monat.", min(diff, cur * 0.15))
+            fallback += String(format: " Prognose Monatsende: ~%.0f€.", projected)
+        } else if cur > 0 {
+            fallback += String(format: " Prognose Monatsende: ~%.0f€.", projected)
+        }
         return FinanceInsight(
             title: "Monatsvergleich",
             rows: [
                 ("Dieser Monat", String(format: "%.2f€", cur)),
                 ("Vormonat", String(format: "%.2f€", prevTotal)),
-                ("Differenz", String(format: "%+.2f€ (%.0f%%)", diff, pct))
+                ("Differenz", String(format: "%+.2f€ (%.0f%%)", diff, pct)),
+                ("Prognose", String(format: "~%.0f€", projected))
             ],
             insight: personal ?? fallback,
             followUpActions: [.byCategory, .spendingPace, .unusualSpending],
@@ -701,6 +760,21 @@ final class FinanceAssistant {
         )
     }
 
+    private func dailyExpenseSeries(transactions: [Transaction], days: Int) -> [(label: String, value: Double)] {
+        let cal = Calendar.current
+        let now = Date()
+        var series: [(label: String, value: Double)] = []
+        for offset in stride(from: days - 1, through: 0, by: -1) {
+            guard let day = cal.date(byAdding: .day, value: -offset, to: now) else { continue }
+            let total = transactions
+                .filter { cal.isDate($0.date, inSameDayAs: day) }
+                .reduce(0) { $0 + $1.amount }
+            let label = day.formatted(.dateTime.weekday(.abbreviated))
+            series.append((label: label, value: total))
+        }
+        return series
+    }
+
     private func spendingPaceInsight(store: FinanceStore) -> FinanceInsight {
         let cal = Calendar.current
         let day = max(cal.component(.day, from: Date()), 1)
@@ -708,6 +782,12 @@ final class FinanceAssistant {
         let spent = store.currentMonthExpenses
         let pace = spent / Double(day) * Double(daysInMonth)
         let income = store.currentMonthIncome
+        let monthTxs = store.transactions(inMonth: Date()).filter { $0.type == .expense && !FinanceStore.isGoalContribution($0) }
+        let dailySeries = dailyExpenseSeries(transactions: monthTxs, days: min(day, 14))
+        var insight = pace > income && income > 0
+            ? "Bei diesem Tempo überziehst du deine Einnahmen."
+            : "Dein Ausgaben-Tempo ist stabil."
+        insight += String(format: " Prognose Monatsende: ~%.0f€.", pace)
         return FinanceInsight(
             title: "Ausgaben-Tempo",
             rows: [
@@ -715,8 +795,10 @@ final class FinanceAssistant {
                 ("Tage vergangen", "\(day) von \(daysInMonth)"),
                 ("Prognose Monatsende", String(format: "~%.0f€", pace))
             ],
-            insight: pace > income && income > 0 ? "Bei diesem Tempo überziehst du deine Einnahmen." : "Dein Ausgaben-Tempo ist stabil.",
-            followUpActions: [.dailyAverage, .savingsTips]
+            insight: insight,
+            followUpActions: [.dailyAverage, .savingsTips, .monthCompare],
+            chartSeries: dailySeries.isEmpty ? nil : dailySeries,
+            chartStyle: dailySeries.isEmpty ? nil : .line
         )
     }
 

@@ -87,11 +87,7 @@ struct SettingsView: View {
                 }
 
                 Section("Geld & Sparen") {
-                    NavigationLink {
-                        GoalsView()
-                    } label: {
-                        Label("Sparziele", systemImage: "target")
-                    }
+                    settingsLink(.savings, title: "Sparziele", icon: "target")
                     settingsLink(.savingsOptions, title: "Sparziel-Optionen", icon: "slider.horizontal.3")
                     settingsLink(.limits, title: "Limits", icon: "gauge.with.dots.needle.67percent")
                     settingsLink(.categories, title: "Kategorien", icon: "tag.fill")
@@ -105,6 +101,12 @@ struct SettingsView: View {
                     settingsLink(.ui, title: "Darstellung & Animationen", icon: "paintbrush")
                     settingsLink(.moneyCard, title: "Money Card & Widget", icon: "creditcard.fill")
                     settingsLink(.map, title: "Geldkarte", icon: "map.fill")
+                    Button {
+                        store.refreshWidgets()
+                        HapticService.success(store: store)
+                    } label: {
+                        Label("Widgets aktualisieren", systemImage: "arrow.clockwise.circle")
+                    }
                 }
 
                 Section("Daten verwalten") {
@@ -182,9 +184,6 @@ struct SettingsView: View {
         NavigationLink(value: destination) {
             Label(title, systemImage: icon)
         }
-        .simultaneousGesture(TapGesture().onEnded {
-            HapticService.navigate(store: store)
-        })
     }
 
     @ViewBuilder

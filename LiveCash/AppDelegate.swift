@@ -16,30 +16,30 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         application.shortcutItems = [
             UIApplicationShortcutItem(
-                type: LiveCashQuickAction.addTransaction.type,
-                localizedTitle: "Neue Buchung",
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "plus.circle.fill"),
+                type: LiveCashQuickAction.openOverview.type,
+                localizedTitle: "Übersicht",
+                localizedSubtitle: "Zur Startseite",
+                icon: UIApplicationShortcutIcon(systemImageName: "house.fill"),
                 userInfo: nil
             ),
             UIApplicationShortcutItem(
                 type: LiveCashQuickAction.openAssistant.type,
                 localizedTitle: "Smart Assistant",
-                localizedSubtitle: nil,
+                localizedSubtitle: "Fragen & Tipps",
                 icon: UIApplicationShortcutIcon(systemImageName: "sparkles"),
                 userInfo: nil
             ),
             UIApplicationShortcutItem(
-                type: LiveCashQuickAction.openOverview.type,
-                localizedTitle: "Übersicht",
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "chart.bar.fill"),
+                type: LiveCashQuickAction.addTransaction.type,
+                localizedTitle: "Neue Buchung",
+                localizedSubtitle: "Ausgabe oder Einnahme",
+                icon: UIApplicationShortcutIcon(systemImageName: "plus.circle.fill"),
                 userInfo: nil
             )
         ]
 
         if let item = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
-            QuickActionRouter.pending = LiveCashQuickAction(rawValue: item.type)
+            QuickActionRouter.enqueue(LiveCashQuickAction(rawValue: item.type))
         }
         return true
     }
@@ -49,11 +49,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         performActionFor shortcutItem: UIApplicationShortcutItem,
         completionHandler: @escaping (Bool) -> Void
     ) {
-        QuickActionRouter.pending = LiveCashQuickAction(rawValue: shortcutItem.type)
+        QuickActionRouter.enqueue(LiveCashQuickAction(rawValue: shortcutItem.type))
         completionHandler(true)
     }
 }
 
 enum QuickActionRouter {
     static var pending: LiveCashQuickAction?
+
+    static func enqueue(_ action: LiveCashQuickAction?) {
+        pending = action
+        NotificationCenter.default.post(name: .liveCashQuickAction, object: action)
+    }
+
+    static func consume() -> LiveCashQuickAction? {
+        let action = pending
+        pending = nil
+        return action
+    }
 }

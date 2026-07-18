@@ -23,12 +23,17 @@ struct FinanceReportView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     hero.appearScale(delay: 0)
-                    whoAmI.appearFade(delay: 0.08)
+                    whoAmI.appearFade(delay: 0.06)
+                    development.appearFade(delay: 0.1)
                     spending.appearFade(delay: 0.14)
-                    monthBars.appearFade(delay: 0.2)
-                    strengths.appearFade(delay: 0.26)
-                    changes.appearFade(delay: 0.32)
-                    forecast.appearFade(delay: 0.38)
+                    monthBars.appearFade(delay: 0.18)
+                    strengths.appearFade(delay: 0.22)
+                    weaknesses.appearFade(delay: 0.26)
+                    habits.appearFade(delay: 0.3)
+                    places.appearFade(delay: 0.34)
+                    savingsBehavior.appearFade(delay: 0.38)
+                    changes.appearFade(delay: 0.42)
+                    forecast.appearFade(delay: 0.46)
                 }
                 .padding(20)
             }
@@ -144,22 +149,27 @@ struct FinanceReportView: View {
                             }
                             HapticService.selection(store: store)
                         } label: {
-                            HStack {
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
                                 Circle()
                                     .fill(LiveCashTheme.accent.opacity(selectedSlice == slice.name ? 1 : 0.35))
                                     .frame(width: 8, height: 8)
                                 Text(slice.name)
                                     .foregroundStyle(.primary)
-                                Spacer()
-                                Text(String(format: "%.0f€", slice.amount))
-                                    .foregroundStyle(.secondary)
-                                Text(String(format: "%.0f%%", slice.percent))
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                                    .frame(width: 44, alignment: .trailing)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text(String(format: "%.0f€", slice.amount))
+                                        .foregroundStyle(.secondary)
+                                        .monospacedDigit()
+                                    Text(String(format: "%.0f%%", slice.percent))
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.primary)
+                                        .monospacedDigit()
+                                }
+                                .frame(minWidth: 56, alignment: .trailing)
                             }
                             .font(LiveCashTheme.captionFont)
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 6)
                         }
                         .buttonStyle(.plain)
                     }
@@ -207,11 +217,133 @@ struct FinanceReportView: View {
     private var strengths: some View {
         LiveCashCard {
             VStack(alignment: .leading, spacing: 10) {
-                sectionTitle("Was mache ich gut?")
+                sectionTitle("Stärken")
                 ForEach(analyze.strengths, id: \.self) { line in
                     Label(line, systemImage: "checkmark.circle.fill")
                         .font(LiveCashTheme.bodyFont)
                         .foregroundStyle(LiveCashTheme.income)
+                }
+            }
+        }
+    }
+
+    private var weaknesses: some View {
+        Group {
+            if !analyze.weaknesses.isEmpty {
+                LiveCashCard {
+                    VStack(alignment: .leading, spacing: 10) {
+                        sectionTitle("Schwächen")
+                        ForEach(analyze.weaknesses, id: \.self) { line in
+                            Label(line, systemImage: "exclamationmark.triangle.fill")
+                                .font(LiveCashTheme.bodyFont)
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var development: some View {
+        LiveCashCard {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionTitle("Entwicklung")
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Dieser Monat")
+                            .font(LiveCashTheme.captionFont)
+                            .foregroundStyle(.secondary)
+                        Text(String(format: "%.0f€", analytics.monthExpenses))
+                            .font(LiveCashTheme.headlineFont)
+                            .foregroundStyle(LiveCashTheme.expense)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("vs. Vormonat")
+                            .font(LiveCashTheme.captionFont)
+                            .foregroundStyle(.secondary)
+                        Text(String(format: "%+.0f%%", analytics.monthCompareDeltaPercent))
+                            .font(LiveCashTheme.headlineFont)
+                            .foregroundStyle(analytics.monthCompareDeltaPercent <= 0 ? LiveCashTheme.income : LiveCashTheme.expense)
+                    }
+                }
+                Text(String(format: "Sparquote %.0f%% · Score %d/100", analyze.savingsRatePercent, analyze.score))
+                    .font(LiveCashTheme.bodyFont)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var habits: some View {
+        LiveCashCard {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionTitle("Gewohnheiten")
+                if let weekday = analyze.expensiveWeekday ?? memory.expensiveWeekday {
+                    Label("\(weekday) ist typischerweise dein teuerster Tag.", systemImage: "calendar")
+                        .font(LiveCashTheme.bodyFont)
+                }
+                if let habit = memory.habitLabel {
+                    Label("Du buchst meistens \(habit).", systemImage: "clock")
+                        .font(LiveCashTheme.bodyFont)
+                }
+                if analyze.foodSpendPercent > 15 {
+                    Label(String(format: "%.0f%% deiner Ausgaben gehen in Essen/Freizeit.", analyze.foodSpendPercent), systemImage: "fork.knife")
+                        .font(LiveCashTheme.bodyFont)
+                }
+                ForEach(analyze.facts.prefix(3), id: \.self) { fact in
+                    Label(fact, systemImage: "sparkle")
+                        .font(LiveCashTheme.captionFont)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private var places: some View {
+        Group {
+            if !analytics.hotspots.isEmpty {
+                LiveCashCard {
+                    VStack(alignment: .leading, spacing: 10) {
+                        sectionTitle("Häufigste Orte")
+                        ForEach(analytics.hotspots.prefix(4)) { spot in
+                            HStack {
+                                Text(spot.title)
+                                    .font(LiveCashTheme.bodyFont)
+                                Spacer()
+                                Text(String(format: "%.0f€", spot.amount))
+                                    .font(LiveCashTheme.captionFont.weight(.semibold))
+                                    .foregroundStyle(LiveCashTheme.accent)
+                            }
+                        }
+                        if let caption = analytics.topHotspotCaption {
+                            Text(caption)
+                                .font(LiveCashTheme.captionFont)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var savingsBehavior: some View {
+        LiveCashCard {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionTitle("Sparverhalten")
+                Text(String(format: "Sparquote diesen Monat: %.0f%%", analyze.savingsRatePercent))
+                    .font(LiveCashTheme.bodyFont)
+                if let goal = memory.primaryGoalName {
+                    Text("Hauptziel „\(goal)“ — \(memory.primaryGoalProgress)% erreicht.")
+                        .font(LiveCashTheme.bodyFont)
+                        .foregroundStyle(.secondary)
+                }
+                Text(String(format: "Ziel-Abschlussrate: %.0f%%", analyze.goalCompletionPercent))
+                    .font(LiveCashTheme.captionFont)
+                    .foregroundStyle(.secondary)
+                if memory.monthlySubscriptionCost > 0 {
+                    Text(String(format: "Abos binden %.0f€/Monat.", memory.monthlySubscriptionCost))
+                        .font(LiveCashTheme.captionFont)
+                        .foregroundStyle(.secondary)
                 }
             }
         }

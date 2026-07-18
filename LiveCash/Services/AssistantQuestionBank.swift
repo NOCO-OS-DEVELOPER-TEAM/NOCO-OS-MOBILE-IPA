@@ -143,6 +143,115 @@ enum AssistantQuestionBank {
             q("welche-ziele", "Welche Sparziele habe ich?", ["wel", "welch"], ["sparziele", "ziele"], .goalsProgress, "Alltag"),
         ]
 
+        // MARK: Einnahmen
+        list += [
+            q("einnahmen-monat", "Wie hoch sind meine Einnahmen diesen Monat?", ["wie", "wi"], ["einnahmen", "hoch", "monat"], .totalIncome, "Einnahmen"),
+            q("einnahmen-vergleich", "Sind meine Einnahmen höher als letzten Monat?", ["sin", "sind"], ["einnahmen", "höher", "hoeher"], .monthCompare, "Einnahmen"),
+            q("gehalt-eingang", "Wann kam mein letztes Gehalt?", ["wan", "wann"], ["gehalt", "letztes"], .recentTransactions, "Einnahmen"),
+            q("einnahmen-quelle", "Woher kommen meine Einnahmen?", ["woh", "woher"], ["einnahmen", "kommen"], .totalIncome, "Einnahmen"),
+            q("einnahmen-vs-aus", "Übersteigen meine Einnahmen die Ausgaben?", ["üb", "ueb"], ["einnahmen", "ausgaben", "übersteigen"], .incomeVsExpense, "Einnahmen"),
+            q("einnahmen-durchschnitt", "Wie hoch ist mein durchschnittliches Monatseinkommen?", ["wie", "wi"], ["durchschnitt", "einkommen"], .totalIncome, "Einnahmen"),
+            q("mehr-einnahmen", "Wie kann ich meine Einnahmen steigern?", ["wie", "wi"], ["einnahmen", "steigern"], .savingsTips, "Einnahmen"),
+        ]
+
+        // MARK: Ausgaben (Erweiterung)
+        list += [
+            q("zu-viel-monat", "Habe ich diesen Monat zu viel ausgegeben?", ["hab", "ha"], ["zu viel", "ausgegeben", "monat"], .whySpending, "Ausgaben"),
+            q("ausgaben-prognose", "Wie hoch werden meine Ausgaben am Monatsende?", ["wie", "wi"], ["prognose", "monatsende", "ausgaben"], .spendingPace, "Ausgaben"),
+            q("groesste-buchung", "Was war meine teuerste Buchung?", ["was", "wa"], ["teuerste", "buchung"], .top5Expenses, "Ausgaben"),
+            q("ausgaben-gestern", "Was habe ich gestern ausgegeben?", ["was", "wa"], ["gestern", "ausgegeben"], .spendingPace, "Ausgaben"),
+            q("ausgaben-wochenende", "Wie viel gebe ich am Wochenende aus?", ["wie", "wi"], ["wochenende", "ausgegeben"], .thisWeek, "Ausgaben"),
+            q("fixkosten", "Wie hoch sind meine Fixkosten?", ["wie", "wi"], ["fixkosten", "fix"], .monthlySubCost, "Ausgaben"),
+            q("variable-kosten", "Wie viel gebe ich für variable Kosten aus?", ["wie", "wi"], ["variable", "kosten"], .byCategory, "Ausgaben"),
+            q("kleine-ausgaben", "Wie viel gehen für Kleinstausgaben drauf?", ["wie", "wi"], ["klein", "kleinstausgaben"], .unusualSpending, "Ausgaben"),
+        ]
+
+        // MARK: Sparziele (Erweiterung)
+        list += [
+            q("ziel-fortschritt", "Wie weit bin ich mit meinem Sparziel?", ["wie", "wi"], ["sparziel", "weit", "fortschritt"], .goalsProgress, "Sparen"),
+            q("ziel-zeit", "Wann erreiche ich mein Sparziel?", ["wan", "wann"], ["sparziel", "erreiche"], .goalsProgress, "Sparen"),
+            q("ziel-monatlich", "Wie viel muss ich monatlich sparen?", ["wie", "wi"], ["monatlich", "sparen", "ziel"], .goalsProgress, "Sparen"),
+            q("ziel-verzoegerung", "Verzögert mich etwas bei meinem Sparziel?", ["ver", "verz"], ["verzögert", "verzoegert", "sparziel"], .goalsProgress, "Sparen"),
+            q("mehrere-ziele", "Wie stehen meine Sparziele insgesamt?", ["wie", "wi"], ["sparziele", "insgesamt"], .goalsProgress, "Sparen"),
+            q("ziel-tipp", "Was hilft mir, mein Sparziel schneller zu erreichen?", ["was", "wa"], ["sparziel", "schneller", "erreichen"], .savingsTips, "Sparen"),
+        ]
+
+        // MARK: Abos (Erweiterung)
+        list += [
+            q("abo-teuer", "Welches Abo ist am teuersten?", ["wel", "welch"], ["abo", "teuerste"], .allSubscriptions, "Abos"),
+            q("abo-anteil", "Wie viel Prozent meiner Ausgaben sind Abos?", ["wie", "wi"], ["abo", "prozent", "ausgaben"], .monthlySubCost, "Abos"),
+            q("abo-sparen", "Kann ich bei Abos Geld sparen?", ["kan", "kann"], ["abo", "sparen"], .potentialSavings, "Abos"),
+            q("abo-vergleich", "Sind meine Abo-Kosten gestiegen?", ["sin", "sind"], ["abo", "gestiegen", "kosten"], .monthCompare, "Abos"),
+            q("abo-liste", "Liste alle wiederkehrenden Zahlungen", ["lis", "list"], ["wiederkehrend", "zahlungen", "abo"], .allSubscriptions, "Abos"),
+        ]
+
+        // MARK: Kategorien (Erweiterung)
+        list += [
+            q("kat-essen", "Wie viel gebe ich für Essen aus?", ["wie", "wi"], ["essen", "ausgeben"], .byCategory, "Kategorien"),
+            q("kat-shopping", "Was kostet mich Shopping?", ["was", "wa"], ["shopping", "kleidung"], .byCategory, "Kategorien"),
+            q("kat-gesundheit", "Wie hoch sind meine Gesundheitsausgaben?", ["wie", "wi"], ["gesundheit", "apotheke"], .byCategory, "Kategorien"),
+            q("kat-wohnen", "Was zahle ich für Wohnen und Nebenkosten?", ["was", "wa"], ["wohnen", "miete", "nebenkosten"], .byCategory, "Kategorien"),
+            q("kat-vergleich", "Welche Kategorie ist gegenüber dem Vormonat gestiegen?", ["wel", "welch"], ["kategorie", "gestiegen", "vormonat"], .monthCompare, "Kategorien"),
+            q("kat-detail", "Zeig Details zu meiner größten Kategorie", ["zeig", "zeige"], ["details", "größte", "kategorie"], .top3Categories, "Kategorien"),
+        ]
+
+        // MARK: Orte (Erweiterung)
+        list += [
+            q("ort-teuer", "An welchem Ort gebe ich am meisten aus?", ["an", "wel"], ["ort", "meisten", "aus"], .expensiveAreas, "Karte"),
+            q("ort-haeufig", "Wo kaufe ich am häufigsten ein?", ["wo"], ["häufig", "haeufig", "kaufe"], .frequentAreas, "Karte"),
+            q("ort-neu", "Gibt es neue Ausgabe-Hotspots?", ["gib", "gibt"], ["hotspot", "neu", "ort"], .expensiveAreas, "Karte"),
+            q("ort-karte-heatmap", "Zeig mir die Ausgaben-Heatmap", ["zeig", "zeige"], ["heatmap", "karte", "ausgaben"], .openMap, "Karte"),
+        ]
+
+        // MARK: Gewohnheiten
+        list += [
+            q("gewohnheit-wochentag", "An welchem Wochentag gebe ich am meisten aus?", ["an", "wel"], ["wochentag", "meisten"], .whySpending, "Gewohnheiten"),
+            q("gewohnheit-tageszeit", "Wann gebe ich tagsüber am meisten aus?", ["wan", "wann"], ["tagsüber", "tagsueber", "ausgeben"], .spendingPace, "Gewohnheiten"),
+            q("gewohnheit-impuls", "Bin ich ein impulsiver Käufer?", ["bin", "bi"], ["impulsiv", "käufer", "kaeufer"], .analyzeMe, "Gewohnheiten"),
+            q("gewohnheit-sparen", "Spare ich regelmäßig oder unregelmäßig?", ["spa", "spar"], ["regelmäßig", "regelmaessig", "sparen"], .analyzeMe, "Gewohnheiten"),
+            q("gewohnheit-gehalt", "Gebe ich nach Gehaltseingang mehr aus?", ["geb", "gebe"], ["gehalt", "eingang", "mehr"], .whySpending, "Gewohnheiten"),
+            q("gewohnheit-kleinst", "Habe ich viele kleine Ausgaben?", ["hab", "ha"], ["kleine", "ausgaben", "viele"], .unusualSpending, "Gewohnheiten"),
+            q("gewohnheit-disziplin", "Wie diszipliniert sind meine Ausgaben?", ["wie", "wi"], ["diszipliniert", "ausgaben"], .analyzeMe, "Gewohnheiten"),
+        ]
+
+        // MARK: Finanzprofil (Erweiterung)
+        list += [
+            q("profil-typ", "Welcher Finanztyp bin ich?", ["wel", "welch"], ["finanztyp", "typ"], .analyzeMe, "Profil"),
+            q("profil-score-detail", "Erkläre mir meinen Finanz-Score", ["erk", "erkl"], ["score", "finanz"], .analyzeMe, "Profil"),
+            q("profil-verhalten", "Wie ist mein Ausgabeverhalten?", ["wie", "wi"], ["ausgabeverhalten", "verhalten"], .analyzeMe, "Profil"),
+            q("profil-verbesserung", "Wie kann ich mein Finanzprofil verbessern?", ["wie", "wi"], ["profil", "verbessern"], .analyzeMe, "Profil"),
+            q("profil-staerke-schwaeche", "Was sind meine Stärken und Schwächen?", ["was", "wa"], ["stärken", "schwächen", "staerken"], .analyzeMe, "Profil"),
+        ]
+
+        // MARK: Wochenbudget (Erweiterung)
+        list += [
+            q("wochenbudget-heute", "Wie viel darf ich heute noch ausgeben?", ["wie", "wi"], ["heute", "darf", "ausgeben"], .weeklyBudget, "Entscheiden"),
+            q("wochenbudget-rest", "Wie viel Budget habe ich diese Woche noch?", ["wie", "wi"], ["budget", "woche", "noch"], .weeklyBudget, "Entscheiden"),
+            q("wochenbudget-ueberschritten", "Habe ich mein Wochenbudget überschritten?", ["hab", "ha"], ["wochenbudget", "überschritten"], .weeklyBudget, "Entscheiden"),
+            q("wochenbudget-tipp", "Wie halte ich mein Wochenbudget ein?", ["wie", "wi"], ["wochenbudget", "halten"], .weeklyBudget, "Entscheiden"),
+        ]
+
+        // MARK: Prognosen
+        list += [
+            q("prog-monatsende", "Wie viel werde ich am Monatsende ausgegeben haben?", ["wie", "wi"], ["monatsende", "ausgegeben", "werde"], .spendingPace, "Prognosen"),
+            q("prog-sparquote", "Wie wird meine Sparquote am Monatsende aussehen?", ["wie", "wi"], ["sparquote", "monatsende"], .spendingPace, "Prognosen"),
+            q("prog-jahr", "Wie viel spare ich im Jahr voraussichtlich?", ["wie", "wi"], ["jahr", "spare", "voraussichtlich"], .whatIf, "Prognosen"),
+            q("prog-ziel", "Wann erreiche ich mein Ziel bei aktuellem Tempo?", ["wan", "wann"], ["ziel", "tempo", "erreiche"], .goalsProgress, "Prognosen"),
+            q("prog-saldo", "Wie wird mein Saldo am Monatsende aussehen?", ["wie", "wi"], ["saldo", "monatsende"], .balance, "Prognosen"),
+            q("prog-trend", "Steigen oder sinken meine Ausgaben langfristig?", ["ste", "stei"], ["steigen", "sinken", "langfristig"], .monthCompare, "Prognosen"),
+        ]
+
+        // MARK: Vergleiche
+        list += [
+            q("vergl-woche-vorwoche", "Diese Woche vs. letzte Woche — wie stehe ich?", ["die", "dies"], ["woche", "letzte", "vergleich"], .last7Days, "Vergleiche"),
+            q("vergl-kategorie-vormonat", "Welche Kategorie ist im Vergleich zum Vormonat gestiegen?", ["wel", "welch"], ["kategorie", "vormonat", "gestiegen"], .monthCompare, "Vergleiche"),
+            q("vergl-einnahmen-ausgaben", "Vergleiche Einnahmen und Ausgaben diesen Monat", ["ver", "verg"], ["einnahmen", "ausgaben", "vergleich"], .incomeVsExpense, "Vergleiche"),
+            q("vergl-sparquote", "Ist meine Sparquote besser als letzten Monat?", ["is", "ist"], ["sparquote", "besser", "monat"], .monthCompare, "Vergleiche"),
+            q("vergl-haendler", "Welcher Händler ist teurer geworden?", ["wel", "welch"], ["händler", "teurer", "haendler"], .merchantBreakdown, "Vergleiche"),
+            q("vergl-jahr", "Bin ich dieses Jahr sparsamer als letztes Jahr?", ["bin", "bi"], ["jahr", "sparsamer"], .analyzeMe, "Vergleiche"),
+            q("vergl-budget", "Liege ich über oder unter meinem üblichen Budget?", ["lie", "lig"], ["budget", "über", "unter"], .weeklyBudget, "Vergleiche"),
+        ]
+
         return list
     }()
 
@@ -172,36 +281,55 @@ enum AssistantQuestionBank {
     /// Matches typed text against the local question bank (prefix + keyword scoring).
     static func matches(for partial: String, limit: Int = 3) -> [AssistantQuestion] {
         let trimmed = partial.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
         guard !trimmed.isEmpty else { return [] }
 
-        let firstWord = trimmed.split(separator: " ").first.map(String.init) ?? trimmed
+        let words = trimmed.split(separator: " ").map(String.init)
+        let firstWord = words.first ?? trimmed
+        let secondWord = words.count > 1 ? words[1] : nil
         var scored: [(AssistantQuestion, Int)] = []
-        scored.reserveCapacity(min(24, indexed.count))
+        scored.reserveCapacity(min(48, indexed.count))
 
         for item in indexed {
             var score = 0
             let q = item.q
+            let promptNorm = item.promptLower
+                .folding(options: .diacriticInsensitive, locale: .current)
 
             if q.prefixes.contains(where: { firstWord.hasPrefix($0) || $0.hasPrefix(firstWord) }) {
                 score += 40
             }
-            if item.promptLower.hasPrefix(trimmed) {
-                score += 50
-            } else if item.promptLower.contains(trimmed) {
-                score += 25
+            if let secondWord,
+               q.prefixes.contains(where: { secondWord.hasPrefix($0) || $0.hasPrefix(secondWord) }) {
+                score += 18
             }
+            if promptNorm.hasPrefix(trimmed) {
+                score += 55
+            } else if promptNorm.contains(trimmed) {
+                score += 28
+            }
+            var keywordHits = 0
             for kw in q.keywords where trimmed.contains(kw) {
                 score += 15
+                keywordHits += 1
             }
+            if keywordHits >= 2 { score += 12 }
+            if keywordHits >= 3 { score += 10 }
             if q.prefixes.contains(where: { trimmed.hasPrefix($0) }) {
-                score += 20
+                score += 22
+            }
+            for word in words where word.count >= 3 && promptNorm.contains(word) {
+                score += 6
             }
             if score > 0 {
                 scored.append((q, score))
             }
         }
 
-        scored.sort { $0.1 > $1.1 }
+        scored.sort { lhs, rhs in
+            if lhs.1 != rhs.1 { return lhs.1 > rhs.1 }
+            return lhs.0.prompt.count < rhs.0.prompt.count
+        }
         return Array(scored.prefix(limit).map(\.0))
     }
 

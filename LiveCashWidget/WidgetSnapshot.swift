@@ -24,6 +24,10 @@ struct WidgetSnapshot: Codable {
     var hasLiveData: Bool
     var blockedInGoals: Double
     var totalWealth: Double
+    var financeScore: Int
+    var coins: Int
+    var weeklyBudget: Double
+    var loginStreakDays: Int
 
     static let empty = WidgetSnapshot(
         balance: 0, monthExpenses: 0, monthIncome: 0,
@@ -38,7 +42,11 @@ struct WidgetSnapshot: Codable {
         updatedAt: .distantPast,
         hasLiveData: false,
         blockedInGoals: 0,
-        totalWealth: 0
+        totalWealth: 0,
+        financeScore: 0,
+        coins: 0,
+        weeklyBudget: 0,
+        loginStreakDays: 0
     )
 
     init(
@@ -64,7 +72,11 @@ struct WidgetSnapshot: Codable {
         updatedAt: Date,
         hasLiveData: Bool = true,
         blockedInGoals: Double = 0,
-        totalWealth: Double = 0
+        totalWealth: Double = 0,
+        financeScore: Int = 0,
+        coins: Int = 0,
+        weeklyBudget: Double = 0,
+        loginStreakDays: Int = 0
     ) {
         self.balance = balance
         self.monthExpenses = monthExpenses
@@ -89,6 +101,10 @@ struct WidgetSnapshot: Codable {
         self.hasLiveData = hasLiveData
         self.blockedInGoals = blockedInGoals
         self.totalWealth = totalWealth
+        self.financeScore = financeScore
+        self.coins = coins
+        self.weeklyBudget = weeklyBudget
+        self.loginStreakDays = loginStreakDays
     }
 
     init(from decoder: Decoder) throws {
@@ -116,6 +132,10 @@ struct WidgetSnapshot: Codable {
         hasLiveData = try c.decodeIfPresent(Bool.self, forKey: .hasLiveData) ?? true
         blockedInGoals = try c.decodeIfPresent(Double.self, forKey: .blockedInGoals) ?? 0
         totalWealth = try c.decodeIfPresent(Double.self, forKey: .totalWealth) ?? balance
+        financeScore = try c.decodeIfPresent(Int.self, forKey: .financeScore) ?? 0
+        coins = try c.decodeIfPresent(Int.self, forKey: .coins) ?? 0
+        weeklyBudget = try c.decodeIfPresent(Double.self, forKey: .weeklyBudget) ?? 0
+        loginStreakDays = try c.decodeIfPresent(Int.self, forKey: .loginStreakDays) ?? 0
     }
 
     enum CodingKeys: String, CodingKey {
@@ -125,6 +145,7 @@ struct WidgetSnapshot: Codable {
         case lastTransactionMerchant, lastTransactionAmount, lastTransactionIsIncome, refreshIntervalMinutes
         case showBalance, showExpenses, showSavings, showSubscriptions, showRecentExpense, updatedAt
         case hasLiveData, blockedInGoals, totalWealth
+        case financeScore, coins, weeklyBudget, loginStreakDays
     }
 }
 

@@ -32,12 +32,27 @@ final class OCRService {
             request.recognitionLanguages = ["de-DE", "en-US"]
             request.usesLanguageCorrection = true
 
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            let orientation = Self.cgOrientation(from: image.imageOrientation)
+            let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
             do {
                 try handler.perform([request])
             } catch {
                 continuation.resume(throwing: error)
             }
+        }
+    }
+
+    private static func cgOrientation(from orientation: UIImage.Orientation) -> CGImagePropertyOrientation {
+        switch orientation {
+        case .up: return .up
+        case .down: return .down
+        case .left: return .left
+        case .right: return .right
+        case .upMirrored: return .upMirrored
+        case .downMirrored: return .downMirrored
+        case .leftMirrored: return .leftMirrored
+        case .rightMirrored: return .rightMirrored
+        @unknown default: return .up
         }
     }
 }

@@ -1,40 +1,34 @@
 import SwiftUI
 
+/// Reliable "Mehr" hub — NavigationLink(value:) only, no opacity traps, no competing gestures.
 struct MoreView: View {
     @EnvironmentObject private var store: FinanceStore
-    @State private var navigateToGoals = false
-    @State private var navigateToSubscriptions = false
-    @State private var appeared = false
+    var isSelected: Bool = true
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section("Finanzen") {
-                    moreLink("Smart Assistant", icon: "brain.head.profile") { SmartAssistantHubView() }
-                    moreLink("Sparziele", icon: "target") { GoalsView() }
-                    moreLink("Abonnements", icon: "repeat.circle") { SubscriptionsView() }
-                    moreLink("Zukunfts-Simulation", icon: "chart.line.uptrend.xyaxis") { FutureSimulationView() }
-                    moreLink("Ausgaben-Limits", icon: "gauge.with.dots.needle.67percent") { SpendingLimitsView() }
+                    navRow("Smart Assistant", icon: "brain.head.profile", route: .assistant)
+                    navRow("Sparziele", icon: "target", route: .goals)
+                    navRow("Abonnements", icon: "repeat.circle", route: .subscriptions)
+                    navRow("Zukunfts-Simulation", icon: "chart.line.uptrend.xyaxis", route: .future)
+                    navRow("Ausgaben-Limits", icon: "gauge.with.dots.needle.67percent", route: .limits)
                 }
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 10)
 
                 Section("Insights") {
-                    moreLink("Mein Finanzbericht", icon: "doc.text.magnifyingglass") { FinanceReportView() }
-                    moreLink("Analyse", icon: "chart.xyaxis.line") { AnalyticsCenterView() }
-                    moreLink("Analyze Me", icon: "person.crop.circle.badge.questionmark") { AnalyzeMeView() }
-                    moreLink("Kalender", icon: "calendar") { FinanceCalendarView() }
-                    moreLink("Financial Story", icon: "sparkles.rectangle.stack") { FinancialStoryView() }
+                    navRow("Mein Finanzbericht", icon: "doc.text.magnifyingglass", route: .financeReport)
+                    navRow("Analyse", icon: "chart.xyaxis.line", route: .analytics)
+                    navRow("Analyze Me", icon: "person.crop.circle.badge.questionmark", route: .analyzeMe)
+                    navRow("Kalender", icon: "calendar", route: .calendar)
+                    navRow("Financial Story", icon: "sparkles.rectangle.stack", route: .story)
                 }
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 14)
 
                 Section("App") {
-                    moreLink("Einstellungen", icon: "gearshape") { SettingsView() }
-                    moreLink("Datenschutz & Vertrauen", icon: "lock.shield") { PrivacyTrustView() }
+                    navRow("Einstellungen", icon: "gearshape", route: .settings)
+                    navRow("Datenschutz & Vertrauen", icon: "lock.shield", route: .privacy)
                 }
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 18)
 
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
@@ -56,45 +50,67 @@ struct MoreView: View {
                     }
                     .padding(.vertical, 4)
                 }
-                .opacity(appeared ? 1 : 0)
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("Mehr")
-            .onAppear {
-                withAnimation(LiveCashMotion.appearEase) {
-                    appeared = true
-                }
+            .navigationDestination(for: MoreRoute.self) { route in
+                destination(for: route)
             }
-            .onChange(of: store.pendingMoreDestination) { _, destination in
-                guard let destination else { return }
-                HapticService.navigate(store: store)
-                switch destination {
-                case .goals: navigateToGoals = true
-                case .subscriptions: navigateToSubscriptions = true
-                }
-                store.pendingMoreDestination = nil
+            .onAppear { pushPendingIfNeeded() }
+            .onChange(of: isSelected) { _, on in
+                if on { pushPendingIfNeeded() }
             }
-            .navigationDestination(isPresented: $navigateToGoals) {
-                GoalsView()
+            .onChange(of: store.pendingMoreDestination) { _, _ in
+                pushPendingIfNeeded()
             }
-            .navigationDestination(isPresented: $navigateToSubscriptions) {
-                SubscriptionsView()
+            .onChange(of: store.moreNavigationEpoch) { _, _ in
+                path = NavigationPath()
             }
         }
-        .id(store.moreNavigationEpoch)
     }
 
-    private func moreLink<Destination: View>(
-        _ title: String,
-        icon: String,
-        @ViewBuilder destination: () -> Destination
-    ) -> some View {
-        NavigationLink {
-            destination()
-        } label: {
+    private func navRow(_ title: String, icon: String, route: MoreRoute) -> some View {
+        NavigationLink(value: route) {
             Label(title, systemImage: icon)
         }
-        .simultaneousGesture(TapGesture().onEnded {
-            HapticService.navigate(store: store)
-        })
     }
+
+    private func pushPendingIfNeeded() {
+        guard let destination = store.pendingMoreDestination else { return }
+        store.pendingMoreDestination = nil
+        let route: MoreRoute = {
+            switch destination {
+            case .goals: return .goals
+            case .subscriptions: return .subscriptions
+            }
+        }()
+        DispatchQueue.main.async {
+            path.append(route)
+            HapticService.navigate(store: store)
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for route: MoreRoute) -> some View {
+        switch route {
+        case .assistant: SmartAssistantHubView()
+        case .goals: GoalsView()
+        case .subscriptions: SubscriptionsView()
+        case .future: FutureSimulationView()
+        case .limits: SpendingLimitsView()
+        case .financeReport: FinanceReportView()
+        case .analytics: AnalyticsCenterView()
+        case .analyzeMe: AnalyzeMeView()
+        case .calendar: FinanceCalendarView()
+        case .story: FinancialStoryView()
+        case .settings: SettingsView()
+        case .privacy: PrivacyTrustView()
+        }
+    }
+}
+
+enum MoreRoute: Hashable {
+    case assistant, goals, subscriptions, future, limits
+    case financeReport, analytics, analyzeMe, calendar, story
+    case settings, privacy
 }

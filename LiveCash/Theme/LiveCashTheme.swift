@@ -49,28 +49,44 @@ struct LiveCashGlassCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(16)
+            .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(.ultraThinMaterial)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .fill(
                                 LinearGradient(
-                                    colors: [LiveCashTheme.glassHighlight, .clear],
+                                    colors: [
+                                        Color.white.opacity(0.22),
+                                        LiveCashTheme.glassHighlight,
+                                        .clear
+                                    ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                     )
+                    .overlay(alignment: .top) {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.55),
+                                        Color.white.opacity(0.12),
+                                        Color.clear
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(LiveCashTheme.glassBorder, lineWidth: 0.8)
-            )
-            .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: .black.opacity(0.07), radius: 16, y: 6)
+            .shadow(color: LiveCashTheme.accent.opacity(0.06), radius: 20, y: 8)
     }
 }
 

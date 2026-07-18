@@ -124,30 +124,21 @@ struct TransactionsListView: View {
                         List {
                             ForEach(groupedSections, id: \.title) { section in
                                 Section {
-                                    ForEach(Array(section.items.enumerated()), id: \.element.id) { index, tx in
-                                        NavigationLink {
-                                            TransactionDetailView(transactionID: tx.id)
-                                        } label: {
+                                    ForEach(section.items) { tx in
+                                        NavigationLink(value: tx.id) {
                                             TransactionRow(transaction: tx)
                                         }
-                                        .simultaneousGesture(TapGesture().onEnded {
-                                            HapticService.navigate(store: store)
-                                        })
                                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                             Button(role: .destructive) {
                                                 HapticService.warning(store: store)
-                                                withAnimation(LiveCashMotion.snappy) {
-                                                    store.deleteTransaction(tx)
-                                                }
+                                                store.deleteTransaction(tx)
                                             } label: {
                                                 Label("Löschen", systemImage: "trash")
                                             }
                                         }
-                                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                                         .listRowSeparator(.hidden)
                                         .listRowBackground(Color.clear)
-                                        .listRowAppear(index: min(index, 8))
-                                        .transition(.opacity.combined(with: .move(edge: .trailing)))
                                     }
                                 } header: {
                                     Text(section.title)
@@ -159,13 +150,16 @@ struct TransactionsListView: View {
                         }
                         .listStyle(.plain)
                         .scrollContentBackground(.hidden)
-                        .animation(LiveCashMotion.crossfade, value: sortMode)
-                        .animation(LiveCashMotion.crossfade, value: filter)
+                        .navigationDestination(for: UUID.self) { id in
+                            TransactionDetailView(transactionID: id)
+                        }
                     }
                 }
             }
             .background(LiveCashTheme.screenBackground)
             .navigationTitle("Buchungen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {

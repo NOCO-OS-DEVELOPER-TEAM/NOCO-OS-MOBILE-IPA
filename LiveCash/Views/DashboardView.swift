@@ -2,41 +2,18 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var store: FinanceStore
+    var isSelected: Bool = true
     @State private var showReceiptScan = false
     @State private var showFinancialStory = false
     @State private var showFinanceReport = false
+    @State private var rewardPulseToken = 0
 
     private var contentSpacing: CGFloat {
         store.appSettings.ui.compactMode ? 16 : 24
     }
 
     private var insightTips: [PersonalFinanceInsights.Tip] {
-        var tips: [PersonalFinanceInsights.Tip] = []
-        if let t = PersonalFinanceInsights.categoryMonthOverMonth(store: store) { tips.append(t) }
-        if let t = PersonalFinanceInsights.frequentCategory(store: store) { tips.append(t) }
-        if let t = PersonalFinanceInsights.goalAccelerationTip(store: store) { tips.append(t) }
-        if let t = PersonalFinanceInsights.loggingHabit(store: store) { tips.append(t) }
-        if tips.isEmpty {
-            let memory = AssistantMemory.build(from: store)
-            if memory.prevMonthExpenses > 0 {
-                let delta = memory.monthExpenses - memory.prevMonthExpenses
-                tips.append(.init(
-                    shortTitle: delta <= 0 ? "Weniger als Vormonat" : "Mehr als Vormonat",
-                    message: delta <= 0
-                        ? String(format: "Du hast %.0f€ weniger ausgegeben als letzten Monat.", abs(delta))
-                        : String(format: "Du hast %.0f€ mehr ausgegeben als letzten Monat.", delta),
-                    action: .monthCompare
-                ))
-            }
-            if let wd = memory.expensiveWeekday {
-                tips.append(.init(
-                    shortTitle: "Teuerster Tag",
-                    message: "Dein \(wd) ist typischerweise dein teuerster Tag.",
-                    action: .spendingPace
-                ))
-            }
-        }
-        return Array(tips.prefix(3))
+        PersonalFinanceInsights.dashboardTips(store: store, limit: 6)
     }
 
     var body: some View {
@@ -47,6 +24,8 @@ struct DashboardView: View {
                         Color.clear.frame(height: 8)
                         headerSection
                             .appearScale(delay: 0)
+                        miniStatsStrip
+                            .appearFade(delay: 0.05)
                         savingsProgressSection
                             .appearFade(delay: 0.08)
                         insightsSection
@@ -79,6 +58,17 @@ struct DashboardView: View {
             }
             .animation(LiveCashMotion.panelSpring, value: store.isAssistantExpanded)
             .toolbar(.hidden, for: .navigationBar)
+            .onChange(of: isSelected) { wasSelected, selected in
+                if selected {
+                    rewardPulseToken += 1
+                    HapticService.soft(store: store)
+                }
+            }
+            .onAppear {
+                if isSelected {
+                    rewardPulseToken += 1
+                }
+            }
             .sheet(isPresented: $showReceiptScan) {
                 ReceiptScanView()
             }
@@ -122,20 +112,108 @@ struct DashboardView: View {
             .accessibilityLabel("Financial Story")
 
             if store.loginReward.loginStreakDays > 0 {
-                PulsingFlameLabel(days: store.loginReward.loginStreakDays)
-                    .id("flame-\(store.loginReward.loginStreakDays)")
+                PulsingFlameLabel(days: store.loginReward.loginStreakDays, pulseToken: rewardPulseToken)
+                    .id("flame-\(store.loginReward.loginStreakDays)-\(rewardPulseToken)")
                     .transition(.scale.combined(with: .opacity))
             }
-            SpinningCoinLabel(coins: max(store.loginReward.coins, 0))
-                .id("coins-\(store.loginReward.coins)")
+            SpinningCoinLabel(coins: max(store.loginReward.coins, 0), spinToken: rewardPulseToken)
+                .id("coins-\(store.loginReward.coins)-\(rewardPulseToken)")
         }
         .animation(LiveCashMotion.softSpring, value: store.loginReward.loginStreakDays)
+        .animation(LiveCashMotion.softSpring, value: rewardPulseToken)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.regularMaterial)
         .overlay(alignment: .bottom) {
             Divider().opacity(0.35)
         }
+    }
+
+    private var miniStatsStrip: some View {
+        let tips = PersonalFinanceInsights.dashboardTips(store: store, limit: 4)
+        let weekTip = tips.first { $0.action == .last7Days || $0.shortTitle.contains("Woche") }
+        let catTip = tips.first { $0.action == .byCategory || $0.action == .monthCompare }
+        let memory = AssistantMemory.build(from: store)
+        let day = max(Calendar.current.component(.day, from: Date()), 1)
+        let weekPace = (store.currentMonthExpenses / Double(day)) * 7
+
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                miniStatCard(
+                    title: "Woche",
+                    value: String(format: "%.0f€", weekPace),
+                    subtitle: weekTip?.shortTitle ?? "Ausgaben-Tempo",
+                    color: LiveCashTheme.expense
+                )
+                if let wd = memory.expensiveWeekday {
+                    miniStatCard(
+                        title: "Teuerster Tag",
+                        value: wd,
+                        subtitle: "Gewohnheit",
+                        color: .orange
+                    )
+                }
+                if let top = memory.topCategories.first {
+                    miniStatCard(
+                        title: "Top-Kategorie",
+                        value: String(format: "%.0f€", top.amount),
+                        subtitle: top.name,
+                        color: LiveCashTheme.accent
+                    )
+                }
+                if memory.prevMonthExpenses > 0 {
+                    let delta = memory.monthExpenses - memory.prevMonthExpenses
+                    miniStatCard(
+                        title: "vs. Vormonat",
+                        value: String(format: "%+.0f€", delta),
+                        subtitle: delta <= 0 ? "Besser" : "Mehr",
+                        color: delta <= 0 ? LiveCashTheme.income : LiveCashTheme.expense
+                    )
+                }
+                if let goal = store.activeGoals.first {
+                    miniStatCard(
+                        title: "Sparziel",
+                        value: "\(goal.progressPercent)%",
+                        subtitle: goal.name,
+                        color: LiveCashTheme.income
+                    )
+                }
+                if let catTip {
+                    miniStatCard(
+                        title: "Insight",
+                        value: String(catTip.shortTitle.prefix(12)),
+                        subtitle: "Tipp",
+                        color: LiveCashTheme.accent
+                    )
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func miniStatCard(title: String, value: String, subtitle: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .contentTransition(.numericText())
+            Text(subtitle)
+                .font(.system(size: 10, design: .rounded))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
+        .padding(14)
+        .frame(width: 132, alignment: .leading)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.22), lineWidth: 0.8)
+        )
     }
 
     private var headerSection: some View {
@@ -243,16 +321,17 @@ struct DashboardView: View {
                 }
             } else {
                 SectionHeader(title: "Erkenntnisse")
-                ForEach(Array(insightTips.enumerated()), id: \.offset) { index, tip in
+                ForEach(Array(insightTips.enumerated()), id: \.element.id) { index, tip in
                     Button {
                         store.showInsight(for: tip.action)
+                        store.focusInputOnAppear = true
                         HapticService.selection(store: store)
                     } label: {
                         LiveCashCard {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "lightbulb.fill")
                                     .foregroundStyle(LiveCashTheme.accent)
-                                    .symbolEffect(.pulse, options: .repeating.speed(0.4), value: tip.shortTitle)
+                                    .symbolEffect(.pulse, options: .repeating.speed(0.35), value: tip.shortTitle)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(tip.shortTitle)
                                         .font(LiveCashTheme.captionFont.weight(.semibold))

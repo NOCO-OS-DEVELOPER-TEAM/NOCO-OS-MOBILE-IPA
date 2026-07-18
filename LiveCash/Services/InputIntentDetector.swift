@@ -59,6 +59,11 @@ enum InputIntentDetector {
             return .transaction
         }
 
+        // Known product without amount → still treat as transaction intent (confirm amount)
+        if SmartInputParser.shared.isKnownProductName(lower) {
+            return .transaction
+        }
+
         if bookingKeywords.contains(where: { lower.contains($0) }) {
             return .unclear
         }

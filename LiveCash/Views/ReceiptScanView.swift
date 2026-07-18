@@ -197,11 +197,15 @@ struct ReceiptScanView: View {
     }
 
     private func saveDraft(_ draft: ParsedTransactionDraft) {
+        // Balance OCR is informational only — never save as expense (would wrongly reduce balance).
+        if documentKind == .balance || draft.isBalanceSnapshot {
+            store.lastFeedback = String(format: "Kontostand erkannt: %.2f€ — nicht als Ausgabe gespeichert.", draft.amount)
+            resetForNextScan()
+            return
+        }
         store.saveDraft(draft, rawInput: ocrText.isEmpty ? nil : ocrText)
         savedCount += 1
-        store.lastFeedback = documentKind == .balance
-            ? "Kontostand gespeichert: \(draft.merchant)"
-            : "Beleg gespeichert: \(draft.merchant)"
+        store.lastFeedback = "Beleg gespeichert: \(draft.merchant)"
         resetForNextScan()
         showCamera = true
     }
